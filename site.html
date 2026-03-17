@@ -297,7 +297,7 @@
 
                 const checkStatus = setInterval(async () => {
                     try {
-                        const res = await fetch(`https://f-burguer.onrender.com/webhook/${data.pagamento_id}`);
+                        const res = await fetch(`https://f-burguer.onrender.com/pix/${data.pagamento_id}`);
                         const sData = await res.json();
                         if (sData.status === 'approved' || sData.status === 'accredited') {
 
