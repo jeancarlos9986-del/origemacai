@@ -2105,35 +2105,30 @@ Deseja continuar?`
 
                     // PIX
 
-                    if (pagamento === "Pix") {
+           if (pagamento === "Pix") {
 
-                        const totalFormatado = total.toFixed(2);
+    const totalFormatado = total.toFixed(2);
 
-                        // 🧾 PIX MANUAL FORMATADO
-                        const pixCode = `
-🔑 Chave PIX: ${PIX_KEY}
-👤 Nome: ${PIX_NOME}
-💰 Valor: R$ ${totalFormatado}
-`.trim();
+    const pixCode = PIX_KEY; // 🔥 QR REAL FUNCIONA ASSIM
 
-                        // 📱 MOSTRAR ÁREA PIX
-                        const pixArea = document.getElementById("pixArea");
-                        pixArea.classList.remove("hidden");
+    const pixArea = document.getElementById("pixArea");
+    pixArea.classList.remove("hidden");
 
-                        // 📋 TEXTO DO PIX
-                        const pixCodeEl = document.getElementById("pixCode");
-                        pixCodeEl.value = pixCode;
+    document.getElementById("pixCode").value = `
+Chave PIX: ${PIX_KEY}
+Nome: ${PIX_NOME}
+Valor: R$ ${totalFormatado}
+`;
 
-                        // 🔳 QR CODE
-                        const qr = document.getElementById("pixQrCode");
-                        qr.innerHTML = "";
+    const qr = document.getElementById("pixQrCode");
+    qr.innerHTML = "";
 
-                        new QRCode(qr, {
-                            text: pixCode,
-                            width: 220,
-                            height: 220
-                        });
-                    }
+    new QRCode(qr, {
+        text: pixCode,
+        width: 220,
+        height: 220
+    });
+}
 
                     // FIREBASE
 
