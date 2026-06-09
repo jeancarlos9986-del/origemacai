@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Entregador | Nova Origem Açaí
+    </title>
+
+    <link rel="manifest" href="./manifest.json">
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes">
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="black-translucent">
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="Nova Origem">
+
+    <link
+        rel="apple-touch-icon"
+        href="./logo.png">
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI',sans-serif;
+        }
+
+        :root{
+
+            --bg:#0b0b0f;
+            --card:#17171f;
+            --primary:#7c3aed;
+            --green:#00c853;
+            --yellow:#f59e0b;
+            --red:#ff1744;
+            --text:#ffffff;
+            --muted:#9ca3af;
+
+        }
+
+        body{
+
+            background:var(--bg);
+            color:var(--text);
+            padding:20px;
+
+        }
+
+        .topbar{
+
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            gap:15px;
+            flex-wrap:wrap;
+            margin-bottom:25px;
+
+        }
+
+        .logo-area{
+
+            display:flex;
+            align-items:center;
+            gap:15px;
+
+        }
+
+        .logo-area img{
+
+            width:60px;
+            height:60px;
+            border-radius:16px;
+
+        }
+
+        .logo-area h1{
+
+            font-size:1.8rem;
+            font-weight:800;
+
+        }
+
+        .online{
+
+            background:rgba(0,200,83,.15);
+            color:#00ff84;
+            border:1px solid rgba(0,200,83,.4);
+            padding:10px 15px;
+            border-radius:12px;
+            font-weight:700;
+
+        }
+
+        #aviso-instalar{
+
+            display:none;
+
+            background:#ff9800;
+            color:black;
+
+            padding:14px;
+
+            text-align:center;
+
+            font-weight:700;
+
+            border-radius:12px;
+
+            margin-bottom:20px;
+
+        }
+
+        .card-entrega{
+
+            background:var(--card);
+
+            border-radius:20px;
+
+            padding:20px;
+
+            margin-bottom:18px;
+
+            border:2px solid rgba(255,255,255,.05);
+
+        }
+
+        .info-valor{
+
+            background:rgba(255,255,255,.04);
+
+            border-radius:14px;
+
+            padding:15px;
+
+            margin:15px 0;
+
+        }
+
+        .btn-rota{
+
+            background:#4285F4;
+
+            color:white;
+
+            text-decoration:none;
+
+            display:block;
+
+            text-align:center;
+
+            padding:14px;
+
+            border-radius:12px;
+
+            font-weight:700;
+
+        }
+
+        .btn-concluir{
+
+            background:var(--green);
+
+            color:white;
+
+            border:none;
+
+            width:100%;
+
+            padding:14px;
+
+            border-radius:12px;
+
+            font-weight:700;
+
+            cursor:pointer;
+
+        }
+
+        .sem-pedidos{
+
+            text-align:center;
+
+            margin-top:100px;
+
+            color:var(--muted);
+
+        }
+
+        .sem-pedidos h2{
+
+            margin-bottom:10px;
+
+        }
+
+        @media(max-width:700px){
+
+            body{
+
+                padding:15px;
+
+            }
+
+            .topbar{
+
+                align-items:flex-start;
+
+            }
+
+            .logo-area h1{
+
+                font-size:1.4rem;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div id="aviso-instalar">
+
+        📲 Instale o aplicativo na tela inicial para acessar mais rápido.
+
+    </div>
+
+    <header class="topbar">
+
+        <div class="logo-area">
+
+            <img
+                src="./logo.png"
+                alt="Nova Origem">
+
+            <div>
+
+                <h1>
+                    Painel do Entregador
+                </h1>
+
+                <p
+                    style="
+                        color:#9ca3af;
+                    ">
+
+                    Nova Origem Açaí
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="online">
+
+            🟢 Sistema Online
+
+        </div>
+
+    </header>
+
+    <main id="lista-entregas">
+
+        <div class="sem-pedidos">
+
+            <h2>
+                Nenhuma entrega pendente
+            </h2>
+
+            <p>
+
+                Os pedidos prontos para entrega aparecerão aqui automaticamente.
+
+            </p>
+
+        </div>
+
+    </main>
+
+    <script>
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener(
+                "load",
+                () => {
+
+                    navigator.serviceWorker
+                        .register("./sw.js");
+
+                }
+            );
+
+        }
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => {
+
+                const isStandalone =
+
+                    window.matchMedia(
+                        "(display-mode: standalone)"
+                    ).matches
+
+                    ||
+
+                    window.navigator.standalone;
+
+                const isMobile =
+
+                    /Android|iPhone|iPad|iPod/i
+                    .test(
+                        navigator.userAgent
+                    );
+
+                if (
+                    isMobile
+                    &&
+                    !isStandalone
+                ) {
+
+                    document
+                        .getElementById(
+                            "aviso-instalar"
+                        )
+                        .style.display =
+                        "block";
+
+                }
+
+            }
+        );
+
+    </script>
+
+    <script
+        type="module"
+        src="./entregador.js">
+    </script>
+
+</body>
+
+</html>
