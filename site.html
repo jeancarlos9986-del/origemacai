@@ -1291,9 +1291,9 @@
 
         const WHATSAPP = "5534997741051";
 
-        const PIX_KEY = "SUA_CHAVE_PIX";
+        const PIX_KEY = "34997741051";
 
-        
+
 
         const PRODUCTS = [
 
@@ -1324,23 +1324,7 @@
                 ],
                 limiteGratis: 3
             },
-            {
-                id: 5,
-                cat: "Copos",
-                nome: "🍌 Copo Fitness 400ml",
-                preco: 20.90,
-                desc: "Açaí, banana e granola.",
-                imagens: [
-                    "./copofitness.jpeg"
-                ],
 
-                customizavel: false,
-
-                adicionaisFixos: [
-                    "Banana",
-                    "Granola"
-                ]
-            },
 
 
 
@@ -1416,7 +1400,7 @@
 
             { nome: "Leite em pó", ativo: true },
 
-            { nome: "Morango", ativo: false }
+            { nome: "Morango", ativo: true }
 
         ];
 
@@ -1428,11 +1412,19 @@
 
             { nome: "Kit Kat", preco: 4, ativo: true },
 
-            { nome: "Ovomaltine", preco: 4, ativo: false },
+            { nome: "Ovomaltine", preco: 4, ativo: true },
 
-            { nome: "Granola Extra", preco: 2, ativo: true },
+            { nome: "Sonho De Valsa", preco: 3, ativo: true },
 
-            { nome: "Morango Extra", preco: 2, ativo: false }
+            { nome: "Ouro Branco", preco: 3, ativo: true },
+
+            { nome: "Choco Ball", preco: 3, ativo: true },
+
+            { nome: "Amendoim", preco: 2, ativo: true },
+
+
+
+
 
         ];
 
@@ -1498,7 +1490,7 @@
 
             const hour = now.getHours();
 
-            const aberto = hour >= 18 && hour <= 23;
+            const aberto = hour >= 14 && hour <= 23;
 
             if (aberto) {
 
@@ -1514,7 +1506,7 @@
 
                 status.className = "status fechado";
 
-                info.innerText = "Abrimos às 18:00";
+                info.innerText = "Abrimos às 14:00";
 
             }
 
@@ -2113,30 +2105,32 @@ Deseja continuar?`
 
                     if (pagamento === "Pix") {
 
-                        const pixCode =
-                            `PIX:${PIX_KEY}:${total.toFixed(2)}`;
+                        const totalFormatado = total.toFixed(2);
 
-                        document.getElementById("pixArea")
-                            .classList.remove("hidden");
+                        // 🧾 PIX MANUAL FORMATADO
+                        const pixCode = `
+🔑 Chave PIX: ${PIX_KEY}
+👤 Nome: ${PIX_NOME}
+💰 Valor: R$ ${totalFormatado}
+`.trim();
 
-                        document.getElementById("pixCode")
-                            .value = pixCode;
+                        // 📱 MOSTRAR ÁREA PIX
+                        const pixArea = document.getElementById("pixArea");
+                        pixArea.classList.remove("hidden");
 
-                        const qr =
-                            document.getElementById("pixQrCode");
+                        // 📋 TEXTO DO PIX
+                        const pixCodeEl = document.getElementById("pixCode");
+                        pixCodeEl.value = pixCode;
 
+                        // 🔳 QR CODE
+                        const qr = document.getElementById("pixQrCode");
                         qr.innerHTML = "";
 
                         new QRCode(qr, {
-
                             text: pixCode,
-
                             width: 220,
-
                             height: 220
-
                         });
-
                     }
 
                     // FIREBASE
@@ -2276,6 +2270,15 @@ ${troco ? `💵 Troco para: R$ ${troco}` : ""}
             }, 3000);
 
         });
+        document.getElementById("copyPix")
+            .addEventListener("click", async () => {
+
+                const code = document.getElementById("pixCode").value;
+
+                await navigator.clipboard.writeText(code);
+
+                alert("PIX copiado com sucesso 💳");
+            });
 
     </script>
 
