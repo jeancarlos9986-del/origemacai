@@ -1,0 +1,102 @@
+<!-- ===================== estoque.html ===================== -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Inteligente - F&B Burguer</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #121212;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        .card {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .btn {
+            background: #2196F3;
+            color: white;
+            margin-top: 5px;
+        }
+
+        .alerta {
+            color: #ff5252;
+            font-weight: bold;
+        }
+
+        pre {
+            background: #000;
+            padding: 10px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <h2>📦 Estoque Inteligente</h2>
+
+
+
+        <div class="card">
+            <h3>📋 Controle</h3>
+            <button class="btn" onclick="gerarListaCompra()">🛒 Lista de Compra</button>
+            <button class="btn" onclick="verEstoque()">📦 Ver Estoque</button>
+            <button class="btn" onclick="exportarWhats()">📲 Enviar WhatsApp</button>
+            <pre id="saida"></pre>
+        </div>
+
+        <div class="card">
+            <h3>📊 Itens</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qtd</th>
+                        <th>Mín</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script type="module" src="estoque.js"></script>
+</body>
+
+</html>

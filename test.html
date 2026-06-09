@@ -1,0 +1,68 @@
+<style>
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at top,
+                    rgba(124, 58, 237, 0.15),
+                    transparent 35%),
+                #070707;
+        }
+
+        .card-hover {
+            transition: .3s;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-6px);
+        }
+
+        .card-hover img {
+            transition: .4s;
+        }
+
+        .card-hover:hover img {
+            transform: scale(1.04);
+        }
+
+        .cart-open {
+            right: 0 !important;
+        }
+
+        .hero-glow {
+            background:
+                radial-gradient(circle,
+                    rgba(168, 85, 247, 0.35),
+                    transparent 70%);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .purple-button {
+            transition: .3s;
+        }
+
+        .purple-button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.35);
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #7c3aed;
+            border-radius: 999px;
+        }
+
+        #cart-items {
+            min-width: 0;
+        }
+    </style>

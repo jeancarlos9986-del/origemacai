@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Cozinha</title>
+    <style>
+        body {
+            background: #111;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            color: #bbb;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 25px;
+            margin: 10px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-lanches {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-espetos {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>QUAL COZINHA ESTÁ NESTE APARELHO?</h1>
+
+        <button class="btn btn-lanches" onclick="definirPraca('lanches')">
+            🍔 LANCHES
+        </button>
+
+        <button class="btn btn-espetos" onclick="definirPraca('espetos')">
+            🍢 ESPETOS / JANTINHAS
+        </button>
+    </div>
+
+    <script>
+        function definirPraca(praca) {
+            // Salva na memória permanente do navegador
+            localStorage.setItem('pracaSelecionada', praca);
+            // Redireciona para o arquivo da cozinha que você já tem
+            window.location.href = 'cozinha.html';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Painel de Pedidos - F&B Burguer</title>
+    <style>
+        body {
+            background: radial-gradient(circle, #1a1a1a 0%, #0d0d0d 100%);
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .coluna {
+            flex: 1;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        h1 {
+            margin: 0;
+            padding: 30px;
+            font-size: 3.5rem;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilo Coluna Preparando */
+        .preparando h1 {
+            background-color: #ff9800;
+            color: #000;
+        }
+
+        /* Estilo Coluna Pronto */
+        .pronto h1 {
+            background-color: #4CAF50;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+
+        .lista-nomes {
+            flex: 1;
+            list-style: none;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        /* Remove a barra de rolagem visualmente */
+        .lista-nomes::-webkit-scrollbar {
+            width: 0px;
+        }
+
+        .lista-nomes li {
+            padding: 25px;
+            border-radius: 15px;
+            font-size: 4.5rem;
+            /* Nome bem grande para ler de longe */
+            font-weight: 900;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 10px solid transparent;
+            transition: all 0.5s ease;
+        }
+
+        /* Animação para Preparando: Pulsação leve */
+        .preparando .lista-nomes li {
+            border-left-color: #ff9800;
+            color: #ddd;
+        }
+
+        /* Animação para Pronto: Brilho e Flash */
+        .pronto .lista-nomes li {
+            background: rgba(76, 175, 80, 0.15);
+            border-left-color: #4CAF50;
+            color: #fff;
+            animation: pulse-ready 2s infinite;
+        }
+
+        @keyframes pulse-ready {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0px rgba(76, 175, 80, 0);
+            }
+
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0px rgba(76, 175, 80, 0);
+            }
+        }
+
+        /* Rodapé com Relógio */
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            right: 30px;
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        /* Efeito de entrada suave para novos nomes */
+        .lista-nomes li {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Scrollbar invisível mas funcional */
+        .lista-nomes {
+            overflow-y: auto;
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .lista-nomes::-webkit-scrollbar {
+            display: none;
+            /* Chrome/Safari */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="coluna preparando">
+            <h1>PREPARANDO</h1>
+            <ul id="lista-preparando" class="lista-nomes"></ul>
+        </div>
+        <div class="coluna pronto">
+            <h1>PRONTO</h1>
+            <ul id="lista-pronto" class="lista-nomes"></ul>
+        </div>
+        <div class="footer" id="relogio">00:00:00</div>
+    </div>
+
+    <script type="module">
+        // 1. Importações necessárias diretamente do CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 2. Cole aqui as SUAS configurações (as mesmas que você usa no index/cozinha)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIcG9NqxQ7PLUB9Qu45FUWwvD1K7of-2s",
+            authDomain: "fb-pedidos.firebaseapp.com",
+            projectId: "fb-pedidos", // Corrigido aqui
+            storageBucket: "fb-pedidos.appspot.com",
+            messagingSenderId: "702648413709",
+            appId: "1:702648413709:web:ce059405977b5e628bef44"
+        };
+
+        // 3. Inicialização
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const listaPrep = document.getElementById('lista-preparando');
+        const listaPronto = document.getElementById('lista-pronto');
+
+        // 4. Escuta em tempo real (onSnapshot)
+        // Filtramos apenas quem está sendo preparado ou já está pronto
+        const q = query(
+            collection(db, "pedidos"),
+            where("status", "in", ["Pendente", "Em preparo", "Preparando", "Pronto"])
+        );
+
+        // Variável global para controle de som (coloque fora do onSnapshot)
+        let totalProntosAntigo = 0;
+
+        onSnapshot(q, (snapshot) => {
+            listaPrep.innerHTML = "";
+            listaPronto.innerHTML = "";
+
+            const agoraMS = Date.now();
+            let totalProntosAtual = 0;
+
+            snapshot.forEach(doc => {
+                const p = doc.data();
+
+                // 1. TRAVA DE AGENDAMENTO: Não mostra no painel se faltar mais de 30min
+                if (!deveAparecerAgora(p.horarioAgendado)) {
+                    return;
+                }
+
+                const nomeExibicao = (p.cliente_nome || p.cliente || "Cliente").toUpperCase();
+                const li = `<li>${nomeExibicao}</li>`;
+
+                if (p.status === "Pronto") {
+                    // 2. LOGICA DE LIMPEZA: Remove do "Pronto" após 10 minutos
+                    const tempoDesdeCriacao = agoraMS - (p.timestamp || agoraMS);
+                    const dezMinutos = 10 * 60 * 1000;
+
+                    if (tempoDesdeCriacao < dezMinutos) {
+                        listaPronto.innerHTML += li;
+                        totalProntosAtual++;
+                    }
+                } else {
+                    // 3. PREPARANDO: Aparece apenas se estiver com status correto
+                    listaPrep.innerHTML += li;
+                }
+            });
+
+            // 4. AVISO SONORO: Toca se um novo pedido entrar em "Pronto"
+            if (totalProntosAtual > totalProntosAntigo) {
+                const somAviso = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                somAviso.play().catch(e => console.log("Aguardando interação para tocar som"));
+            }
+            totalProntosAntigo = totalProntosAtual;
+        });
+    </script>
+    <script type="module" src="auth-guard.js"></script>
+</body>
+
+</html>

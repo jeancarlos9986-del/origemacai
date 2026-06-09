@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Espetinho</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <button id="btn-sair" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Sair do Sistema</button>
+    <style>
+        :root {
+            --danger: #ff4d4d;
+            --success: #4caf50;
+            --info: #2196f3;
+            --warning: #ff9800;
+            --bg-dark: #121212;
+            /* Fundo padrão das suas outras páginas */
+            --card-bg: #1e1e1e;
+            /* Fundo dos cards igual ao da cozinha */
+            --primary: #ff9800;
+            /* Laranja F&B Burguer */
+            --text: #ffffff;
+            --border: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-dark);
+            margin: 0;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* Container de Filtros */
+        .filter-container {
+            text-align: center;
+            margin-bottom: 25px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-container select,
+        .filter-container input {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 5px;
+        }
+
+        /* Grid de Estatísticas */
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card-stat {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .card-stat:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .card-stat i {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .card-stat p {
+            margin: 0;
+            color: #bbb;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .card-stat h3 {
+            margin: 8px 0 0;
+            font-size: 1.6rem;
+            color: #fff;
+        }
+
+        /* Gráficos e Layout */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        .chart-container {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            min-height: 300px;
+        }
+
+        .chart-container h4 {
+            color: var(--primary);
+            margin-top: 0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        /* Lista de Insumos/Estoque */
+        #lista-insumos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        #lista-insumos div {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        #lista-insumos div strong {
+            color: var(--primary);
+            display: block;
+        }
+
+        /* Scrollbar Dark */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2><i class="fas fa-chart-line"></i> Gestão ADM - Lucro Real</h2>
+
+    <div class="filter-container">
+        <label style="font-weight: bold; color: var(--dark);">Período:</label>
+        <select id="filtro-data" style="padding: 8px; border-radius: 5px; border: 1px solid #ddd; margin-left: 10px;">
+            <option value="hoje">Hoje</option>
+            <option value="ontem">Ontem</option>
+            <option value="7dias">Últimos 7 dias</option>
+            <option value="30dias">Últimos 30 dias</option>
+            <option value="tudo">Tudo</option>
+        </select>
+    </div>
+
+    <div class="grid-stats">
+        <div class="card-stat">
+            <i class="fas fa-clipboard-list" style="color: var(--dark)"></i>
+            <p>Pedidos</p>
+            <h3 id="total-pedidos">0</h3>
+        </div>
+        <div class="card-stat">
+            <i class="fas fa-fire"></i>
+            <p>Média Espetos</p>
+            <h3 id="tempo-espetos">-- min</h3>
+        </div>
+        <div class="card-stat">
+            <i class="fas fa-hamburger" style="color: var(--info)"></i>
+            <p>Média Lanches</p>
+            <h3 id="tempo-lanches">-- min</h3>
+        </div>
+    </div>
+
+    <div class="grid-stats">
+        <div class="card-stat" style="border-color: var(--info)">
+            <p>Faturamento Bruto</p>
+            <h3 id="total-bruto" style="color: var(--info)">R$ 0,00</h3>
+        </div>
+
+        <div class="card-stat" style="border-color: #00bcd4">
+            <p>Total Débito</p>
+            <h3 id="total-debito-real" style="color: #00bcd4">R$ 0,00</h3>
+        </div>
+
+        <div class="card-stat" style="border-color: #f1c40f">
+            <p>Total Crédito</p>
+            <h3 id="total-credito-real" style="color: #f1c40f">R$ 0,00</h3>
+        </div>
+
+        <div class="card-stat" style="border-color: #9b59b6">
+            <p>Custo Insumos</p>
+            <h3 id="total-insumos" style="color: #9b59b6">R$ 0,00</h3>
+        </div>
+
+        <div class="card-stat" style="border-color: var(--danger)">
+            <p>Taxas Cartão</p>
+            <h3 id="total-taxas" style="color: var(--danger)">R$ 0,00</h3>
+        </div>
+
+        <div class="card-stat" style="border-color: var(--success)">
+            <p>Lucro Líquido</p>
+            <h3 id="total-liquido" style="color: var(--success)">R$ 0,00</h3>
+        </div>
+    </div>
+
+    <div class="charts-row">
+        <div class="chart-container"><canvas id="graficoPedidos"></canvas></div>
+        <div class="chart-container"><canvas id="graficoPagamentos"></canvas></div>
+    </div>
+    <div class="card-stat" style="border-bottom: 5px solid var(--info);">
+        <i class="fas fa-motorcycle" style="color: var(--info)"></i>
+        <p>Total Entregas</p>
+        <h3 id="total-entregas-contador">0</h3>
+    </div>
+    <div class="chart-container" style="margin: 20px auto; max-width: 1200px;">
+        <h3 style="text-align: center; color: var(--dark); border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <i class="fas fa-boxes"></i> Resumo de Ingredientes Gastos
+        </h3>
+        <div id="lista-insumos"></div>
+    </div>
+    <div class="card-repasse"
+        style="background: #fdf2f8; border: 2px solid #d81b60; padding: 15px; border-radius: 8px; margin-top: 20px;">
+        <h3 style="color: #d81b60; margin: 0;">🍧 Repasse Açaí (Hoje)</h3>
+        <p style="font-size: 1.5rem; font-weight: bold;" id="display-total-acai">R$ 0,00</p>
+        <small style="color: #666;">(Valor bruto acumulado nos pedidos)</small>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        document.getElementById('btn-sair').addEventListener('click', () => {
+            if (confirm("Deseja mesmo sair do sistema?")) {
+                signOut(auth).then(() => {
+                    window.location.replace("login.html");
+                });
+            }
+        });
+        const DIARIA_ENTREGADOR = 80.00;
+        let totalEntregas = 0; // Para contar quantos pedidos foram entrega
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIcG9NqxQ7PLUB9Qu45FUWwvD1K7of-2s",
+            authDomain: "fb-pedidos.firebaseapp.com",
+            projectId: "fb-pedidos",
+            storageBucket: "fb-pedidos.appspot.com",
+            messagingSenderId: "702648413709",
+            appId: "1:702648413709:web:ce059405977b5e628bef44"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const FICHA_TECNICA = {
+            "Jantinha": { Jantinha: 1 },
+            "Cheesebacon Simples": { pao: 1, hamburguer: 1, cheddar: 1, bacon: 1 },
+            "Cheesebacon Duplo": { pao: 1, hamburguer: 2, cheddar: 2, bacon: 2 },
+            "Tropical Simples": { pao: 1, hamburguer: 1, queijo: 1, bacon: 1, abacaxi: 5 },
+            "Tropical Duplo": { pao: 1, hamburguer: 2, queijo: 2, bacon: 2, abacaxi: 5 },
+            "BIG F&B Simples": { pao: 1, hamburguer: 1, cheddar: 1 },
+            "BIG F&B Duplo": { pao: 1, hamburguer: 2, cheddar: 2 },
+            "F&B Banana Simples": { pao: 1, hamburguer: 1, queijo: 1, banana: 1 },
+            "F&B Banana Duplo": { pao: 1, hamburguer: 2, queijo: 2, banana: 1 },
+            "F&B TOSCANA SIMPLES": { pao: 1, hamburguer: 2, queijo: 2 },
+            "F&B TOSCANA DUPLO": { pao: 1, hamburguer: 2, queijo: 2 },
+            "F&B Mania": { pao: 1, hamburguer: 3, cheddar: 3, bacon: 3 },
+            "Pão + 1Blend": { pao: 1, hamburguer: 1 },
+            "Pão + 2Blend": { pao: 1, hamburguer: 2 },
+            "Mussarela": { queijo: 1 },
+            "Cheedar": { cheddar: 1 },
+            "Bacon": { bacon: 1 },
+            "Ovo": { ovo: 1 },
+            "Alface": { alface: 1 },
+            "Abacaxi": { abacaxi: 1 },
+            "Anel de Cebola": { AneldeCebola: 1 },
+            "Batata Frita P": { batatap: 85 },
+            "Batata Frita M": { "Batata Frita M": 140 },
+            "Especial de batata": { batata: 450 },
+            "Coca  Cola 2L": { coca2l: 1 },
+            "Coca Cola Zero 2L": { Coczzero2l: 1 },
+            "Fanta Laranja 2L": { Fanta2l: 1 },
+            "Kuat 2L": { Kuat2l: 1 },
+            "Mineiro 1.5L": { Mineiro15l: 1 },
+            "Coca Cola 1L": { coca1l: 1 },
+            "Coca Cola 1L Zero": { Coczzero1l: 1 },
+            "Mineiro Lata": { Mineirolata: 1 },
+            "Fanta Laranja Lata": { fantaLlata: 1 },
+            "Fanta Uva Lata": { fantaUlata: 1 },
+            "Coca Cola Lata": { cocalata: 1 },
+            "Coca Cola Zero Lata": { cocazerolata: 1 },
+            "Dell Vale Lata": { dellvalelata: 1 },
+            "Agua Mineral": { aguamini: 1 },
+            "Agua C/Gas": { aguagas: 1 },
+            "Amstel": { amstel: 1 },
+            "Skol": { skol: 1 },
+            "Brahma": { brahma: 1 },
+            "Heineken": { heineken: 1 }
+
+        };
+
+        const TABELA_CUSTOS = {
+            "jantinha": 5.90, "Fraldinha": 5.60, "Almôdega Com Bacon": 7.50, "Fran Bacon": 6.60,
+            "Costela Bovina": 5.70, "Linguiça Cuiabana C/Queijo": 6.70, "Kafta C/Queijo": 6.10,
+            "Linguiça Toscana": 3.60, "Tulipa": 5.60, "Costela Suina": 4.40, "Filé Mignon": 11.60,
+            "Pão de alho": 2.70, "Coraçãozinho": 5.50, "Medalhão": 7.50, "Choripan": 4.10,
+            "Cupim Laranja": 8.50, "Cheesebacon Simples": 5.97, "Cheesebacon Duplo": 11.09,
+            "Tropical Simples": 6.67, "Tropical Duplo": 11.24, "BIG F&B Simples": 5.97,
+            "BIG F&B Duplo": 10.93, "F&B Banana Simples": 6.46, "F&B Banana Duplo": 10.93,
+            "F&B Mania": 15.00, "Batata Frita M": 2.00, "Batata Frita P": 2.00,
+            "Coca Cola 2L": 7.00, "Fanta Laranja 2L": 7.00, "Coca cola Lata 310ml": 3.00,
+            "Mineiro 1,5L": 6.50, "Brahma": 3.00, "Agua Mineral": 1.50
+        };
+
+        async function carregarDados() {
+            try {
+                const filtro = document.getElementById('filtro-data').value;
+                const agora = new Date();
+                let limiteMs = 0;
+
+                let resumoIngredientes = { pao: 0, hamburguer: 0, queijo: 0, bacon: 0, abacaxi: 0, banana: 0, cheddar: 0, batatap: 0, batatam: 0, batata: 0, ovo: 0, AneldeCebola: 0, coca2l: 0, Coczzero2l: 0, Fanta2l: 0 };
+
+                if (filtro === 'hoje') limiteMs = new Date().setHours(0, 0, 0, 0);
+                else if (filtro === 'ontem') {
+                    const ontem = new Date();
+                    ontem.setDate(ontem.getDate() - 1);
+                    limiteMs = ontem.setHours(0, 0, 0, 0);
+                }
+                else if (filtro === '7dias') limiteMs = agora.getTime() - (7 * 24 * 60 * 60 * 1000);
+                else if (filtro === '30dias') limiteMs = agora.getTime() - (30 * 24 * 60 * 60 * 1000);
+
+                const q = query(collection(db, "pedidos"), where("status", "in", ["Pronto", "Finalizado", "Entregue", "Concluído", "A Caminho", "Saiu para entrega"]));
+                const querySnapshot = await getDocs(q);
+
+                // --- VARIÁVEIS DE CÁLCULO ---
+                let bruto = 0, taxas = 0, totalInsumosFin = 0, totalPedidos = 0;
+                let qtdEntregas = 0; // <--- NOVA VARIÁVEL PARA CONTAR ENTREGAS
+                let somaTempoLanches = 0, contLanches = 0, somaTempoEspetos = 0, contEspetos = 0;
+                // Altere esta linha
+                let metodosCount = { pix: 0, cartaoDebito: 0, cartaoCredito: 0, dinheiro: 0 };
+
+                querySnapshot.forEach((doc) => {
+                    const p = doc.data();
+                    const ts = Number(p.timestamp);
+
+                    if (filtro !== 'tudo' && ts < limiteMs) return;
+                    if (filtro === 'ontem' && ts > (limiteMs + 86400000)) return;
+
+                    totalPedidos++;
+
+                    // --- LÓGICA DE CONTAGEM DE ENTREGA ---
+                    if (p.tipo_local && p.tipo_local.toLowerCase() === "entrega") {
+                        qtdEntregas++;
+                    }
+
+                    const v = parseFloat(p.total) || 0;
+                    bruto += v;
+
+                    // 1. CUSTO FINANCEIRO
+                    const somarCusto = (obj) => {
+                        if (!obj) return;
+                        Object.entries(obj).forEach(([nome, qtd]) => {
+                            totalInsumosFin += (TABELA_CUSTOS[nome.trim()] || 0) * (Number(qtd) || 0);
+                        });
+                    };
+                    somarCusto(p.espetos); somarCusto(p.lanches); somarCusto(p.refrigerantes);
+                    if (p.jantinhas?.quantidade) totalInsumosFin += 5.90 * Number(p.jantinhas.quantidade);
+
+                    // 2. INGREDIENTES (FICHA)
+                    if (p.lanches) {
+                        Object.entries(p.lanches).forEach(([nomeLanche, qtdPedido]) => {
+                            const receita = FICHA_TECNICA[nomeLanche.trim()];
+                            if (receita) {
+                                Object.entries(receita).forEach(([ing, qtdFicha]) => {
+                                    if (resumoIngredientes.hasOwnProperty(ing)) {
+                                        resumoIngredientes[ing] += (qtdFicha * Number(qtdPedido));
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    // 3. TEMPO MÉDIO
+                    const t1 = Number(p.timestamp);
+                    const t2 = Number(p.timestamp_pronto);
+                    if (t1 > 0 && t2 > 0) {
+                        const diff = (t2 - t1) / 1000 / 60;
+                        if (diff > 0.1 && diff < 180) {
+                            const temLanche = p.lanches && Object.keys(p.lanches).length > 0;
+                            const temEspeto = (p.espetos && Object.keys(p.espetos).length > 0) || (p.jantinhas?.quantidade > 0);
+                            if (temLanche) { somaTempoLanches += diff; contLanches++; }
+                            if (temEspeto) { somaTempoEspetos += diff; contEspetos++; }
+                        }
+                    }
+
+                    // 4. TAXAS
+                    // --- 4. TAXAS E SEPARAÇÃO DE MÉTODOS ---
+                    const m = String(p.pagamento?.metodo || p.pagamento || '').toLowerCase();
+                    const tipo = String(p.pagamento?.tipo_cartao || '').toLowerCase();
+
+                    if (m.includes('cart') || m.includes('déb') || m.includes('créd')) {
+                        // Verifica se é crédito (pelo subtipo ou pelo nome do método)
+                        if (tipo.includes('cred') || m.includes('créd')) {
+                            const tx = 0.0158; // Taxa Crédito
+                            taxas += v * tx;
+                            metodosCount.cartaoCredito = (metodosCount.cartaoCredito || 0) + v;
+                        } else {
+                            const tx = 0.0101; // Taxa Débito
+                            taxas += v * tx;
+                            metodosCount.cartaoDebito = (metodosCount.cartaoDebito || 0) + v;
+                        }
+                    } else if (m.includes('pix')) {
+                        metodosCount.pix += v;
+                    } else {
+                        metodosCount.dinheiro += v;
+                    }
+                });
+
+                // --- ATUALIZAÇÃO DA INTERFACE ---
+                document.getElementById('total-pedidos').innerText = totalPedidos;
+                document.getElementById('total-entregas-contador').innerText = qtdEntregas; // <--- MOSTRA NOVO CARD
+
+                document.getElementById('total-bruto').innerText = bruto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('total-insumos').innerText = "- " + totalInsumosFin.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('total-taxas').innerText = "- " + taxas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                // Cálculo do Lucro considerando a Diária do Entregador apenas se houver entregas
+                const custoEntregador = qtdEntregas > 0 ? DIARIA_ENTREGADOR : 0;
+                const lucroFinal = bruto - totalInsumosFin - taxas - custoEntregador;
+
+                document.getElementById('total-liquido').innerText = lucroFinal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                document.getElementById('tempo-espetos').innerText = contEspetos > 0 ? Math.round(somaTempoEspetos / contEspetos) + ' min' : '-- min';
+                document.getElementById('tempo-lanches').innerText = contLanches > 0 ? Math.round(somaTempoLanches / contLanches) + ' min' : '-- min';
+
+                // RENDERIZAÇÃO DA LISTA DE INGREDIENTES
+                const listaInsumosContainer = document.getElementById('lista-insumos');
+                const htmlInsumos = Object.entries(resumoIngredientes)
+                    .filter(([_, total]) => total > 0)
+                    .map(([nome, total]) => `
+            <div style="background:#f8f9fa; padding:10px; border-radius:8px; text-align:center; border:1px solid #eee;">
+                <p style="font-size:0.7rem; color:#888; margin:0; text-transform:uppercase;">${nome}</p>
+                <h4 style="margin:5px 0 0; color:#2c3e50;">${total}</h4>
+            </div>
+        `).join('');
+
+                listaInsumosContainer.innerHTML = htmlInsumos || '<p style="font-size:0.8rem; color:#999;">Nenhum gasto registrado.</p>';
+
+                renderizarGraficos(contEspetos, contLanches, metodosCount);
+            } catch (e) { console.error("Erro ao carregar dados ADM:", e); }
+        }
+        function renderizarGraficos(e, l, m) {
+            const cfg = { responsive: true, maintainAspectRatio: false };
+
+            // Gráfico de Barras (Espetos vs Lanches)
+            if (window.c1) window.c1.destroy();
+            window.c1 = new Chart(document.getElementById('graficoPedidos'), {
+                type: 'bar',
+                data: {
+                    labels: ['Espetos', 'Lanches'],
+                    datasets: [{
+                        label: 'Pedidos Concluídos',
+                        data: [e, l],
+                        backgroundColor: ['#e67e22', '#3498db']
+                    }]
+                },
+                options: cfg
+            });
+
+            // Gráfico de Pizza (Agora com separação de cartões)
+            if (window.c2) window.c2.destroy();
+            window.c2 = new Chart(document.getElementById('graficoPagamentos'), {
+                type: 'pie',
+                data: {
+                    labels: ['Pix', 'Cartão Débito', 'Cartão Crédito', 'Dinheiro'],
+                    datasets: [{
+                        data: [
+                            m.pix || 0,
+                            m.cartaoDebito || 0,
+                            m.cartaoCredito || 0,
+                            m.dinheiro || 0
+                        ],
+                        backgroundColor: [
+                            '#27ae60', // Pix (Verde)
+                            '#00bcd4', // Débito (Ciano)
+                            '#f1c40f', // Crédito (Amarelo)
+                            '#95a5a6'  // Dinheiro (Cinza)
+                        ]
+                    }]
+                },
+                options: cfg
+            });
+        }
+
+        document.getElementById('filtro-data').addEventListener('change', carregarDados);
+        carregarDados();
+        setInterval(carregarDados, 30000);
+        // Defina as taxas da sua máquina (Exemplo)
+        const TAXAS = {
+            "Pix": 0,
+            "Dinheiro": 0,
+            "Cartão de Débito": 0.019, // 1.9%
+            "Cartão de Crédito": 0.035  // 3.5%
+        };
+
+        let resumoRepasse = { totalBruto: 0, totalLiquido: 0 };
+
+        pedidosDoDia.forEach(p => {
+            if (p.valor_acai > 0) {
+                const taxa = TAXAS[p.metodo_pagamento] || 0;
+                resumoRepasse.totalBruto += p.valor_acai;
+                resumoRepasse.totalLiquido += p.valor_acai * (1 - taxa);
+            }
+        });
+
+        console.log(`Valor Bruto Açaí: R$ ${resumoRepasse.totalBruto}`);
+        console.log(`Valor para entregar ao dono (Líquido): R$ ${resumoRepasse.totalLiquido}`);
+        // Esta função recebe um array de pedidos (ou um pedido único)
+        async function carregarEExibirResumo() {
+            const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+            // 1. Busca os pedidos no Firebase
+            const pedidosRef = collection(window.db, "pedidos");
+            const snapshot = await getDocs(pedidosRef);
+
+            let listaDePedidos = [];
+            snapshot.forEach(doc => {
+                listaDePedidos.push(doc.data());
+            });
+
+            // 2. Verifica se encontrou algo
+            if (listaDePedidos.length === 0) {
+                document.getElementById('container-resumo').innerHTML = "Nenhum pedido encontrado no banco.";
+                return;
+            }
+
+            // 3. Calcula o consumo usando a função que criamos
+            const consumo = calcularConsumoTotal(listaDePedidos);
+
+            // 4. Exibe na tela
+            renderizarResumo(consumo);
+        }
+        // Esta função recebe um array de pedidos (ou um pedido único)
+        function calcularConsumoTotalUnificado(listaDePedidos) {
+            let relatorioGeral = {};
+
+            listaDePedidos.forEach(pedido => {
+                // Categorias que podem estar no pedido
+                const categorias = ['lanches', 'espetos', 'bebidas', 'batatas', 'outros'];
+
+                categorias.forEach(cat => {
+                    const itens = pedido[cat] || {};
+
+                    for (const [nomeProduto, qtd] of Object.entries(itens)) {
+                        // Tenta buscar na Ficha Técnica
+                        const regra = FICHA_TECNICA[nomeProduto];
+
+                        if (regra) {
+                            // SE É LANCHE (ou tem ficha): soma os insumos
+                            for (const [insumo, qtdPorUnidade] of Object.entries(regra)) {
+                                relatorioGeral[insumo] = (relatorioGeral[insumo] || 0) + (qtdPorUnidade * qtd);
+                            }
+                        } else {
+                            // SE É BEBIDA/BATATA (sem ficha): soma o próprio produto
+                            relatorioGeral[nomeProduto] = (relatorioGeral[nomeProduto] || 0) + qtd;
+                        }
+                    }
+                });
+            });
+            return relatorioGeral;
+        }
+        function exibirRelatorioOrdenado(relatorio) {
+            // Transforma em array e ordena do maior para o menor
+            const listaOrdenada = Object.entries(relatorio).sort((a, b) => b[1] - a[1]);
+
+            console.log("--- RELATÓRIO TOTAL DE SAÍDA ---");
+            listaOrdenada.forEach(([item, qtd]) => {
+                console.log(`${item}: ${qtd}`);
+            });
+        }
+
+    </script>
+</body>
+
+</html>

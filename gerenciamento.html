@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F&B Burguer - Financeiro</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI';
+            background: #121212;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: #1e1e1e;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #ff9800;
+        }
+
+        h2 {
+            color: #ff9800;
+            margin-top: 0;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: #252525;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .perda-valor {
+            color: #ff5252;
+            font-weight: bold
+        }
+
+        .lucro-valor {
+            color: #4caf50;
+            font-weight: bold;
+            font-size: 1.3em
+        }
+
+        .resumo-lista {
+            list-style: none;
+            padding: 0
+        }
+
+        .resumo-lista li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #333
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <a href="index.html">⬅️ Pedidos</a>
+        <a href="estoque.html">📦 Estoque</a>
+
+        <div class="card">
+            <h2>📈 Lucro Hoje</h2>
+            <div class="dashboard-grid">
+                <div class="stat-box">Jantinhas<br>R$ <span id="lucro-hoje-jantinhas">0.00</span></div>
+                <div class="stat-box">Espetos<br>R$ <span id="lucro-hoje-espetos">0.00</span></div>
+                <div class="stat-box">Lanches<br>R$ <span id="lucro-hoje-lanches">0.00</span></div>
+                <div class="stat-box">Açaí<br>R$ <span id="lucro-hoje-acai">0.00</span></div>
+                <div class="stat-box">Bebidas<br>R$ <span id="lucro-hoje-refris">0.00</span></div>
+            </div>
+            <div style="text-align:center;margin-top:20px">
+                <strong>LUCRO TOTAL HOJE: R$ <span id="lucro-hoje-total">0.00</span></strong>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>💰 Resumo Geral</h2>
+            <ul class="resumo-lista">
+                <li><span>Vendas:</span><strong>R$ <span id="vendas-total">0.00</span></strong></li>
+                <li><span>Taxas:</span><span class="perda-valor">R$ <span id="taxas-total">0.00</span></span></li>
+                <li><span>Custo Produtos:</span><span class="perda-valor">R$ <span id="custos-total">0.00</span></span>
+                </li>
+                <li><span>Gastos Extras:</span><span class="perda-valor">R$ <span id="gastos-total">0.00</span></span>
+                </li>
+                <li style="margin-top:10px;border-top:2px solid #333;padding-top:10px">
+                    <span>LUCRO REAL:</span><span class="lucro-valor">R$ <span id="lucro-real">0.00</span></span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script type="module" src="./js/gerenciamento.js"></script>
+</body>
+<script type="module" src="auth-guard.js"></script>
+
+</html>

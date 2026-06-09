@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhar Pedido | F&B Burguer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --brand-red: #E63946;
+            --brand-gold: #FFB703;
+            --dark-bg: #0B0C10;
+            --glass: rgba(31, 40, 51, 0.8);
+        }
+
+        body {
+            background: radial-gradient(circle at top, #1f2833 0%, #0b0c10 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .status-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-header h2 {
+            color: var(--brand-gold);
+            font-weight: 800;
+            font-size: 2rem;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .order-id {
+            font-size: 0.9rem;
+            color: #45A29E;
+            margin-bottom: 30px;
+            display: block;
+        }
+
+        /* Linha de Progresso */
+        .progress-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 50px 0;
+            position: relative;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 25px;
+            /* Alinhado ao centro dos círculos */
+            left: 0;
+            height: 4px;
+            background: #1a1a1a;
+            width: 100%;
+            z-index: 1;
+            border-radius: 10px;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 25px;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--brand-red), var(--brand-gold));
+            width: 0%;
+            /* Dinâmico via JS */
+            z-index: 1;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px var(--brand-red);
+            border-radius: 10px;
+        }
+
+        .step-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            width: 80px;
+        }
+
+        .step {
+            width: 55px;
+            height: 55px;
+            background: #1a1a1a;
+            border: 3px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+            color: #444;
+            font-size: 1.2rem;
+        }
+
+        /* Estágio Ativo/Concluído */
+        .step.active {
+            border-color: var(--brand-red);
+            color: white;
+            background: var(--dark-bg);
+            box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+            transform: scale(1.15);
+        }
+
+        .step.completed {
+            border-color: var(--brand-gold);
+            color: var(--brand-gold);
+            background: var(--dark-bg);
+        }
+
+        .step-label {
+            font-size: 0.75rem;
+            margin-top: 12px;
+            color: #666;
+            font-weight: 600;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .step.active+.step-label {
+            color: white;
+        }
+
+        /* Animação de Pulso para o item atual */
+        .pulse-current {
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(230, 57, 70, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(230, 57, 70, 0);
+            }
+        }
+
+        /* Informações adicionais */
+        .status-msg {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .status-msg p {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .loader-dots:after {
+            content: ' .';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+
+        @keyframes dots {
+
+            0%,
+            20% {
+                color: rgba(0, 0, 0, 0);
+                text-shadow: .2em 0 0 rgba(0, 0, 0, 0), .4em 0 0 rgba(0, 0, 0, 0);
+            }
+
+            40% {
+                color: white;
+                text-shadow: .2em 0 0 rgba(0, 0, 0, 0), .4em 0 0 rgba(0, 0, 0, 0);
+            }
+
+            60% {
+                text-shadow: .2em 0 0 white, .4em 0 0 rgba(0, 0, 0, 0);
+            }
+
+            80%,
+            100% {
+                text-shadow: .2em 0 0 white, .4em 0 0 white;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="status-card">
+        <div class="status-header">
+            <h2 id="msg-cliente">Olá!</h2>
+            <p id="status-texto">Estamos processando seu pedido...</p>
+            <p id="tempo-estimado" style="margin-top:10px; color:#FFB703; font-weight:600;"></p>
+        </div>
+
+
+        <div class="progress-container">
+            <div class="progress-line"></div>
+            <div id="fill" class="progress-fill"></div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; z-index: 2;">
+                <div id="step1" class="step active"><i class="fas fa-clipboard-check"></i></div>
+                <span class="step-label">Recebido</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; z-index: 2;">
+                <div id="step2" class="step"><i class="fas fa-fire"></i></div>
+                <span class="step-label">Na Chapa</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; z-index: 2;">
+                <div id="step3" class="step"><i class="fas fa-motorcycle"></i></div>
+                <span class="step-label">Pronto</span>
+            </div>
+        </div>
+
+        <div id="detalhes-pedido"
+            style="text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-top: 20px;">
+            <p style="color: var(--brand-gold); font-size: 0.9rem;">Resumo do Pedido:</p>
+            <p id="valor-total" style="margin-top:10px; font-weight:700;"></p>
+            <ul id="lista-itens" style="list-style: none; padding: 0; margin: 10px 0; font-size: 0.9rem;"></ul>
+        </div>
+
+        <button onclick="window.location.href='site.html'" class="add-button"
+            style="margin-top: 25px; width: 100%; padding: 15px;">Fazer Novo Pedido</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIcG9NqxQ7PLUB9Qu45FUWwvD1K7of-2s",
+            authDomain: "fb-pedidos.firebaseapp.com",
+            projectId: "fb-pedidos"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const pedidoId = urlParams.get('id');
+
+        if (pedidoId) {
+            onSnapshot(doc(db, "pedidos", pedidoId), (snap) => {
+                if (snap.exists()) {
+                    const p = snap.data();
+                    document.getElementById('msg-cliente').innerText = `Olá, ${p.cliente_nome}!`;
+                    const tempo = document.getElementById("tempo-estimado");
+
+                    if (p.status === "Pendente") {
+                        tempo.innerText = "Tempo estimado: 30 minutos";
+                    }
+                    else if (p.status === "Em preparo") {
+                        tempo.innerText = "Tempo estimado: 15 minutos";
+                    }
+                    else if (p.status === "Pronto") {
+                        tempo.innerText = "Seu pedido está pronto!";
+                    }
+
+                    const fill = document.getElementById('fill');
+                    const s2 = document.getElementById('step2');
+                    const s3 = document.getElementById('step3');
+                    const txt = document.getElementById('status-texto');
+
+                    // Lógica de Status (conforme sua cozinha altera no Firebase)
+                    if (p.status === "Pendente") {
+                        txt.innerText = "🍔 Pedido recebido na cozinha!";
+                        fill.style.width = "0%";
+                    }
+                    else if (p.status === "Em preparo" || p.status === "Preparando") {
+                        txt.innerText = "🔥 Seu lanche está na chapa!";
+                        fill.style.width = "50%";
+                        s2.classList.add('active', 'pulse');
+                    }
+                    else if (p.status === "Pronto") {
+                        txt.innerText = "🚀 Pedido finalizado! Saindo para você.";
+                        fill.style.width = "100%";
+                        s2.classList.remove('pulse');
+                        s2.classList.add('active');
+                        s3.classList.add('active', 'pulse');
+                    }
+
+                    // Lista de itens no resumo
+                    const lista = document.getElementById('lista-itens');
+                    lista.innerHTML = "";
+                    const todosItens = { ...p.lanches, ...p.adicionais };
+                    Object.entries(todosItens).forEach(([nome, qtd]) => {
+                        lista.innerHTML += `<li>${qtd}x ${nome}</li>`;
+                    });
+                }
+            });
+            document.getElementById("valor-total").innerText =
+                "Total: R$ " + p.total.toFixed(2);
+
+        }
+    </script>
+</body>
+
+</html>

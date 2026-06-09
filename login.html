@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | F&B Burguer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #ff9800;
+            --primary-hover: #e68a00;
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text: #ffffff;
+            --input-bg: #2d2d2d;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image:
+                linear-gradient(rgba(18, 18, 18, 0.8), rgba(18, 18, 18, 0.9)),
+                url('https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=2072');
+            /* Fundo de hambúrguer desfocado */
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .login-card i.logo-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .login-card h2 {
+            margin: 10px 0 30px 0;
+            font-weight: 600;
+            letter-spacing: 1px;
+            color: var(--text);
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: #333;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .footer-text {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .logo-img {
+            width: 120px;
+            /* Tamanho da logo */
+            height: 120px;
+            object-fit: cover;
+            /* Garante que a imagem não distorça */
+            border-radius: 50%;
+            /* Deixa a logo redonda */
+            margin-bottom: 15px;
+            border: 3px solid var(--primary);
+            /* Borda laranja ao redor */
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+            /* Brilho suave */
+        }
+
+        /* Ajuste no H2 para não colar na logo */
+        .login-card h2 {
+            margin: 5px 0 30px 0;
+            font-size: 1.2rem;
+            color: #bbb;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="login-card">
+        <img src="./Logo F&B.jpeg" alt="Logo F&B Burguer" class="logo-img">
+
+        <h2>SISTEMA F&B</h2>
+
+
+        <div class="input-group">
+            <i class="fas fa-envelope"></i>
+            <input type="email" id="email" placeholder="E-mail do Administrador">
+        </div>
+
+        <div class="input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="password" placeholder="Palavra-passe">
+        </div>
+
+        <button onclick="fazerLogin()">
+            <i class="fas fa-sign-in-alt"></i> ENTRAR NO PAINEL
+        </button>
+
+        <div class="footer-text">
+            &copy; 2024 F&B Burguer - Acesso Restrito
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth } from "./firebase.js";
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        window.fazerLogin = async () => {
+            const btn = document.querySelector('button');
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+
+            if (!e || !p) return alert("Preenche tudo, chef!");
+
+            try {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> AUTENTICANDO...';
+                await signInWithEmailAndPassword(auth, e, p);
+                window.location.href = "admin.html";
+            } catch (error) {
+                btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> ENTRAR NO PAINEL';
+                alert("Erro: Usuário ou senha inválidos!");
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+
+</html>

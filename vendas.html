@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançar Pedido - Garçom</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #ff9800;
+            --success: #4caf50;
+            --danger: #ff5252;
+            --text: #e0e0e0;
+            --muted: #9e9e9e;
+            --border: #333;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: radial-gradient(circle at top, #1a1a1a, #0f0f0f);
+            color: var(--text);
+            margin: 0;
+            padding: 14px;
+            padding-bottom: 160px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .card {
+            background: linear-gradient(180deg, #1f1f1f, #181818);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, .6);
+        }
+
+        .card h3 {
+            font-size: .95rem;
+            margin: 0 0 14px;
+            color: var(--primary);
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #fff;
+            outline: none;
+        }
+
+        /* Seletor Tipo de Pedido */
+        .tipo-pedido-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .radio-button {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .radio-button input {
+            display: none;
+        }
+
+        .radio-label {
+            display: block;
+            padding: 12px;
+            text-align: center;
+            background: #252525;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .radio-button input:checked+.radio-label {
+            background: var(--primary);
+            color: #000;
+            border-color: var(--primary);
+        }
+
+        /* Itens e Botões */
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px dashed #333;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        button.qty {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+            background: #000;
+            color: var(--primary);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        button.qty:active {
+            transform: scale(0.9);
+        }
+
+        .btn-minus {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        .footer-fixo {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #000;
+            padding: 18px;
+            border-top: 2px solid var(--primary);
+            z-index: 999;
+        }
+
+        .total-valor {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        #btn-enviar {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: #000;
+            border: none;
+            border-radius: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .main-header {
+            background-color: #1a1a1a;
+            /* Cor de fundo escura */
+            padding: 10px 0;
+            text-align: center;
+            border-bottom: 2px solid #ff9800;
+            /* Linha de destaque */
+        }
+
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-vendas {
+            width: 80px;
+            /* Tamanho menor para mobile */
+            height: 80px;
+            border-radius: 50%;
+            /* Se a logo for redonda */
+            object-fit: cover;
+            border: 2px solid #fff;
+        }
+
+        .brand-name {
+            font-size: 1.2rem;
+            color: #fff;
+            margin: 0;
+        }
+
+        .busca-produto {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 5px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            background: #1a1a1a;
+            color: #fff;
+            font-size: .95rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="header-container">
+            <img src="./Logo F&B.jpeg" alt="Logo F&B" class="logo-vendas">
+            <h1 class="brand-name">F&B Burguer - Pedidos</h1>
+        </div>
+    </header>
+    <div class="categorias-bar">
+        <button class="categoria-btn ativo" onclick="toggleCategoria('jantinha')">🍛 Jantinha</button>
+        <button class="categoria-btn ativo" onclick="toggleCategoria('espetos')">🍢 Espetos</button>
+        <button class="categoria-btn ativo" onclick="toggleCategoria('lanches')">🍔 Lanches</button>
+        <button class="categoria-btn ativo" onclick="toggleCategoria('bebidas')">🥤 Bebidas</button>
+    </div>
+
+
+    <div class="card">
+        <h3>👤 Identificação</h3>
+        <input type="text" id="cliente-nome" placeholder="Nome do Cliente ou Nº da Mesa">
+        <select id="tipo-pedido" style="display:none">
+            <option value="balcao">balcao</option>
+            <option value="entrega">entrega</option>
+            <option value="local">local</option>
+        </select>
+
+
+
+        <div class="card">
+            <h3>🍛 Jantinha</h3>
+            <div id="lista-jantinha"></div>
+        </div>
+        <div class="card">
+            <h3>🍢 Espetos</h3>
+
+            <input type="text" id="busca-espetos" placeholder="🔎 Buscar espeto..." class="busca-produto">
+
+            <div id="lista-espetos"></div>
+        </div>
+
+        <div class="card">
+            <h3>🍔 Lanches</h3>
+
+            <input type="text" id="busca-lanches" placeholder="🔎 Buscar lanche..." class="busca-produto">
+
+            <div id="lista-lanches"></div>
+        </div>
+
+        <div class="card">
+            <h3>🥤 Bebidas</h3>
+
+            <input type="text" id="busca-bebidas" placeholder="🔎 Buscar bebida..." class="busca-produto">
+
+            <div id="lista-bebidas"></div>
+        </div>
+
+    </div>
+    <div class="tipo-pedido-wrapper">
+        <label class="titulo-campo">Tipo de Pedido:</label>
+
+        <select id="tipo-pedido" style="display: none;">
+            <option value="balcao">balcao</option>
+            <option value="entrega">entrega</option>
+            <option value="local">local</option>
+        </select>
+
+        <div class="tipo-pedido-container">
+            <label class="radio-button">
+                <input type="radio" name="tipo-visual" value="local" onclick="sincronizarTipo(this.value)">
+                <span class="radio-label">🍽️ Aqui</span>
+            </label>
+            <label class="radio-button">
+                <input type="radio" name="tipo-visual" value="entrega" onclick="sincronizarTipo(this.value)">
+                <span class="radio-label">🛵 Entrega</span>
+            </label>
+            <label class="radio-button">
+                <input type="radio" name="tipo-visual" value="balcao" onclick="sincronizarTipo(this.value)" checked>
+                <span class="radio-label">🥡 Balcão</span>
+            </label>
+        </div>
+    </div>
+
+    <label>Endereço de Entrega:</label>
+    <input type="text" id="endereco-entrega" placeholder="Rua, Número, Bairro">
+    <input type="number" id="numero-mesa" placeholder="Nº da Mesa" style="display:none;">
+    <div class="card">
+        <h3>✍️ Observações</h3>
+        <textarea id="observacao-geral" placeholder="Ex: Sem cebola, Coca com gelo e limão..."></textarea>
+    </div>
+
+    <div class="footer-fixo">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span>Total:</span>
+            <span class="total-valor">R$ <span id="total-valor">0.00</span></span>
+        </div>
+        <button id="btn-enviar" onclick="enviarPedidoFinal()">🚀 Enviar para Cozinha</button>
+    </div>
+
+
+    <script type="module" src="vendas.js"></script>
+    <!-- MODAL DE CONFIRMAÇÃO -->
+    <div id="modal-confirmacao" class="modal hidden">
+        <div class="modal-content">
+            <h2>✅ Confirmar Pedido</h2>
+
+            <div class="modal-section">
+                <strong>👤 Cliente:</strong>
+                <span id="conf-cliente"></span>
+            </div>
+
+            <div class="modal-section">
+                <strong>🧾 Itens:</strong>
+                <div id="conf-itens" class="conf-itens"></div>
+            </div>
+
+            <div class="modal-section total">
+                <strong>Total:</strong>
+                <span id="conf-total"></span>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancelar" onclick="fecharModal()">❌ Cancelar</button>
+                <button class="btn-confirmar" onclick="confirmarEnvio()">✅ Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <audio id="som-add" src="click.mp3" preload="auto"></audio>
+    <script type="module" src="auth-guard.js"></script>
+
+</body>
+
+</html>
