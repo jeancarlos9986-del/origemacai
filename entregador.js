@@ -152,7 +152,7 @@ function renderizarCard(id, p) {
                 <h3
                     style="
                         margin:0;
-                        color:#000;
+                        color:#fff;
                     ">
 
                     👤 ${p.nome || "Cliente"}
@@ -189,7 +189,7 @@ function renderizarCard(id, p) {
 
         </div>
 
-        <p style="color:#000;">
+        <p style="color:#fff;">
 
             📍 <strong>Endereço:</strong><br>
 
@@ -227,7 +227,7 @@ function renderizarCard(id, p) {
 
         <p
             style="
-                color:#000;
+                color:#fff;
                 margin-top:10px;
             ">
 
