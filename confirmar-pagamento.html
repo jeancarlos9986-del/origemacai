@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <title>Confirmação de Pagamento</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
-</head>
+    <!-- ✅ CORREÇÃO: Usando tipo module e versões corretas -->
+    <script type="module">
+        // ==============================================
+        // ✅ CORREÇÃO: IMPORTAÇÕES OBRIGATÓRIAS DO FIREBASE
+        // ==============================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            query, 
+            where, 
+            getDocs, 
+            updateDoc 
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<body>
-
-    <script>
         // ==============================================
         // 🔴 CONFIGURAÇÕES DO SEU FIREBASE (IGUAL COZINHA)
         // ==============================================
@@ -24,10 +31,10 @@
         };
 
         // Inicializa Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // 🔴 SUA CHAVE DO MERCADO PAGO
+        // 🔴 SUA CHAVE DO MERCADO PAGO (JÁ ESTÁ CERTA!)
         const MP_TOKEN = "APP_USR-227919236312518-060911-f6b282e1962824f92ec1d24d4e986a9-3260785733";
 
         // ==============================================
@@ -48,14 +55,21 @@
 
                 // 2. Se PAGO: Muda status para NOVO → CAI NA COZINHA
                 if (dados.status === "approved") {
-
+                    
                     // Procura o pedido salvo como "aguardando_pagamento"
                     const pedidosRef = collection(db, "pedidos");
                     const consulta = query(pedidosRef, where("id_pagamento_mp", "==", Number(idPagamento)));
                     const resultado = await getDocs(consulta);
 
+                    if (resultado.empty) {
+                        document.body.innerHTML = "<h2 style='color:red;'>❌ Pedido não encontrado no banco</h2>";
+                        return;
+                    }
+
                     // 3. ATUALIZA PARA NOVO → A COZINHA VÊ AGORA!
+                    let dadosPedido;
                     resultado.forEach(async (doc) => {
+                        dadosPedido = doc.data();
                         await updateDoc(doc.ref, {
                             status: "novo", // ✅ MESMO STATUS DO DINHEIRO/CARTÃO
                             data_pagamento: new Date()
@@ -63,15 +77,57 @@
                         console.log("✅ PEDIDO LIBERADO PARA COZINHA!");
                     });
 
-                    return "Pagamento confirmado! Pedido enviado para a cozinha.";
-                }
-                else {
-                    return "Aguardando pagamento... Status: " + dados.status;
+                    // ==============================================
+                    // 📩 ✅ ADICIONADO: ABRE WHATSAPP AUTOMÁTICO
+                    // ==============================================
+                    if (dadosPedido) {
+                        // Monta mensagem igual ao seu site
+                        const itensTexto = dadosPedido.itens.map(item => `
+• ${item.nome}
+${item.gratis?.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
+${item.extras?.length ? `Extras: ${item.extras.join(", ")}` : ""}
+${item.obs ? `Obs: ${item.obs}` : ""}
+                        `).join("\n");
+
+                        const mensagem = encodeURIComponent(`
+🛒 PEDIDO CONFIRMADO - NOVA ORIGEM AÇAÍ ✅
+
+👤 Cliente: ${dadosPedido.nome}
+📞 WhatsApp: ${dadosPedido.fone}
+📦 Entrega: ${dadosPedido.entrega}
+📍 Endereço: ${dadosPedido.endereco || "Retirada"}
+
+📋 ITENS:
+${itensTexto}
+
+💰 Total: R$ ${dadosPedido.total.toFixed(2)}
+💳 Pagamento: PIX ✅
+
+O pagamento foi confirmado! Já estamos preparando seu pedido 🧡
+Agradecemos a preferência!
+                        `);
+
+                        // Abre o WhatsApp do cliente
+                        window.open(`https://wa.me/55${dadosPedido.fone.replace(/\D/g, '')}?text=${mensagem}`, '_blank');
+                        
+                        document.body.innerHTML = `
+                            <div style="font-family: Arial; text-align:center; margin-top:50px;">
+                                <h2 style="color:green;">✅ PAGAMENTO CONFIRMADO!</h2>
+                                <p>Pedido enviado para a cozinha.</p>
+                                <p>WhatsApp enviado automaticamente para o cliente.</p>
+                            </div>
+                        `;
+                    }
+
+                } else if (dados.status === "pending") {
+                    document.body.innerHTML = "<h2 style='color:orange;'>⏳ Aguardando pagamento...</h2>";
+                } else {
+                    document.body.innerHTML = `<h2 style='color:red;'>❌ Status: ${dados.status}</h2>`;
                 }
 
             } catch (erro) {
                 console.error("❌ Erro:", erro);
-                return "Erro ao verificar pagamento.";
+                document.body.innerHTML = `<h2 style='color:red;'>❌ Erro: ${erro.message}</h2>`;
             }
         }
 
@@ -82,14 +138,18 @@
         const idRecebido = parametros.get('id');
 
         if (idRecebido) {
-            verificarPagamento(idRecebido).then(texto => {
-                document.body.innerHTML = "<h2>" + texto + "</h2>";
-            });
+            verificarPagamento(idRecebido);
         } else {
-            document.body.innerHTML = "<h2>Aguardando notificação do Mercado Pago...</h2>";
+            document.body.innerHTML = `
+                <div style="font-family: Arial; text-align:center; margin-top:50px; color:#666;">
+                    <h2>🔄 Aguardando notificação do Mercado Pago...</h2>
+                    <p>Essa página receberá o aviso automaticamente.</p>
+                </div>
+            `;
         }
-
     </script>
+</head>
+<body style="background:#f8f9fa; margin:0; padding:20px;">
+    <!-- Conteúdo gerado pelo script -->
 </body>
-
 </html>
