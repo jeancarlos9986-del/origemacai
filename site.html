@@ -2316,7 +2316,8 @@ Deseja continuar?`
                                         hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
                                     });
 
-                                    alert("✅ PIX GERADO! Aguardando pagamento... Após pagar, o pedido vai para a cozinha automaticamente.");
+                                    alert("✅ PIX gerado! Efetue o pagamento para concluir.");
+                                    return; // 👈 PARADA AQUI: NÃO ENVIA WHATSAPP, NÃO LIMPA CARRINHO
 
                                 } else {
                                     alert("❌ Erro: " + dados.message);
@@ -2330,10 +2331,9 @@ Deseja continuar?`
                         };
 
                         gerarPix();
+                        return; // 👈 SAI DA FUNÇÃO AQUI, NÃO EXECUTA O RESTO ABAIXO
 
-                        return;
-                    }
-                    else {
+                    } else {
                         // ==============================================
                         // ✅ DINHEIRO OU CARTÃO: CONTINUA IGUAL SEMPRE FOI!
                         // CAI NA COZINHA NA HORA COM STATUS "NOVO"
@@ -2352,22 +2352,18 @@ Deseja continuar?`
                             criadoEm: Date.now(),
                             hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
                         });
-                    }
 
-                    // 👉 REMOVA O CÓDIGO DO addDoc QUE ESTAVA AQUI EMBAIXO!
-                    // Ele foi movido para dentro da função gerarPix, com o ID correto.
-                    // WHATSAPP
-
-                    const itensTexto = cart.map(item => `
+                        // ✅ GERA MENSAGEM E ABRE WHATSAPP NORMALMENTE
+                        const itensTexto = cart.map(item => `
 
 • ${item.nome}
 ${item.gratis.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
 ${item.extras.length ? `Extras: ${item.extras.join(", ")}` : ""}
 ${item.obs ? `Obs: ${item.obs}` : ""}
 
-                `).join("\n");
+            `).join("\n");
 
-                    const mensagem = encodeURIComponent(`
+                        const mensagem = encodeURIComponent(`
 
 🛒 NOVO PEDIDO - NOVA ORIGEM
 
@@ -2388,41 +2384,25 @@ ${itensTexto}
 
 ${troco ? `💵 Troco para: R$ ${troco}` : ""}
 
-                `);
+            `);
 
-                    if (pagamento === "Pix") {
-
-                        // NÃO limpa nem fecha ainda
-                        alert("PIX gerado! Efetue o pagamento para concluir.");
-
-                        return; // 👈 para aqui
+                        // ✅ FINALIZAÇÃO NORMAL
+                        alert("Pedido enviado com sucesso!");
+                        cart = [];
+                        saveCart();
+                        updateCart();
+                        closeCheckout();
+                        window.open(
+                            `https://wa.me/${WHATSAPP}?text=${mensagem}`,
+                            "_blank"
+                        );
                     }
 
-                    // pagamento normal (cartão/dinheiro)
-                    alert("Pedido enviado com sucesso!");
-
-                    cart = [];
-                    saveCart();
-                    updateCart();
-                    closeCheckout();
-                    window.open(
-
-                        `https://wa.me/${WHATSAPP}?text=${mensagem}`,
-
-                        "_blank"
-
-                    );
-
                 } catch (error) {
-
                     console.error(error);
-
                     alert("Erro ao enviar pedido.");
-
                 }
-
             });
-
         // =========================
 
 
