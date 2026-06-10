@@ -384,6 +384,112 @@
                 var(--shadow);
         }
 
+        /* ===== PIX ESTILOS MELHORADOS ===== */
+        .pix-area {
+            margin-top: 24px;
+            background: linear-gradient(180deg, #0f172a, #1a2436);
+            border-radius: 22px;
+            padding: 22px;
+            text-align: center;
+            border: 1px solid rgba(0, 200, 83, 0.2);
+            box-shadow: 0 5px 20px rgba(0, 200, 83, 0.08);
+        }
+
+        .pix-header {
+            margin-bottom: 15px;
+        }
+
+        .pix-header h3 {
+            color: #00c853;
+            margin: 8px 0 4px;
+            font-size: 1.1rem;
+        }
+
+        .pix-subtitle {
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        .pix-alerta {
+            background: rgba(255, 187, 0, 0.1);
+            border: 1px solid rgba(255, 187, 0, 0.3);
+            color: #ffdd44;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            text-align: left;
+        }
+
+        .pix-qr-container {
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 16px;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .pix-qr-container img {
+            display: block;
+        }
+
+        .pix-chave-container {
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        .pix-chave-container label {
+            font-size: 0.85rem;
+            color: #d1d5db;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .pix-chave-container textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.8rem;
+            font-family: monospace;
+            resize: none;
+            cursor: pointer;
+        }
+
+        .pix-info {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(124, 58, 237, 0.08);
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin: 16px 0;
+            border: 1px solid rgba(124, 58, 237, 0.15);
+        }
+
+        .pix-info span {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+
+        .pix-info strong {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .pix-confirm-btn {
+            background: linear-gradient(135deg, #00c853, #00a844) !important;
+            font-size: 1rem;
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .pix-confirm-btn:hover {
+            box-shadow: 0 5px 15px rgba(0, 200, 83, 0.3);
+        }
+
         .card:hover {
             transform:
                 translateY(-6px);
@@ -1040,65 +1146,110 @@
 
     <!-- MODAL CUSTOM -->
 
+    <!-- MODAL CUSTOM -->
     <div class="modal" id="customModal">
-
         <div class="modal-content">
-
             <div class="modal-top">
-
                 <div>
-
                     <h2 id="customTitle"></h2>
-
                     <small style="color:#9ca3af;">
                         Personalize seu pedido
                     </small>
-
                 </div>
-
                 <i class="fa fa-times close" id="closeCustom"></i>
-
             </div>
 
-            <p id="customDesc" style="color:#9ca3af; line-height:1.6;">
+            <p id="customDesc" style="color:#9ca3af; line-height:1.6; margin-bottom:16px;">
             </p>
 
             <!-- GRATIS -->
-
             <div id="gratisBlock">
-
                 <div class="section-title" id="gratisTitle"></div>
-
+                <!-- Contador de itens grátis -->
+                <small id="contadorGratis"
+                    style="color:#00c853; font-weight:bold; margin:-10px 0 12px 0; display:block; font-size: 0.9rem;"></small>
                 <div class="group" id="gratisList"></div>
-
             </div>
 
             <!-- EXTRAS -->
-
             <div class="section-title">
                 Adicionais Extras
             </div>
-
             <div class="group" id="extraList"></div>
 
-            <!-- OBS -->
+            <!-- 💸 RESUMO DE VALOR EM TEMPO REAL (Melhoria Nova) -->
+            <div id="resumoValor"
+                style="background:rgba(0, 200, 83, 0.08); padding:16px; border-radius:16px; margin:20px 0; border: 1px solid rgba(0, 200, 83, 0.2); display:none;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 6px;">
+                    <span>Valor Base:</span>
+                    <span id="valBase">R$ 0,00</span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 8px; color: #c084fc;">
+                    <span>Adicionais:</span>
+                    <span id="valExtras">+ R$ 0,00</span>
+                </div>
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 8px 0;"></div>
+                <div
+                    style="display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; color: #00c853;">
+                    <span>TOTAL:</span>
+                    <span id="valTotal">R$ 0,00</span>
+                </div>
+            </div>
 
+            <!-- OBS -->
             <div class="section-title">
                 Observações
             </div>
-
-            <textarea id="obs" rows="3" placeholder="Ex: pouco leite condensado, sem banana...">
-            </textarea>
+            <textarea id="obs" rows="3" placeholder="Ex: pouco leite condensado, sem banana..."></textarea>
 
             <button class="finish-btn" id="addCartBtn">
-
                 <i class="fa-solid fa-cart-plus"></i>
-
                 Adicionar ao Carrinho
-
             </button>
 
         </div>
+    </div>
+
+    <p id="customDesc" style="color:#9ca3af; line-height:1.6;">
+    </p>
+
+    <!-- GRATIS -->
+
+    <div id="gratisBlock">
+        <div class="section-title" id="gratisTitle"></div>
+        <!-- ADICIONE ESSA LINHA AQUI -->
+        <small id="contadorGratis"
+            style="color:#00c853; font-weight:bold; margin:-10px 0 10px 0; display:block;"></small>
+        <div class="group" id="gratisList"></div>
+    </div>
+
+    <!-- EXTRAS -->
+
+    <div class="section-title">
+        Adicionais Extras
+    </div>
+
+    <div class="group" id="extraList"></div>
+
+    <!-- OBS -->
+
+    <div class="section-title">
+        Observações
+    </div>
+
+    <textarea id="obs" rows="3" placeholder="Ex: pouco leite condensado, sem banana...">
+            </textarea>
+
+    <button class="finish-btn" id="addCartBtn">
+
+        <i class="fa-solid fa-cart-plus"></i>
+
+        Adicionar ao Carrinho
+
+    </button>
+
+    </div>
 
     </div>
 
@@ -1218,31 +1369,43 @@
 
             <!-- PIX -->
 
+            <!-- PIX MELHORADO -->
             <div class="pix-area hidden" id="pixArea">
-
-                <div class="pix-top">
-
-                    <i class="fa-solid fa-qrcode"></i>
-
-                    <h3>
-                        PIX Gerado ✅
-                    </h3>
-
+                <div class="pix-header">
+                    <i class="fa-solid fa-qrcode fa-2x" style="color:#00c853;"></i>
+                    <h3>PIX Gerado com Sucesso ✅</h3>
+                    <p class="pix-subtitle">Leia o QR Code ou copie a chave abaixo</p>
                 </div>
 
-                <div id="pixQrCode"></div>
+                <!-- AVISO IMPORTANTE -->
+                <div class="pix-alerta">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <strong>Atenção:</strong> Após pagar, clique no botão <b>"Já Efetuei o Pagamento"</b> abaixo para
+                    confirmar seu pedido.
+                </div>
 
-                <textarea id="pixCode" rows="4" readonly>
-                </textarea>
+                <!-- QR CODE -->
+                <div id="pixQrCode" class="pix-qr-container"></div>
 
-                <button class="copy-btn" id="copyPix">
+                <!-- CHAVE PARA COPIAR -->
+                <div class="pix-chave-container">
+                    <label>Chave PIX (Copie e cole no seu banco):</label>
+                    <textarea id="pixCode" rows="3" readonly onclick="this.select()"></textarea>
+                    <button class="copy-btn" id="copyPix">
+                        <i class="fa-solid fa-copy"></i> COPIAR CHAVE PIX
+                    </button>
+                </div>
 
-                    <i class="fa-solid fa-copy"></i>
+                <!-- DADOS DO PAGAMENTO -->
+                <div class="pix-info">
+                    <div><span>Valor:</span> <strong id="pixValorTotal">R$ 0,00</strong></div>
+                    <div><span>Recebedor:</span> <strong id="pixNomeRecebedor">Nova Origem Açaí</strong></div>
+                </div>
 
-                    COPIAR PIX
-
+                <!-- BOTÃO DE CONFIRMAÇÃO -->
+                <button class="finish-btn pix-confirm-btn" id="pixConfirmBtn">
+                    <i class="fa-solid fa-check-double"></i> JÁ EFETUEI O PAGAMENTO
                 </button>
-
             </div>
 
         </div>
@@ -1290,9 +1453,7 @@
         // =========================
 
         const WHATSAPP = "5534997741051";
-        
         const PIX_NOME = "Nova Origem Açaí";
-
         const PIX_KEY = "34997741051";
 
 
@@ -1339,9 +1500,10 @@
                 nome: "Copo Trufado 500ml",
                 preco: 34.90,
                 desc: "Copo recheado de nutella, sinta nutella em cada colherada",
-               imagens: [
+                imagens: [
                     "./copotrufado2.jpeg",
                     "./Copo Trufado.jpeg"
+
                 ],
                 limiteGratis: 2
 
@@ -1616,102 +1778,72 @@
         // =========================
         // CUSTOMIZAR
         // =========================
-
         function openCustomize(id) {
-
             const product = PRODUCTS.find(p => p.id === id);
-
             if (!product) return;
 
             currentProduct = product;
 
             document.getElementById("customTitle").innerText = product.nome;
-
             document.getElementById("customDesc").innerText = product.desc;
-
             document.getElementById("obs").value = "";
 
             const gratisList = document.getElementById("gratisList");
-
             const extraList = document.getElementById("extraList");
 
             // GRATIS
-
             if (product.limiteGratis > 0) {
+                document.getElementById("gratisBlock").classList.remove("hidden");
+                document.getElementById("gratisTitle").innerText = `Escolha até ${product.limiteGratis} adicionais grátis`;
 
-                document.getElementById("gratisBlock")
-                    .classList.remove("hidden");
-
-                document.getElementById("gratisTitle").innerText =
-                    `Escolha até ${product.limiteGratis} adicionais grátis`;
-
+                // 👇 1. Primeiro criamos os elementos na tela
                 gratisList.innerHTML = GRATIS.map(item => `
-
 <div class="option ${!item.ativo ? 'esgotado' : ''}">
-
     <label>
-
         <input type="checkbox"
             class="gratisCheck"
             value="${item.nome}"
             ${!item.ativo ? "disabled" : ""}>
-
         ${item.nome}
-
     </label>
-
     ${item.ativo
                         ? `<span style="color:#00c853;">grátis</span>`
-                        : `<span style="color:#ef4444;font-weight:700;">
-            ESGOTADO
-          </span>`
+                        : `<span style="color:#ef4444;font-weight:700;">ESGOTADO</span>`
                     }
-
 </div>
-
 `).join("");
 
+                // 👇 2. AGORA SIM: adicionamos os eventos DEPOIS que os elementos existem
+                document.querySelectorAll('.gratisCheck').forEach(chk => {
+                    chk.addEventListener('change', atualizarContadorGratis);
+                });
+
+                // 👇 3. Atualiza o contador logo ao abrir
+                atualizarContadorGratis();
+
             } else {
-
-                document.getElementById("gratisBlock")
-                    .classList.add("hidden");
-
+                document.getElementById("gratisBlock").classList.add("hidden");
             }
 
             // EXTRAS
-
             extraList.innerHTML = EXTRAS.map(item => `
-
 <div class="option">
-
     <label>
-
         <input type="checkbox"
             class="extraCheck"
             value="${item.nome}"
             data-price="${item.preco}"
             ${!item.ativo ? "disabled" : ""}>
-
         ${item.nome}
-
     </label>
-
     ${item.ativo
-                    ? `<span style="color:#c084fc;">
-                + ${money(item.preco)}
-           </span>`
-                    : `<span style="color:#ef4444;font-weight:700;">
-                ESGOTADO
-           </span>`
+                    ? `<span style="color:#c084fc;">+ ${money(item.preco)}</span>`
+                    : `<span style="color:#ef4444;font-weight:700;">ESGOTADO</span>`
                 }
-
 </div>
-
 `).join("");
 
-            document.getElementById("customModal")
-                .style.display = "flex";
-
+            document.getElementById("customModal").style.display = "flex";
         }
 
         function closeCustomize() {
@@ -2104,76 +2236,126 @@ Deseja continuar?`
 
                     );
 
-                    // PIX
+                    if (pagamento === "Pix") {
+                        const totalFormatado = total.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                            minimumFractionDigits: 2
+                        });
 
-           if (pagamento === "Pix") {
+                        // ==============================================
+                        // 🔴 SUA CHAVE DE PRODUÇÃO (que já funcionou)
+                        // ==============================================
+                        const MP_TOKEN = "APP_USR-227919236312518-060911-f6b282e1962824f92ec1d24d4e986a9-3260785733";
 
-    const totalFormatado = total.toFixed(2);
+                        // ==============================================
+                        // 🚀 GERA O PIX E SALVA ESPERANDO PAGAMENTO
+                        // ==============================================
+                        const gerarPix = async () => {
+                            try {
+                                const idempotencyKey = "pedido-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
 
-    const pixCode = PIX_KEY; // 🔥 QR REAL FUNCIONA ASSIM
+                                const resposta = await fetch("https://api.mercadopago.com/v1/payments", {
+                                    method: "POST",
+                                    headers: {
+                                        "Authorization": `Bearer ${MP_TOKEN}`,
+                                        "Content-Type": "application/json",
+                                        "X-Idempotency-Key": idempotencyKey
+                                    },
+                                    body: JSON.stringify({
+                                        transaction_amount: Number(total.toFixed(2)),
+                                        description: `Pedido - Nova Origem Açaí`,
+                                        payment_method_id: "pix",
+                                        payer: {
+                                            email: "vendas@novaorigemacai.com.br",
+                                            first_name: nome.substring(0, 15)
+                                        },
+                                        date_of_expiration: new Date(Date.now() + 30 * 60000).toISOString()
+                                    })
+                                });
 
-    const pixArea = document.getElementById("pixArea");
-    pixArea.classList.remove("hidden");
+                                const dados = await resposta.json();
+                                console.log("✅ RESPOSTA:", dados);
 
-    document.getElementById("pixCode").value = `
-Chave PIX: ${PIX_KEY}
-Nome: ${PIX_NOME}
-Valor: R$ ${totalFormatado}
-`;
+                                if (dados.id && (dados.status === "pending" || dados.status === "in_process")) {
+                                    const codigoPix = dados.point_of_interaction.transaction_data.qr_code;
+                                    const imagemPix = dados.point_of_interaction.transaction_data.qr_code_base64;
+                                    const idPagamentoMP = dados.id;
 
-    const qr = document.getElementById("pixQrCode");
-    qr.innerHTML = "";
+                                    // 📌 MOSTRA TELA PARA O CLIENTE
+                                    const pixArea = document.getElementById("pixArea");
+                                    const pixCodeEl = document.getElementById("pixCode");
+                                    const qr = document.getElementById("pixQrCode");
+                                    const valorTotalEl = document.getElementById("pixValorTotal");
+                                    const nomeRecebedorEl = document.getElementById("pixNomeRecebedor");
 
-    new QRCode(qr, {
-        text: pixCode,
-        width: 220,
-        height: 220
-    });
-}
+                                    pixArea.classList.remove("hidden");
+                                    pixArea.style.display = "block";
+                                    pixCodeEl.value = codigoPix;
+                                    qr.innerHTML = `<img src="data:image/png;base64,${imagemPix}" width="220" height="220" style="background:white; border-radius:12px; padding:8px;">`;
+                                    valorTotalEl.innerText = totalFormatado;
+                                    nomeRecebedorEl.innerText = "Nova Origem Açaí";
 
-                    // FIREBASE
+                                    // ==============================================
+                                    // 📝 SALVA NO FIREBASE - STATUS ESPECIAL
+                                    // ==============================================
+                                    // ⛔ NÃO CAI NA COZINHA AINDA! Status = aguardando_pagamento
+                                    await addDoc(collection(db, "pedidos"), {
+                                        numero: Date.now(),
+                                        nome: nome,
+                                        fone: fone,
+                                        entrega: entrega,
+                                        endereco: endereco,
+                                        pagamento: "Pix",
+                                        troco: troco || null,
+                                        itens: cart,
+                                        total: total,
+                                        status: "aguardando_pagamento", // 🔴 ESSENCIAL: FICA OCULTO
+                                        id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA VERIFICAÇÃO
+                                        criadoEm: Date.now(),
+                                        hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                                    });
 
-                    await addDoc(
+                                    alert("✅ PIX GERADO! Aguardando pagamento... Após pagar, o pedido vai para a cozinha automaticamente.");
 
-                        collection(db, "pedidos"),
+                                } else {
+                                    alert("❌ Erro: " + dados.message);
+                                    console.error("ERRO:", dados);
+                                }
 
-                        {
+                            } catch (erro) {
+                                console.error("❌ FALHA:", erro);
+                                alert("Falha ao conectar.");
+                            }
+                        };
 
+                        gerarPix();
+
+                        return;
+                    }
+                    else {
+                        // ==============================================
+                        // ✅ DINHEIRO OU CARTÃO: CONTINUA IGUAL SEMPRE FOI!
+                        // CAI NA COZINHA NA HORA COM STATUS "NOVO"
+                        // ==============================================
+                        await addDoc(collection(db, "pedidos"), {
                             numero: Date.now(),
-
-                            nome,
-
-                            fone,
-
-                            entrega,
-
-                            endereco,
-
-                            pagamento,
-
+                            nome: nome,
+                            fone: fone,
+                            entrega: entrega,
+                            endereco: endereco,
+                            pagamento: pagamento,
                             troco: troco || null,
-
                             itens: cart,
-
-                            total,
-
-                            status: "novo",
-
+                            total: total,
+                            status: "novo", // ✅ CAI NA COZINHA NORMALMENTE
                             criadoEm: Date.now(),
+                            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                        });
+                    }
 
-                            hora: new Date()
-                                .toLocaleTimeString("pt-BR", {
-
-                                    hour: "2-digit",
-
-                                    minute: "2-digit"
-
-                                })
-
-                        }
-
-                    );
-
+                    // 👉 REMOVA O CÓDIGO DO addDoc QUE ESTAVA AQUI EMBAIXO!
+                    // Ele foi movido para dentro da função gerarPix, com o ID correto.
                     // WHATSAPP
 
                     const itensTexto = cart.map(item => `
@@ -2208,16 +2390,21 @@ ${troco ? `💵 Troco para: R$ ${troco}` : ""}
 
                 `);
 
+                    if (pagamento === "Pix") {
+
+                        // NÃO limpa nem fecha ainda
+                        alert("PIX gerado! Efetue o pagamento para concluir.");
+
+                        return; // 👈 para aqui
+                    }
+
+                    // pagamento normal (cartão/dinheiro)
                     alert("Pedido enviado com sucesso!");
 
                     cart = [];
-
                     saveCart();
-
                     updateCart();
-
                     closeCheckout();
-
                     window.open(
 
                         `https://wa.me/${WHATSAPP}?text=${mensagem}`,
@@ -2277,6 +2464,48 @@ ${troco ? `💵 Troco para: R$ ${troco}` : ""}
 
                 alert("PIX copiado com sucesso 💳");
             });
+        function atualizarContadorGratis() {
+            const selecionados = document.querySelectorAll('.gratisCheck:checked').length;
+            const limite = currentProduct.limiteGratis;
+            const contadorEl = document.getElementById('contadorGratis');
+
+            contadorEl.innerText = `${selecionados} de ${limite} selecionados`;
+
+            // Muda cor se exceder
+            if (selecionados > limite) {
+                contadorEl.innerText += ` | ${selecionados - limite} será cobrado`;
+                contadorEl.style.color = "#ffbb00";
+            } else {
+                contadorEl.style.color = "#00c853";
+            }
+        }
+
+        function atualizarValorModal() {
+            if (!currentProduct) return;
+
+            const valorBase = currentProduct.preco;
+            let valorExtras = 0;
+
+            // Soma os extras pagos
+            document.querySelectorAll('.extraCheck:checked').forEach(el => {
+                valorExtras += Number(el.dataset.price);
+            });
+
+            // Soma os grátis excedentes (se tiver)
+            const qtdGratis = document.querySelectorAll('.gratisCheck:checked').length;
+            if (qtdGratis > currentProduct.limiteGratis) {
+                const excedentes = qtdGratis - currentProduct.limiteGratis;
+                valorExtras += excedentes * 2; // preço do excedente
+            }
+
+            const total = valorBase + valorExtras;
+
+            // Atualiza os valores na tela
+            document.getElementById('valBase').innerText = money(valorBase);
+            document.getElementById('valExtras').innerText = money(valorExtras);
+            document.getElementById('valTotal').innerText = money(total);
+            document.getElementById('resumoValor').style.display = "block";
+        }
 
     </script>
 
