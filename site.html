@@ -142,18 +142,11 @@
 
         .hero {
             position: relative;
-
             overflow: hidden;
-
-            padding:
-                75px 20px 65px;
-
+            padding: 75px 20px 65px;
             text-align: center;
-
-            background:
-                linear-gradient(rgba(0, 0, 0, .72),
-                    rgba(7, 7, 10, .98)),
-                url('./logonovonova.jpeg') center/cover;
+            /* ✅ CORRIGIDO: REMOVIDA IMAGEM QUE NÃO EXISTIA */
+            background: linear-gradient(rgba(0, 0, 0, .72), rgba(7, 7, 10, .98));
         }
 
         .hero::before {
@@ -996,6 +989,20 @@
                 text-decoration: line-through;
             }
         }
+
+        /* 🔴 ESCONDE CAMPOS VAZIOS E TÍTULOS SEM CONTEÚDO */
+        h3.section-title:empty,
+        .adicionais-extras:empty,
+        .observacoes:empty,
+        .campo-vazio,
+        #adicionais-extras,
+        #observacoes {
+            display: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
     </style>
 </head>
 
@@ -1226,30 +1233,11 @@
 
     <!-- EXTRAS -->
 
-    <div class="section-title">
-        Adicionais Extras
-    </div>
 
-    <div class="group" id="extraList"></div>
 
-    <!-- OBS -->
 
-    <div class="section-title">
-        Observações
-    </div>
 
-    <textarea id="obs" rows="3" placeholder="Ex: pouco leite condensado, sem banana...">
-            </textarea>
 
-    <button class="finish-btn" id="addCartBtn">
-
-        <i class="fa-solid fa-cart-plus"></i>
-
-        Adicionar ao Carrinho
-
-    </button>
-
-    </div>
 
     </div>
 
@@ -1399,7 +1387,7 @@
                 <!-- DADOS DO PAGAMENTO -->
                 <div class="pix-info">
                     <div><span>Valor:</span> <strong id="pixValorTotal">R$ 0,00</strong></div>
-                    <div><span>Recebedor:</span> <strong id="pixNomeRecebedor">Nova Origem Açaí</strong></div>
+                    <div><span>Recebedor:</span> <strong id="pixNomeRecebedor">Jean Carlos Carreiro Reis</strong></div>
                 </div>
 
                 <!-- BOTÃO DE CONFIRMAÇÃO -->
@@ -1421,9 +1409,12 @@
         import {
             getFirestore,
             collection,
-            addDoc
+            addDoc,
+            query,        // ✅ ADICIONE ESSA
+            where,        // ✅ ADICIONE ESSA
+            getDocs,      // ✅ ADICIONE ESSA
+            updateDoc     // ✅ ADICIONE ESSA
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
         // =========================
         // FIREBASE
         // =========================
@@ -1453,9 +1444,8 @@
         // =========================
 
         const WHATSAPP = "5534997741051";
-        const PIX_NOME = "Nova Origem Açaí";
+        const PIX_NOME = "Jean Carlos Carreiro Reis";
         const PIX_KEY = "34997741051";
-
 
 
         const PRODUCTS = [
@@ -1514,7 +1504,7 @@
                 id: 9,
                 cat: "Copos",
                 nome: "Cone Trufado",
-                preco: 13.00,
+                preco: 2.00,
                 desc: "Cone com açai e muitaaaaaaaa Nutella",
                 imagens: [
                     "./cone.jpeg"
@@ -1602,7 +1592,8 @@
         let currentProduct = null;
 
         let cart = JSON.parse(localStorage.getItem("cartNovaOrigem")) || [];
-
+        let idPagamentoAtual = null;
+        let MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
         // =========================
         // ELEMENTOS
         // =========================
@@ -2281,6 +2272,7 @@ Deseja continuar?`
                                     const codigoPix = dados.point_of_interaction.transaction_data.qr_code;
                                     const imagemPix = dados.point_of_interaction.transaction_data.qr_code_base64;
                                     const idPagamentoMP = dados.id;
+                                    idPagamentoAtual = idPagamentoMP;
 
                                     // 📌 MOSTRA TELA PARA O CLIENTE
                                     const pixArea = document.getElementById("pixArea");
@@ -2486,7 +2478,79 @@ ${troco ? `💵 Troco para: R$ ${troco}` : ""}
             document.getElementById('valTotal').innerText = money(total);
             document.getElementById('resumoValor').style.display = "block";
         }
+        // ✅ FUNÇÃO DE VERIFICAÇÃO E LIBERAÇÃO
+        async function verificarEEnviarPedido() {
+            if (!idPagamentoAtual) return alert("Erro: pagamento não encontrado!");
 
+            const btn = document.getElementById("pixConfirmBtn");
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verificando...`;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`https://api.mercadopago.com/v1/payments/${idPagamentoAtual}`, {
+                    headers: { Authorization: `Bearer ${MP_TOKEN}` }
+                });
+                const dados = await res.json();
+
+                if (dados.status === "approved") {
+                    // ✅ ATUALIZA NO FIREBASE
+                    const ref = collection(db, "pedidos");
+                    const q = query(ref, where("id_pagamento_mp", "==", Number(idPagamentoAtual)));
+                    const snap = await getDocs(q);
+
+                    if (snap.empty) throw new Error("Pedido não localizado");
+
+                    let pedido;
+                    snap.forEach(async (doc) => {
+                        pedido = doc.data();
+                        await updateDoc(doc.ref, { status: "novo", data_pagamento: new Date() });
+                    });
+
+                    // ✅ ABRE WHATSAPP
+                    const itensTexto = pedido.itens.map(item => `
+• ${item.nome}
+${item.gratis?.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
+${item.extras?.length ? `Extras: ${item.extras.join(", ")}` : ""}
+${item.obs ? `Obs: ${item.obs}` : ""}
+            `).join("\n");
+
+                    const msg = encodeURIComponent(`
+✅ PAGAMENTO CONFIRMADO!
+
+🛒 NOVO PEDIDO - NOVA ORIGEM
+
+👤 Cliente: ${pedido.nome}
+📞 WhatsApp: ${pedido.fone}
+📦 Entrega: ${pedido.entrega}
+📍 Endereço: ${pedido.endereco || "Retirada"}
+
+📋 ITENS:
+${itensTexto}
+
+💰 Total: R$ ${pedido.total.toFixed(2)}
+💳 Pagamento: PIX ✅
+
+Já estamos preparando seu Açaí 🧡
+            `);
+
+                    cart = []; saveCart(); updateCart(); closeCheckout();
+                    window.open(`https://wa.me/55${pedido.fone.replace(/\D/g, '')}?text=${msg}`, '_blank');
+                    alert("✅ Pagamento confirmado! Pedido enviado para a cozinha.");
+
+                } else if (dados.status === "pending") {
+                    alert("⏳ Pagamento ainda não caiu. Aguarde 1min e tente novamente.");
+                } else {
+                    alert("❌ Pagamento não aprovado.");
+                }
+            } catch (e) {
+                alert("❌ Erro: " + e.message);
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-check-double"></i> JÁ EFETUEI O PAGAMENTO`;
+                btn.disabled = false;
+            }
+        }
+        // ✅ BOTÃO DE CONFIRMAR PAGAMENTO
+        document.getElementById("pixConfirmBtn").addEventListener("click", verificarEEnviarPedido);
     </script>
 
 </body>
