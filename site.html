@@ -142,18 +142,11 @@
 
         .hero {
             position: relative;
-
             overflow: hidden;
-
-            padding:
-                75px 20px 65px;
-
+            padding: 75px 20px 65px;
             text-align: center;
-
-            background:
-                linear-gradient(rgba(0, 0, 0, .72),
-                    rgba(7, 7, 10, .98)),
-                url('./logonovonova.jpeg') center/cover;
+            /* ✅ CORRIGIDO: REMOVIDA IMAGEM QUE NÃO EXISTIA */
+            background: linear-gradient(rgba(0, 0, 0, .72), rgba(7, 7, 10, .98));
         }
 
         .hero::before {
@@ -995,6 +988,20 @@
             .option.esgotado label {
                 text-decoration: line-through;
             }
+        }
+
+        /* 🔴 ESCONDE CAMPOS VAZIOS E TÍTULOS SEM CONTEÚDO */
+        h3.section-title:empty,
+        .adicionais-extras:empty,
+        .observacoes:empty,
+        .campo-vazio,
+        #adicionais-extras,
+        #observacoes {
+            display: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
         }
     </style>
 </head>
