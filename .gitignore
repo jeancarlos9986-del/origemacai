@@ -1,2 +1,4 @@
+# Ignora arquivos de chave do Firebase
 firebase-key.json
-node_modules
+firebase-key.json.json
+*.json.json
