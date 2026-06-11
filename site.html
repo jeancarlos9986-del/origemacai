@@ -2242,108 +2242,87 @@ Deseja continuar?`
                         // ==============================================
                         // 🚀 GERA O PIX E SALVA ESPERANDO PAGAMENTO
                         // ==============================================
-                        const gerarPix = async () => {
-                            try {
-                                const idempotencyKey = "pedido-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
+                   const gerarPix = async () => {
+    try {
+        // Pegar os dados atuais do pedido
+        const total = cart.reduce((acc, item) => acc + item.preco, 0);
+        const nome = document.getElementById("nome").value || "Cliente";
+        const fone = document.getElementById("fone").value || "";
+        const entrega = document.getElementById("entrega").value || "";
+        const endereco = document.getElementById("endereco").value || "";
+        const troco = document.getElementById("troco").value || null;
+        const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const email = "vendas@novaorigemacai.com.br"; // seu email fixo
 
-                                const resposta = await fetch("https://api.mercadopago.com/v1/payments", {
-                                    method: "POST",
-                                    headers: {
-                                        "Authorization": `Bearer ${MP_TOKEN}`,
-                                        "Content-Type": "application/json",
-                                        "X-Idempotency-Key": idempotencyKey
-                                    },
-                                    body: JSON.stringify({
-                                        transaction_amount: Number(total.toFixed(2)),
-                                        description: `Pedido - Nova Origem Açaí`,
-                                        payment_method_id: "pix",
-                                        payer: {
-                                            email: "vendas@novaorigemacai.com.br",
-                                            first_name: nome.substring(0, 15)
-                                        },
-                                        date_of_expiration: new Date(Date.now() + 30 * 60000).toISOString()
-                                    })
-                                });
+        console.log("🔄 Solicitando PIX ao servidor...");
 
-                                const dados = await resposta.json();
-                                console.log("✅ RESPOSTA:", dados);
+        // 🔹 AGORA CHAMA O SEU SERVIDOR NO RENDER (SEM ERRO DE CORS)
+        const resposta = await fetch("https://origemacai.onrender.com/gerar-pix", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                total: total,
+                descricao: `Pedido - Nova Origem Açaí`,
+                nome: nome,
+                email: email
+            })
+        });
 
-                                if (dados.id && (dados.status === "pending" || dados.status === "in_process")) {
-                                    const codigoPix = dados.point_of_interaction.transaction_data.qr_code;
-                                    const imagemPix = dados.point_of_interaction.transaction_data.qr_code_base64;
-                                    const idPagamentoMP = dados.id;
-                                    idPagamentoAtual = idPagamentoMP;
+        const dados = await resposta.json();
+        console.log("✅ RESPOSTA DO SERVIDOR:", dados);
 
-                                    // 📌 MOSTRA TELA PARA O CLIENTE
-                                    const pixArea = document.getElementById("pixArea");
-                                    const pixCodeEl = document.getElementById("pixCode");
-                                    const qr = document.getElementById("pixQrCode");
-                                    const valorTotalEl = document.getElementById("pixValorTotal");
-                                    const nomeRecebedorEl = document.getElementById("pixNomeRecebedor");
+        if (dados.sucesso) {
+            const codigoPix = dados.codigoPix;
+            const imagemPix = dados.imagemPix;
+            const idPagamentoMP = dados.idPagamento;
+            idPagamentoAtual = idPagamentoMP;
 
-                                    pixArea.classList.remove("hidden");
-                                    pixArea.style.display = "block";
-                                    pixCodeEl.value = codigoPix;
-                                    qr.innerHTML = `<img src="data:image/png;base64,${imagemPix}" width="220" height="220" style="background:white; border-radius:12px; padding:8px;">`;
-                                    valorTotalEl.innerText = totalFormatado;
-                                    nomeRecebedorEl.innerText = "Nova Origem Açaí";
+            // 📌 MOSTRA TELA PARA O CLIENTE
+            const pixArea = document.getElementById("pixArea");
+            const pixCodeEl = document.getElementById("pixCode");
+            const qr = document.getElementById("pixQrCode");
+            const valorTotalEl = document.getElementById("pixValorTotal");
+            const nomeRecebedorEl = document.getElementById("pixNomeRecebedor");
 
-                                    // ==============================================
-                                    // 📝 SALVA NO FIREBASE - STATUS ESPECIAL
-                                    // ==============================================
-                                    // ⛔ NÃO CAI NA COZINHA AINDA! Status = aguardando_pagamento
-                                    await addDoc(collection(db, "pedidos"), {
-                                        numero: Date.now(),
-                                        nome: nome,
-                                        fone: fone,
-                                        entrega: entrega,
-                                        endereco: endereco,
-                                        pagamento: "Pix",
-                                        troco: troco || null,
-                                        itens: cart,
-                                        total: total,
-                                        status: "aguardando_pagamento", // 🔴 ESSENCIAL: FICA OCULTO
-                                        id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA VERIFICAÇÃO
-                                        criadoEm: Date.now(),
-                                        hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                                    });
+            pixArea.classList.remove("hidden");
+            pixArea.style.display = "block";
+            pixCodeEl.value = codigoPix;
+            qr.innerHTML = `<img src="data:image/png;base64,${imagemPix}" width="220" height="220" style="background:white; border-radius:12px; padding:8px;">`;
+            valorTotalEl.innerText = totalFormatado;
+            nomeRecebedorEl.innerText = "Nova Origem Açaí";
 
-                                    alert("✅ PIX gerado! Efetue o pagamento para concluir.");
-                                    return; // 👈 PARADA AQUI: NÃO ENVIA WHATSAPP, NÃO LIMPA CARRINHO
+            // ==============================================
+            // 📝 SALVA NO FIREBASE - STATUS AGUARDANDO PAGAMENTO
+            // ==============================================
+            await addDoc(collection(db, "pedidos"), {
+                numero: Date.now(),
+                nome: nome,
+                fone: fone,
+                entrega: entrega,
+                endereco: endereco,
+                pagamento: "Pix",
+                troco: troco || null,
+                itens: cart,
+                total: total,
+                status: "aguardando_pagamento", // 🔴 FICA OCULTO ATÉ PAGAR
+                id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA O WEBHOOK
+                criadoEm: Date.now(),
+                hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+            });
 
-                                } else {
-                                    alert("❌ Erro: " + dados.message);
-                                    console.error("ERRO:", dados);
-                                }
+            alert("✅ PIX gerado! Efetue o pagamento para concluir.");
+            return; // 👈 PARADA AQUI: NÃO ENVIA WHATSAPP AINDA
 
-                            } catch (erro) {
-                                console.error("❌ FALHA:", erro);
-                                alert("Falha ao conectar.");
-                            }
-                        };
+        } else {
+            alert("❌ Erro: " + dados.erro);
+            console.error("ERRO:", dados);
+        }
 
-                        gerarPix();
-                        return; // 👈 SAI DA FUNÇÃO AQUI, NÃO EXECUTA O RESTO ABAIXO
-
-                    } else {
-                        // ==============================================
-                        // ✅ DINHEIRO OU CARTÃO: CONTINUA IGUAL SEMPRE FOI!
-                        // CAI NA COZINHA NA HORA COM STATUS "NOVO"
-                        // ==============================================
-                        await addDoc(collection(db, "pedidos"), {
-                            numero: Date.now(),
-                            nome: nome,
-                            fone: fone,
-                            entrega: entrega,
-                            endereco: endereco,
-                            pagamento: pagamento,
-                            troco: troco || null,
-                            itens: cart,
-                            total: total,
-                            status: "novo", // ✅ CAI NA COZINHA NORMALMENTE
-                            criadoEm: Date.now(),
-                            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                        });
+    } catch (erro) {
+        console.error("❌ FALHA:", erro);
+        alert("Falha ao conectar com o servidor.");
+    }
+};
 
                         // ✅ GERA MENSAGEM E ABRE WHATSAPP NORMALMENTE
                         const itensTexto = cart.map(item => `
