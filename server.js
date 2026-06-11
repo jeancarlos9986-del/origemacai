@@ -5,7 +5,7 @@ const fetch = require('node-fetch');
 const app = express();
 
 // ✅ CONFIGURAÇÃO DO FIREBASE (BAIXE A CHAVE NO PAINEL DO FIREBASE)
-const serviceAccount = require('./firebase-key.json');
+const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
