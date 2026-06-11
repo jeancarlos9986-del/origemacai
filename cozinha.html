@@ -2,238 +2,341 @@
 <html lang="pt-BR">
 
 <head>
+
     <meta charset="UTF-8">
-    <title>🔥 Cozinha Real-Time - F&B Burguer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <title>Cozinha | Nova Origem Açaí</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
         :root {
-            --pendente: #ff9800;
-            --preparando: #2196f3;
-            --pronto: #4caf50;
-            --bg: #121212;
-            --card-bg: #1e1e1e;
+            --bg: #0b0b0f;
+            --card: #17171f;
+            --card2: #1f2937;
+            --primary: #7c3aed;
+            --green: #00c853;
+            --yellow: #f59e0b;
+            --red: #ff1744;
+            --text: #ffffff;
+            --muted: #9ca3af;
         }
 
         body {
             background: var(--bg);
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            margin: 0;
+            color: var(--text);
+            padding: 25px;
         }
 
-        h1 {
-            color: var(--pendente);
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 10px;
-        }
-
-        /* Botão de Som */
-        #ativar-som {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            padding: 15px 25px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
-        }
-
-        /* Resumo no Topo */
-        #totalizadores-itens {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-
-        }
-
-        .resumo-tag {
-            background: var(--card-bg);
-            padding: 10px 20px;
-            border-radius: 8px;
-            border-bottom: 3px solid var(--pendente);
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
-        /* Grid de Cards */
-        #lista-pedidos-cozinha {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-        }
-
-        /* Estilo do Card de Pedido */
-        .pedido-card {
-            background: var(--card-bg);
-            border-radius: 15px;
-            overflow: hidden;
-            border: 2px solid #333;
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .pedido-header {
-            padding: 15px;
-            background: #252525;
+        .topbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #333;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .pedido-id {
-            font-weight: bold;
-            color: var(--pendente);
-        }
-
-        .pedido-canal {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .pedido-corpo {
-            padding: 20px;
-            flex-grow: 1;
-        }
-
-        .cliente-nome {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-            display: block;
-            border-bottom: 1px solid #444;
-            padding-bottom: 5px;
-        }
-
-        .lista-itens {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .item-linha {
-            font-size: 1.3rem;
-            padding: 8px 0;
-            border-bottom: 1px dashed #333;
+        .logo-area {
             display: flex;
             align-items: center;
+            gap: 15px;
         }
 
-        .item-linha i {
-            margin-right: 10px;
-            color: #888;
+        .logo-area img {
+            width: 65px;
+            height: 65px;
+            border-radius: 18px;
+            object-fit: cover;
         }
 
-        .observacao-box {
-            margin-top: 15px;
-            padding: 10px;
-            background: #332a11;
-            border-radius: 8px;
-            color: #ffeb3b;
-            font-weight: bold;
-            border-left: 5px solid #ffeb3b;
+        .logo-area h1 {
+            font-size: 2rem;
+            font-weight: 800;
         }
 
-        /* Botões de Ação */
-        .pedido-footer {
-            padding: 15px;
+        .online-status {
+            background: rgba(0, 200, 83, .15);
+            border: 1px solid rgba(0, 200, 83, .4);
+            color: #00ff84;
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-weight: 700;
+        }
+
+        .painel {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 20px;
+        }
+
+        .pedido-card {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 22px;
+            border: 2px solid rgba(255, 255, 255, .05);
+            transition: .2s;
+        }
+
+        .pedido-card.novo {
+            border-color: rgba(124, 58, 237, .5);
+        }
+
+        .pedido-card.preparo {
+            border-color: rgba(245, 158, 11, .5);
+        }
+
+        .pedido-card.finalizado {
+            border-color: rgba(0, 200, 83, .5);
+            opacity: .9;
+        }
+
+        .pedido-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 18px;
             gap: 10px;
         }
 
-        .btn-cozinha {
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-            text-transform: uppercase;
+        .pedido-numero {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #c084fc;
         }
 
-        .btn-preparar {
-            background: var(--preparando);
+        .pedido-hora {
+            color: var(--muted);
+            font-size: .9rem;
+            margin-top: 5px;
+        }
+
+        .pedido-status {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: .8rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status-novo {
+            background: rgba(124, 58, 237, .15);
+            color: #c084fc;
+        }
+
+        .status-preparo {
+            background: rgba(245, 158, 11, .15);
+            color: #fbbf24;
+        }
+
+        .status-finalizado {
+            background: rgba(0, 200, 83, .15);
+            color: #00ff84;
+        }
+
+        .cliente-box {
+            background: rgba(255, 255, 255, .03);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 18px;
+            line-height: 1.8;
+        }
+
+        .cliente-box strong {
             color: white;
+        }
+
+        .pedido-itens {
+            background: var(--card2);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 18px;
+        }
+
+        .pedido-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .05);
+        }
+
+        .pedido-item:last-child {
+            border-bottom: none;
+        }
+
+        .pedido-item strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .item-extra {
+            color: #c084fc;
+            font-size: .9rem;
+            line-height: 1.5;
+        }
+
+        .item-gratis {
+            color: #00ff84;
+            font-size: .9rem;
+            line-height: 1.5;
+        }
+
+        .item-obs {
+            color: #facc15;
+            font-size: .9rem;
+            line-height: 1.5;
+        }
+
+        .pedido-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pedido-total {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #00ff84;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .acoes button {
+            border: none;
+            padding: 12px 16px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 800;
+            color: white;
+            transition: .2s;
+        }
+
+        .acoes button:hover {
+            transform: scale(1.03);
+        }
+
+        .btn-preparo {
+            background: var(--yellow);
         }
 
         .btn-finalizar {
-            background: var(--pronto);
-            color: white;
+            background: var(--green);
         }
 
-        /* Status Cores */
-        .status-Pendente {
-            border-color: var(--pendente);
+        .btn-remover {
+            background: var(--red);
         }
 
-        .status-Preparando {
-            border-color: var(--preparando);
+        .sem-pedidos {
+            text-align: center;
+            margin-top: 120px;
+            color: var(--muted);
         }
 
-        @media (max-width: 480px) {
-            #lista-pedidos-cozinha {
-                grid-template-columns: 1fr;
+        .sem-pedidos i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: .5;
+        }
+
+        @media(max-width:700px) {
+
+            body {
+                padding: 18px;
+            }
+
+            .topbar {
+                align-items: flex-start;
+            }
+
+            .logo-area h1 {
+                font-size: 1.5rem;
+            }
+
+            .pedido-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .acoes {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            .acoes button {
+                width: 100%;
             }
         }
     </style>
+
 </head>
 
 <body>
 
-    <button id="ativar-som" onclick="liberarSom()">
-        <i class="fas fa-volume-mute"></i> Ativar Som
-    </button>
+    <header class="topbar">
 
-    <audio id="som-pedido" src="alerta.mp3" preload="auto"></audio>
+        <div class="logo-area">
 
-    <h1><i class="fas fa-fire"></i> Cozinha F&B</h1>
+            <img src="./logonovonova.png.jpeg" alt="Logo">
 
-    <div id="totalizadores-itens">
-        <div class="resumo-tag">Aguardando novos pedidos...</div>
-    </div>
+            <div>
 
-    <div id="lista-pedidos-cozinha">
-    </div>
+                <h1>Painel da Cozinha</h1>
 
-    <script>
-        // Função para permitir o som (Navegadores bloqueiam som automático)
-        function liberarSom() {
-            const btn = document.getElementById('ativar-som');
-            const som = document.getElementById('som-pedido');
+                <p style="color:#9ca3af;">
+                    Nova Origem Açaí
+                </p>
 
-            // Tocar o bipe normal
-            som.play().then(() => {
-                som.pause();
-                som.currentTime = 0;
+            </div>
 
-                // TESTE DE VOZ: Faz a IA falar um "OK" para o navegador liberar a API de fala
-                const wakeUpVoz = new SpeechSynthesisUtterance("Sistema de voz ativado");
-                wakeUpVoz.lang = 'pt-BR';
-                window.speechSynthesis.speak(wakeUpVoz);
+        </div>
 
-                btn.style.background = "#4caf50";
-                btn.innerHTML = '<i class="fas fa-volume-up"></i> Voz e Som Ativados';
-            });
-        }
-    </script>
 
-    
+        <div class="online-status">
 
-    <script type="module" src="cozinha.js"></script>
+            <i class="fa-solid fa-circle"></i>
+            Sistema Online
+            <button id="ativarSom">
+                🔔 Ativar Som
+            </button>
+        </div>
 
+    </header>
+
+    <main>
+
+        <div id="painelPedidos" class="painel"></div>
+
+        <div id="semPedidos" class="sem-pedidos">
+
+            <i class="fa-solid fa-burger"></i>
+
+            <h2>Nenhum pedido no momento</h2>
+
+            <p>
+                Os pedidos realizados no site aparecerão aqui automaticamente.
+            </p>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="./cozinha.js"></script>
 
 </body>
 

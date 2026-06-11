@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmação de Pagamento</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+</head>
+
+<body>
+
+    <script>
+        // ==============================================
+        // 🔴 CONFIGURAÇÕES DO SEU FIREBASE (IGUAL COZINHA)
+        // ==============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_zNrNdstdLSa95AjYF_W8XFMwIwlq4DE",
+            authDomain: "fb-pedidos.firebaseapp.com",
+            projectId: "fb-pedidos",
+            storageBucket: "fb-pedidos.firebasestorage.app",
+            messagingSenderId: "440937401229",
+            appId: "1:440937401229:web:4a27c27a69792eb25bcbc4"
+        };
+
+        // Inicializa Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore(app);
+
+        // 🔴 SUA CHAVE DO MERCADO PAGO
+        const MP_TOKEN = "APP_USR-227919236312518-060911-f6b282e1962824f92ec1d24d4e986a9-3260785733";
+
+        // ==============================================
+        // 🚀 FUNÇÃO QUE VERIFICA E LIBERA PARA COZINHA
+        // ==============================================
+        async function verificarPagamento(idPagamento) {
+            try {
+                // 1. Consulta Mercado Pago
+                const resposta = await fetch(`https://api.mercadopago.com/v1/payments/${idPagamento}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${MP_TOKEN}`
+                    }
+                });
+
+                const dados = await resposta.json();
+                console.log("🔍 Status:", dados.status);
+
+                // 2. Se PAGO: Muda status para NOVO → CAI NA COZINHA
+                if (dados.status === "approved") {
+
+                    // Procura o pedido salvo como "aguardando_pagamento"
+                    const pedidosRef = collection(db, "pedidos");
+                    const consulta = query(pedidosRef, where("id_pagamento_mp", "==", Number(idPagamento)));
+                    const resultado = await getDocs(consulta);
+
+                    // 3. ATUALIZA PARA NOVO → A COZINHA VÊ AGORA!
+                    resultado.forEach(async (doc) => {
+                        await updateDoc(doc.ref, {
+                            status: "novo", // ✅ MESMO STATUS DO DINHEIRO/CARTÃO
+                            data_pagamento: new Date()
+                        });
+                        console.log("✅ PEDIDO LIBERADO PARA COZINHA!");
+                    });
+
+                    return "Pagamento confirmado! Pedido enviado para a cozinha.";
+                }
+                else {
+                    return "Aguardando pagamento... Status: " + dados.status;
+                }
+
+            } catch (erro) {
+                console.error("❌ Erro:", erro);
+                return "Erro ao verificar pagamento.";
+            }
+        }
+
+        // ==============================================
+        // 📥 RECEBE O AVISO
+        // ==============================================
+        const parametros = new URLSearchParams(window.location.search);
+        const idRecebido = parametros.get('id');
+
+        if (idRecebido) {
+            verificarPagamento(idRecebido).then(texto => {
+                document.body.innerHTML = "<h2>" + texto + "</h2>";
+            });
+        } else {
+            document.body.innerHTML = "<h2>Aguardando notificação do Mercado Pago...</h2>";
+        }
+
+    </script>
+</body>
+
+</html>

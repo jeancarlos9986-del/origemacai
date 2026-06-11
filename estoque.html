@@ -1,10 +1,12 @@
+<!-- ===================== estoque.html ===================== -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estoque - F&B Burguer</title>
+    <title>Estoque Inteligente - F&B Burguer</title>
+
     <style>
         body {
             font-family: sans-serif;
@@ -14,7 +16,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 900px;
             margin: auto;
         }
 
@@ -22,86 +24,79 @@
             background: #1e1e1e;
             padding: 20px;
             border-radius: 10px;
-            border-left: 5px solid #28a745;
             margin-bottom: 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
         th,
         td {
-            padding: 12px;
+            padding: 10px;
             border-bottom: 1px solid #333;
-            text-align: left;
         }
 
-        .btn-acao {
+        button {
             cursor: pointer;
-            padding: 8px 12px;
+            padding: 8px;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
+        }
+
+        .btn {
+            background: #2196F3;
+            color: white;
+            margin-top: 5px;
+        }
+
+        .alerta {
+            color: #ff5252;
             font-weight: bold;
         }
 
-        .btn-add {
-            background: #ff9800;
-            color: white;
-        }
-
-        .btn-reset {
-            background: #dc3545;
-            color: white;
-            margin-top: 10px;
-            width: 100%;
-        }
-
-        input {
+        pre {
+            background: #000;
             padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #333;
-            background: #0b0c10;
-            color: white;
+            border-radius: 8px;
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <a href="gerenciamento.html" style="color: #ff9800; text-decoration: none;">⬅️ Voltar ao Gerenciamento</a>
 
-        <div class="card" style="margin-top: 20px;">
-            <h2>📦 Controle de Estoque</h2>
+        <h2>📦 Estoque Inteligente</h2>
+
+
+
+        <div class="card">
+            <h3>📋 Controle</h3>
+            <button class="btn" onclick="gerarListaCompra()">🛒 Lista de Compra</button>
+            <button class="btn" onclick="verEstoque()">📦 Ver Estoque</button>
+            <button class="btn" onclick="exportarWhats()">📲 Enviar WhatsApp</button>
+            <pre id="saida"></pre>
+        </div>
+
+        <div class="card">
+            <h3>📊 Itens</h3>
             <table>
                 <thead>
                     <tr>
                         <th>Item</th>
                         <th>Qtd</th>
-                        <th>Ações</th>
+                        <th>Mín</th>
+                        <th>Ação</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-estoque">
-                </tbody>
+                <tbody id="tabela"></tbody>
             </table>
-
-            <button class="btn-acao btn-reset" onclick="window.inicializarEstoquePadrao()">🔄 Resetar/Carregar Estoque
-                Padrão</button>
         </div>
 
-        <div class="card" style="border-left: 5px solid #ff9800;">
-            <h3>➕ Novo Item</h3>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="novo-item-nome" placeholder="Nome do insumo" style="flex: 1;">
-                <input type="number" id="novo-item-qtd" placeholder="Qtd" style="width: 80px;">
-                <button onclick="window.cadastrarNovoItem()" class="btn-acao btn-add">ADICIONAR</button>
-            </div>
-        </div>
     </div>
 
-    <script type="module" src="./estoque.js"></script>
+    <script type="module" src="estoque.js"></script>
 </body>
 
 </html>

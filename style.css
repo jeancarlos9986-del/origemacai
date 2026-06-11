@@ -23,7 +23,7 @@ body {
 .main-header {
     background-color: #000000;
     padding: 20px 0;
-    border-bottom: 3px solid #ff9800;
+    border-bottom: 3px solid #ff00bf;
     /* Linha Neon Laranja */
     margin-bottom: 30px;
     border-radius: 0 0 15px 15px;
@@ -42,7 +42,7 @@ body {
     height: 250px;
     /* Ajustado para um tamanho equilibrado */
     width: auto;
-    filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
+    filter: drop-shadow(0 0 10px #f4f4f4);
 }
 
 .brand-name {
@@ -85,7 +85,7 @@ body {
 h1,
 h2,
 h3 {
-    color: #ff9800;
+    color: #9933ff;
     /* Títulos em Laranja */
     border-bottom: 2px solid #333;
     padding-bottom: 10px;
@@ -121,9 +121,9 @@ textarea {
 
 input:focus,
 select:focus {
-    border-color: #ff9800;
+    border-color: #341539;
     outline: none;
-    box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+    box-shadow: 0 0 5px #341539;
 }
 
 /* Botão Salvar (Estilo da Foto) */
@@ -131,7 +131,8 @@ button {
     background-color: #000;
     color: white;
     padding: 12px 20px;
-    border: 2px solid #ff9800;
+    border: 2px solid #341539;
+    ;
     border-radius: 8px;
     cursor: pointer;
     margin-top: 10px;
@@ -142,9 +143,11 @@ button {
 }
 
 button:hover {
-    background-color: #ff9800;
+    background-color: #341539;
+    ;
     color: #000;
-    box-shadow: 0 0 20px rgba(255, 152, 0, 0.4);
+    box-shadow: 0 0 20px #341539;
+    ;
 }
 
 /* ============================================================
@@ -176,7 +179,8 @@ button:hover {
 
 .quantity-control button {
     background-color: #333;
-    color: #ff9800;
+    color: #341539;
+    ;
     border: none;
     padding: 5px 15px;
     font-size: 18px;
@@ -213,10 +217,10 @@ button:hover {
 
 #tabela-pedidos th {
     background-color: #000;
-    color: #ff9800;
+    color: #341539;
     padding: 12px;
     text-align: left;
-    border-bottom: 2px solid #ff9800;
+    border-bottom: 2px solid#341539;
 }
 
 #tabela-pedidos td {
@@ -245,10 +249,10 @@ button:hover {
 #total-display {
     font-size: 1.8rem;
     font-weight: bold;
-    color: #ff9800;
+    color: #9b04b3d5;
     margin-top: 20px;
     text-align: center;
-    text-shadow: 0 0 10px rgba(255, 152, 0, 0.2);
+    text-shadow: 0 0 10px #e0d9d9;
 }
 
 /* Ajustes Mobile */
@@ -278,12 +282,14 @@ button:hover {
     left: 0;
     right: 0;
     background: #000;
-    border-top: 2px solid #ff9800;
+    border-top: 2px solid #A020F0;
+    ;
     padding: 15px;
     text-align: center;
     font-size: 0.8rem;
     font-weight: bold;
-    color: #ff9800;
+    color: #A020F0;
+    ;
     z-index: 999;
 }
 
@@ -349,7 +355,8 @@ button:hover {
 .categoria-btn {
     width: 100%;
     padding: 14px;
-    background: #ff9800;
+    background: #A020F0;
+
     color: #000;
     font-size: 18px;
     font-weight: bold;
@@ -374,7 +381,8 @@ button:hover {
     z-index: 999;
     background: #111;
     padding: 10px;
-    border-bottom: 2px solid #ff9800;
+    border-bottom: 2px solid #A020F0;
+
     display: flex;
     gap: 10px;
     align-items: center;
@@ -398,14 +406,16 @@ button:hover {
 
 .pedido-cozinha {
     background: #111;
-    border: 2px solid #ff9800;
+    border: 2px solid #A020F0;
+    ;
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 16px;
 }
 
 .pedido-cozinha h2 {
-    color: #ff9800;
+    color: #A020F0;
+    ;
 }
 
 .pedido-cozinha ul {
@@ -432,7 +442,8 @@ button:hover {
     /* Cor de fundo escura */
     padding: 10px 0;
     text-align: center;
-    border-bottom: 2px solid #ff9800;
+    border-bottom: 2px solid #A020F0;
+    ;
     /* Linha de destaque */
 }
 
@@ -722,11 +733,13 @@ button:hover {
 
 /* Estilo do botão quando clicado (Ativo) */
 .btn-tipo input:checked+.btn-label {
-    background: #ff9800;
+    background: #A020F0;
+    ;
     /* Laranja da marca */
     color: #000;
     border-color: #fff;
-    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
+    box-shadow: 0 4px 10px #A020F0;
+    ;
     transform: translateY(-2px);
 }
 
@@ -739,7 +752,8 @@ button:hover {
     display: block;
     margin-bottom: 8px;
     font-weight: bold;
-    color: #ff9800;
+    color: #A020F0;
+    ;
     /* Laranja da marca */
 }
 
@@ -782,10 +796,12 @@ button:hover {
 
 /* Estado Ativo (Selecionado) */
 .radio-button input:checked+.radio-label {
-    background: #ff9800;
+    background: #A020F0;
+    ;
     color: #000;
     border-color: #fff;
-    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+    box-shadow: 0 4px 12px #A020F0;
+    ;
     transform: translateY(-2px);
     /* Efeito de elevação */
 }

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestão de Jantinhas</title>
+    <title>System 🍇</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -12,251 +12,216 @@
 
     <header class="main-header">
         <div class="header-container">
-            <img src="./Logo F&B.jpeg" alt="Logo F&B" class="logo-top">
-            <h1 class="brand-name">F&B Burguer - Sistema de gerenciamento</h1>
+            <img src="./Logo nova.png" alt="Logo F&B" class="logo-top">
+            <h1 class="brand-name">Nova Origem System 🍇</h1>
         </div>
     </header>
 
-    <div class="container">
-        <div id="nav-link">
 
-            <a href="estoque.html">
-                <button style="background: #2196F3;">📦 Controle de Estoque</button>
-            </a>
+
+    <section id="cadastro-pedido" class="card">
+        <h2>Novo Pedido</h2>
+
+
+        <div class="cliente-fixo">
+            <label for="cliente-nome">Cliente:</label>
+            <input type="text" id="cliente-nome" placeholder="Nome do cliente" required>
         </div>
 
-        <section id="cadastro-pedido" class="card">
-            <h2>Novo Pedido</h2>
+        <label>WhatsApp do Cliente:</label>
+        <input type="tel" id="cliente-fone" placeholder="DDD + Número (Ex: 34999998888)">
 
-            <div class="campo-registro">
-                <label>🕒 Horário de Entrega/Retirada:</label>
-                <select id="adm-horario-agendado"
-                    style="padding: 8px; border-radius: 5px; background: #333; color: white;">
-                    <option value="Imediato">🚀 Imediato (Agora)</option>
-                    <option value="19:00">19:00</option>
-                    <option value="19:30">19:30</option>
-                    <option value="20:00">20:00</option>
-                    <option value="20:30">20:30</option>
-                    <option value="21:00">21:00</option>
-                    <option value="21:30">21:30</option>
-                    <option value="22:00">22:00</option>
-                </select>
+        <label for="qtd-jantinhas">Quantidade de Jantinhas (R$ 18,00):</label>
+        <input type="number" id="qtd-jantinhas" value="0" min="0">
+
+
+
+
+        <div class="categoria">
+            <button class="categoria-btn" onclick="toggleCategoria('acai')">
+                🍧 Açaí
+            </button>
+
+            <div class="categoria-conteudo" id="acai">
+                <div id="acai-container"></div>
+                <h4>Adicionais</h4>
+                <div id="acai-adicionais-container" class="itens-container"></div>
             </div>
-            <div class="cliente-fixo">
-                <label for="cliente-nome">Cliente:</label>
-                <input type="text" id="cliente-nome" placeholder="Nome do cliente" required>
-            </div>
-            <label>WhatsApp do Cliente:</label>
-            <input type="tel" id="cliente-fone" placeholder="DDD + Número (Ex: 34999998888)">
+        </div>
 
-            <label for="qtd-jantinhas">Quantidade de Jantinhas (R$ 18,00):</label>
-            <input type="number" id="qtd-jantinhas" value="0" min="0">
 
-            <div class="categoria">
-                <button class="categoria-btn" onclick="toggleCategoria('espetos')">
-                    🍢 Espetos
-                </button>
 
-                <div class="categoria-conteudo" id="espetos">
-                    <div id="espetos-container" class="item-list"></div>
+        <label for="observacao">Observações do Pedido:</label>
+        <textarea id="observacao" placeholder="Ex: tirar cebola, sem sal..." rows="3"></textarea>
 
-                    <label for="ponto-carne">Ponto da Carne:</label>
-                    <select id="ponto-carne">
-                        <option value="Não especificado">Selecione...</option>
-                        <option value="Malpassada">Malpassada</option>
-                        <option value="Ao ponto">Ao ponto</option>
-                        <option value="Bem passada">Bem passada</option>
-                    </select>
-                </div>
-            </div>
+        <h3>Entrega e Pagamento</h3>
 
-            <h3>Lanches</h3>
-            <div class="categoria">
-                <button class="categoria-btn" onclick="toggleCategoria('lanches')">
-                    🍔 Lanches
-                </button>
+        <label for="endereco-entrega">Endereço (Vazio para Retirada):</label>
+        <input type="text" id="endereco-entrega" placeholder="Rua, Número, Bairro">
 
-                <div class="categoria-conteudo" id="lanches">
-                    <div id="lanches-container" class="item-list"></div>
-                </div>
-            </div>
-
-            <div class="categoria">
-                <button class="categoria-btn" onclick="toggleCategoria('acai')">
-                    🍧 Açaí
-                </button>
-
-                <div class="categoria-conteudo" id="acai">
-                    <div id="acai-container"></div>
-                    <h4>Adicionais</h4>
-                    <div id="acai-adicionais-container" class="itens-container"></div>
-                </div>
-            </div>
-
-            <div class="categoria">
-                <button class="categoria-btn" onclick="toggleCategoria('bebidas')">
-                    🥤 Bebidas
-                </button>
-
-                <div class="categoria-conteudo" id="bebidas">
-                    <div id="refris-container" class="item-list"></div>
-                </div>
-            </div>
-
-            <label for="observacao">Observações do Pedido:</label>
-            <textarea id="observacao" placeholder="Ex: tirar cebola, sem sal..." rows="3"></textarea>
-
-            <h3>Entrega e Pagamento</h3>
-
-            <label for="endereco-entrega">Endereço (Vazio para Retirada):</label>
-            <input type="text" id="endereco-entrega" placeholder="Rua, Número, Bairro">
-
-            <label for="metodo-pagamento">Método de Pagamento:</label>
-            <select id="metodo-pagamento">
-                <option value="Pix">Pix</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Dinheiro">Dinheiro</option>
+        <label for="metodo-pagamento">Método de Pagamento:</label>
+        <select id="metodo-pagamento">
+            <option value="Pix">Pix</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+        </select>
+        <div class="campo-form">
+            <label><strong>Status do Pagamento:</strong></label>
+            <select id="pagamento-status"
+                style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #e67e22; font-weight: bold;">
+                <option value="Pendente">❌ PAGAR NA ENTREGA (Cobrar)</option>
+                <option value="Pago">✅ JÁ ESTÁ PAGO (Não cobrar)</option>
             </select>
-            <div class="campo-form">
-                <label><strong>Status do Pagamento:</strong></label>
-                <select id="pagamento-status"
-                    style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #e67e22; font-weight: bold;">
-                    <option value="Pendente">❌ PAGAR NA ENTREGA (Cobrar)</option>
-                    <option value="Pago">✅ JÁ ESTÁ PAGO (Não cobrar)</option>
-                </select>
-            </div>
-            <div id="troco-input-group" style="display: none;">
-                <label for="valor-recebido">Valor Recebido:</label>
-                <input type="number" id="valor-recebido" value="0.00" min="0" step="0.01">
-                <p id="troco-feedback" style="font-weight: bold;"></p>
-            </div>
-
-            <label>Tipo de Pedido:</label>
-            <select id="tipo-pedido">
-                <option value="balcao">Retirada/Balcão</option>
-                <option value="entrega">Entrega</option>
-                <option value="local">Comer no local</option>
-            </select>
-
-            <h3 id="total-display">Total do Pedido: R$ 0.00</h3>
-            <p id="feedback-msg" class="feedback"></p>
-
-            <button onclick="salvarNovoPedido()" style="background: #28a745; font-weight: bold;">Salvar
-                Pedido</button>
-        </section>
-        <section id="relatorio-caixa" class="card">
-            <h2>Resumo e Gestão</h2>
-            <ul>
-                <li>Total de Vendas: R$ <span id="vendas-total">0.00</span></li>
-                <li>Pedidos Processados: <span id="num-pedidos">0</span></li>
-            </ul>
-        </section>
-
-        <button onclick="limparPainelGeral()"
-            style="background-color: #ff4444; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
-            🧹 LIMPAR PAINEL (Resetar)
-        </button>
-        <button onclick="fecharCaixa()"
-            style="background:#ff5252; color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; font-weight: bold; cursor: pointer; margin: 20px 0;">
-            🔒 Fechar Caixa do Dia
-        </button>
-
-        <section id="mensagens-area" class="card">
-            <h2>Mensagens Rápidas</h2>
-
-            <div id="mensagens-output" style="display: none; flex-direction: column; gap: 20px;">
-
-                <div class="message-group" style="display: flex; flex-direction: column; gap: 8px;">
-                    <label for="msg-cliente-output"><strong>Mensagem para o Cliente (WhatsApp):</strong></label>
-                    <textarea id="msg-cliente-output" rows="8" readonly
-                        style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: sans-serif; background-color: #f9f9f9;"></textarea>
-                    <button onclick="copiarMensagem('msg-cliente-output')"
-                        style="background-color: #28a745; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                        Copiar para Cliente
-                    </button>
-                </div>
-
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
-
-                <div class="message-group" style="display: flex; flex-direction: column; gap: 8px;">
-                    <label for="msg-entregador-output"><strong>Mensagem para o Entregador/Cozinha:</strong></label>
-                    <textarea id="msg-entregador-output" rows="8" readonly
-                        style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: sans-serif; background-color: #f9f9f9;"></textarea>
-                    <button onclick="copiarMensagem('msg-entregador-output')"
-                        style="background-color: #ffc107; color: #333; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
-                        Copiar para Entregador
-                    </button>
-                </div>
-            </div>
-        </section>
-
-
-
-        <div id="lista-pedidos-area">
-            <table id="tabela-pedidos" style="width: 100%; border-collapse: collapse; color: white;">
-                <thead>
-                    <tr style="background: #333;">
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Total</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
         </div>
-        <script>
-            // Lógica de interface
-            window.toggleCategoria = function (id) {
-                const el = document.getElementById(id);
-                if (!el) return;
-                const aberto = el.style.display === "block";
-                document.querySelectorAll(".categoria-conteudo").forEach(div => div.style.display = "none");
-                el.style.display = aberto ? "none" : "block";
-            }
-        </script>
+        <div id="troco-input-group" style="display: none;">
+            <label for="valor-recebido">Valor Recebido:</label>
+            <input type="number" id="valor-recebido" value="0.00" min="0" step="0.01">
+            <p id="troco-feedback" style="font-weight: bold;"></p>
+        </div>
 
-        <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-            import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        <label>Tipo de Pedido:</label>
+        <select id="tipo-pedido">
+            <option value="balcao">Retirada/Balcão</option>
+            <option value="entrega">Entrega</option>
+            <option value="local">Comer no local</option>
+        </select>
 
-            // CONFIGURAÇÃO UNIFICADA E CORRIGIDA PARA O PROJETO REAL
-            const firebaseConfig = {
-                apiKey: "AIzaSyDIcG9NqxQ7PLUB9Qu45FUWwvD1K7of-2s",
-                authDomain: "fb-pedidos.firebaseapp.com",
-                projectId: "fb-pedidos", // Corrigido aqui
-                storageBucket: "fb-pedidos.appspot.com",
-                messagingSenderId: "702648413709",
-                appId: "1:702648413709:web:ce059405977b5e628bef44"
-            };
+        <h3 id="total-display">Total do Pedido: R$ 0.00</h3>
+        <p id="feedback-msg" class="feedback"></p>
 
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
+        <button onclick="salvarNovoPedido()" style="background: #28a745; font-weight: bold;">Salvar
+            Pedido</button>
+    </section>
+    <section id="relatorio-caixa" class="card">
+        <h2>Resumo e Gestão</h2>
+        <ul>
+            <li>Total de Vendas: R$ <span id="vendas-total">0.00</span></li>
+            <li>Pedidos Processados: <span id="num-pedidos">0</span></li>
+        </ul>
+    </section>
 
-            // Exporta o banco para os outros arquivos JS
-            window.db = db;
-            console.log("✅ Firebase conectado ao projeto fb-pedidos");
-        </script>
+    <button onclick="limparPainelGeral()"
+        style="background-color: #ff4444; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+        🧹 LIMPAR PAINEL (Resetar)
+    </button>
+    <button onclick="fecharCaixa()"
+        style="background:#ff5252; color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; font-weight: bold; cursor: pointer; margin: 20px 0;">
+        🔒 Fechar Caixa do Dia
+    </button>
 
-        <script type="module" src="firebasePedidos.js"></script>
-        <script type="module" src="script.js"></script>
-        <script type="module" src="./config.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <div id="modalCaixa"
-            style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-            <div
-                style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; font-family: sans-serif;">
-                <h2 style="text-align:center; color:#333;">📊 Fechamento do Dia</h2>
-                <hr>
-                <div id="conteudoCaixa" style="margin: 20px 0; line-height: 1.6;">
-                </div>
-                <button onclick="document.getElementById('modalCaixa').style.display='none'"
-                    style="width:100%; padding:10px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">FECHAR</button>
+    <section id="mensagens-area" class="card">
+        <h2>Mensagens Rápidas</h2>
+
+        <div id="mensagens-output" style="display: none; flex-direction: column; gap: 20px;">
+
+            <div class="message-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <label for="msg-cliente-output"><strong>Mensagem para o Cliente (WhatsApp):</strong></label>
+                <textarea id="msg-cliente-output" rows="8" readonly
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: sans-serif; background-color: #f9f9f9;"></textarea>
+                <button onclick="copiarMensagem('msg-cliente-output')"
+                    style="background-color: #28a745; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    Copiar para Cliente
+                </button>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;">
+
+            <div class="message-group" style="display: flex; flex-direction: column; gap: 8px;">
+                <label for="msg-entregador-output"><strong>Mensagem para o Entregador/Cozinha:</strong></label>
+                <textarea id="msg-entregador-output" rows="8" readonly
+                    style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: sans-serif; background-color: #f9f9f9;"></textarea>
+                <button onclick="copiarMensagem('msg-entregador-output')"
+                    style="background-color: #ffc107; color: #333; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    Copiar para Entregador
+                </button>
             </div>
         </div>
+    </section>
+
+
+
+    <div id="lista-pedidos-area">
+        <table id="tabela-pedidos" style="width: 100%; border-collapse: collapse; color: white;">
+            <thead>
+                <tr style="background: #333;">
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <section class="card">
+        <h2>Estoque</h2>
+
+        <table border="1" style="width:100%; color:white;">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Quantidade</th>
+                    <th>Mínimo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
+
+        <pre id="saida"></pre>
+    </section>
+    <script>
+        // Lógica de interface
+        window.toggleCategoria = function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const aberto = el.style.display === "block";
+            document.querySelectorAll(".categoria-conteudo").forEach(div => div.style.display = "none");
+            el.style.display = aberto ? "none" : "block";
+        }
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // CONFIGURAÇÃO UNIFICADA E CORRIGIDA PARA O PROJETO REAL
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIcG9NqxQ7PLUB9Qu45FUWwvD1K7of-2s",
+            authDomain: "fb-pedidos.firebaseapp.com",
+            projectId: "fb-pedidos", // Corrigido aqui
+            storageBucket: "fb-pedidos.appspot.com",
+            messagingSenderId: "702648413709",
+            appId: "1:702648413709:web:ce059405977b5e628bef44"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Exporta o banco para os outros arquivos JS
+        window.db = db;
+        console.log("✅ Firebase conectado ao projeto fb-pedidos");
+    </script>
+
+    <script type="module" src="firebasePedidos.js"></script>
+    <script type="module" src="script.js"></script>
+    <script type="module" src="./config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <div id="modalCaixa"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div
+            style="background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; font-family: sans-serif;">
+            <h2 style="text-align:center; color:#333;">📊 Fechamento do Dia</h2>
+            <hr>
+            <div id="conteudoCaixa" style="margin: 20px 0; line-height: 1.6;">
+            </div>
+            <button onclick="document.getElementById('modalCaixa').style.display='none'"
+                style="width:100%; padding:10px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">FECHAR</button>
+        </div>
+    </div>
 </body>
 
 

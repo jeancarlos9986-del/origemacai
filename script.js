@@ -27,7 +27,8 @@ const COBERTURA_DIAS = 2;           // Quantos dias de estoque garantir
 const ESTOQUE_MINIMO_COMPRA = 10;   // Estoque mínimo para entrar na lista
 
 
-
+let pedidosEmEspera = [];
+let pedidoAtual = {};
 // Pega os pedidos já salvos no LocalStorage ou cria array vazio
 let pedidosSalvos = JSON.parse(localStorage.getItem("pedidos")) || [];
 
@@ -42,7 +43,7 @@ const TAXAS = {
     credito: 0.0399  // 3.99%
 };
 
-const CHAVE_PIX = "704.131.246-14";
+const CHAVE_PIX = "34997741051";
 
 const PRECOS = {
     jantinha: 18.00,
@@ -56,6 +57,7 @@ const PRECOS = {
         "Medalhão": 10.00, "Choripan": 10.00, "Picanha": 18.00, "Tilapia": 12.00, "Pintado": 12.00, "Miolo de acem": 15.00, "Especial de batata": 45.00, "Batata Frita M": 8.00, "Batata Frita P": 5.00
     },
     lanches: {
+        "X-Bagunça": 38.00, "X-Tudo": 34.00, "2 X-Bagunça + 1Kuat 2L": 78.00, "2 X-Tudo + 1Kuat 2L ": 70.00,
         "Cheesebacon Simples": 21.00, "Cheesebacon Duplo": 31.00,
         "Tropical Simples": 22.00, "Tropical Duplo": 32.00,
         "BIG F&B Simples": 21.00, "BIG F&B Duplo": 31.00,
@@ -66,25 +68,48 @@ const PRECOS = {
         "Coca Cola 2L": 12.00, "Coca Cola Zero 2L": 12.00, "Fanta Laranja 2L": 12.00, "Kuat 2L": 10.00, "Mineiro 1.5L": 7.50, "Coca Cola 1L": 8.50, "Coca Cola Zero 1L": 8.50, "Mineiro Lata": 5.00, "Fanta Laranja Lata": 5.00, "Fanta Uva Lata": 5.00, "Coca Cola Lata": 5.00, "Coca Cola Zero Lata": 5.00, "Dell Vale Lata": 5.00, "Agua Mineral": 4.00, "Agua C/Gas": 4.00, "Dell Vale Pessego": 10, "Dell Vale Manga": 10, "Dell Vale Abacaxi": 10, "Dell Vale Laranja": 10, "Amstel": 6.00, "Skol": 5.00, "Brahma": 5.00, "Heineken": 9.00, "Monster Energy": 13.00
     },
     acai: {
-        "Açaí 400ml": 17.00,
-        "Açai 500ml": 20.00,
+        "Açaí 400ml": 18.90,
+        "Açai 500ml": 22.90,
+        " Trufado Nutella": 34.90,
         "Shake Tradicional": 16.00,
-        "Shake + Paçoca": 18.00
+        "Shake + Paçoca": 18.00,
+        "Shake Tradicional": 16.00,
+        "Shake + Paçoca 1.5L": 45.00,
+        "Cone": 13.00,
+        "Barca Sensação": 31.90,
+        "Barca Premium": 36.90
     },
     acaiAdicionais: {
-        "Banana Açai": 0.00,
-        "Morango": 0.00,
-        "Granola": 0.00,
-        "Leite em pó": 0.00,
-        "Leite Condensado": 0.00,
-        "Paçoca": 2.00,
-        "Ouro Branco": 3.00,
-        "Sonho de Valsa": 3.00,
-        "Nutella": 4.00,
-        "Kit Kat": 3.00,
-        "Disquetes": 2.00,
-        "Ovomaltine": 3.00
+        // Grátis / básicos
+        "Banana Gratis": 0.00,
+        "Granola Gratis": 0.00,
+        "Leite Condensado Gratis": 0.00,
+        "Leite em pó Gratis": 0.00,
+        "Morango Gratis": 0.00,
+        "Banana": 2.00,
+        "Granola": 2.00,
+        "Leite Condensado": 2.00,
+        "Leite em pó": 3.00,
+        "Morango": 3.00,
 
+
+        // Extras
+        "Paçoca": 2.00,
+        "Disquete": 2.00,
+
+        // Chocolates
+        "Ovomaltine": 4.00,
+        "Ouro Branco": 4.00,
+        "Sonho de Valsa": 4.00,
+        "Kit Kat": 4.00,
+        "Bis": 4.00,
+
+        // Premium
+        "Nutella": 5.00,
+
+        // Novos
+        "Choco Ball": 3.00,
+        "Amendoim Granulado": 2.00
     }
 
 };
@@ -137,7 +162,7 @@ const INSUMOS = {
         cebola_caramelizada: 1,
         alface: 1,
         molho_da_casa: 1,
-        abacaxi: 1,
+        abacaxi: 5,
         banana: 1
     },
     acai: {
@@ -667,73 +692,76 @@ async function salvarNovoPedido() {
 
     const tipoPedido = document.getElementById("tipo-pedido").value;
     const observacao = document.getElementById("observacao")?.value || "";
-    const qtdJantinhas = parseInt(document.getElementById('qtd-jantinhas').value) || 0;
-    const pontoCarne = document.getElementById('ponto-carne').value;
     const metodoPagamento = document.getElementById('metodo-pagamento').value;
     const tipoCartao = document.getElementById('tipo-cartao')?.value || null;
-    let valorRecebido = parseFloat(document.getElementById('valor-recebido').value) || 0;
+    let valorRecebido = parseFloat(document.getElementById('valor-recebido')?.value) || 0;
     const enderecoEntrega = document.getElementById('endereco-entrega').value.trim() || "Retirada";
+
+    // 🔧 variáveis que estavam quebrando
+    const qtdJantinhas = parseInt(document.getElementById("qtd-jantinhas")?.value) || 0;
+    const pontoCarne = document.getElementById("ponto-carne")?.value || "Não especificado";
 
     if (!clienteNome) {
         alert("Por favor, preencha o nome do cliente.");
         return;
     }
 
-    const espetos = {};
-    const refris = {};
-    const lanches = {};
+    // 🍧 AÇAÍ
     const acai = {};
     const acaiAdicionais = {};
 
-    document.querySelectorAll('#espetos-container input[data-name]').forEach(i => { espetos[i.dataset.name] = parseInt(i.value) || 0; });
-    document.querySelectorAll('#refris-container input[data-name]').forEach(i => { refris[i.dataset.name] = parseInt(i.value) || 0; });
-    document.querySelectorAll('#lanches-container input[data-name]').forEach(i => { lanches[i.dataset.name] = parseInt(i.value) || 0; });
-    document.querySelectorAll('#acai-container input[data-name]').forEach(i => { acai[i.dataset.name] = parseInt(i.value) || 0; });
-    document.querySelectorAll('#acai-adicionais-container input[data-name]').forEach(i => { acaiAdicionais[i.dataset.name] = parseInt(i.value) || 0; });
-
-    const categoriasEstoque = { espetos, refrigerantes: refris, lanches, acai };
-    for (const categoria in categoriasEstoque) {
-        for (const [nome, qtd] of Object.entries(categoriasEstoque[categoria])) {
-            if (qtd > 0 && (!ESTOQUE[categoria] || ESTOQUE[categoria][nome] < qtd)) {
-                alert(`❌ ${nome} sem estoque suficiente`);
-                return;
-            }
-        }
-    }
-
-    const pedidoBase = {
-        jantinhas: { quantidade: qtdJantinhas },
-        espetos: limparZeros(espetos),
-        refrigerantes: limparZeros(refris),
-        lanches: limparZeros(lanches),
-        acai: limparZeros(acai),
-        acaiAdicionais: limparZeros(acaiAdicionais),
-        observacao: observacao.trim(),
-    };
-
-    const financeiro = calcularFinanceiroPedido(pedidoBase, metodoPagamento, tipoCartao);
-    const total = financeiro.faturamentoTotal;
-
-    // --- CÁLCULO DO VALOR DO AÇAÍ ---
-    let valorSomenteAcai = 0;
-    Object.entries(pedidoBase.acai).forEach(([nome, qtd]) => {
-        if (qtd > 0 && PRECOS.acai && PRECOS.acai[nome]) valorSomenteAcai += PRECOS.acai[nome] * qtd;
-    });
-    Object.entries(pedidoBase.acaiAdicionais).forEach(([nome, qtd]) => {
-        if (qtd > 0 && PRECOS.acaiAdicionais && PRECOS.acaiAdicionais[nome]) valorSomenteAcai += PRECOS.acaiAdicionais[nome] * qtd;
+    document.querySelectorAll('#acai-container input[data-name]').forEach(i => {
+        const qtd = parseInt(i.value) || 0;
+        if (qtd > 0) acai[i.dataset.name] = qtd;
     });
 
-    if (total <= 0) {
+    document.querySelectorAll('#acai-adicionais-container input[data-name]').forEach(i => {
+        const qtd = parseInt(i.value) || 0;
+        if (qtd > 0) acaiAdicionais[i.dataset.name] = qtd;
+    });
+
+    // ❌ se não tiver nada
+    if (Object.keys(acai).length === 0 && Object.keys(acaiAdicionais).length === 0 && qtdJantinhas === 0) {
         alert("O pedido está vazio.");
         return;
     }
 
+    // 📦 BASE DO PEDIDO (LIMPO)
+    const pedidoBase = {
+        jantinhas: { quantidade: qtdJantinhas },
+        acai: acai,
+        acaiAdicionais: acaiAdicionais,
+        observacao: observacao.trim(),
+    };
+
+    // 💰 CALCULAR TOTAL
+    let total = 0;
+    let valorSomenteAcai = 0;
+
+    if (typeof PRECOS !== "undefined") {
+        Object.entries(acai).forEach(([nome, qtd]) => {
+            if (PRECOS.acai?.[nome]) {
+                total += PRECOS.acai[nome] * qtd;
+                valorSomenteAcai += PRECOS.acai[nome] * qtd;
+            }
+        });
+
+        Object.entries(acaiAdicionais).forEach(([nome, qtd]) => {
+            if (PRECOS.acaiAdicionais?.[nome]) {
+                total += PRECOS.acaiAdicionais[nome] * qtd;
+                valorSomenteAcai += PRECOS.acaiAdicionais[nome] * qtd;
+            }
+        });
+    }
+
+    // 💵 TROCO
     let trocoADar = 0;
     if (metodoPagamento === "Dinheiro") {
         if (valorRecebido < total) valorRecebido = total;
         trocoADar = valorRecebido - total;
     }
 
+    // 📄 PEDIDO FINAL
     const pedidoFinal = {
         id: window.idPedidoEmEdicao || Date.now(),
         cliente_nome: clienteNome,
@@ -743,9 +771,12 @@ async function salvarNovoPedido() {
         ponto_carne: pontoCarne,
         data: new Date().toISOString(),
         timestamp: Date.now(),
+
         ...pedidoBase,
+
         total: total,
         valor_acai: valorSomenteAcai,
+
         pagamento: {
             metodo: metodoPagamento,
             tipo_cartao: tipoCartao,
@@ -753,6 +784,7 @@ async function salvarNovoPedido() {
             troco: trocoADar,
             status_pagamento: document.getElementById('pagamento-status')?.value || "Pendente"
         },
+
         status: "Pendente",
         endereco_entrega: tipoPedido === "entrega" ? enderecoEntrega : "Local"
     };
@@ -760,6 +792,7 @@ async function salvarNovoPedido() {
     try {
         const { doc, setDoc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
+        // 👤 SALVAR CLIENTE
         if (clienteFone && clienteFone.length >= 8) {
             const clienteRef = doc(window.db, "clientes", clienteFone);
             await setDoc(clienteRef, {
@@ -770,18 +803,21 @@ async function salvarNovoPedido() {
             }, { merge: true });
         }
 
+        // ✏️ EDIÇÃO OU NOVO
         if (window.idPedidoEmEdicao) {
-            pedidoFinal.status = "Pendente";
-            pedidoFinal.prontoLanche = false;
-            pedidoFinal.prontoEspeto = false;
             const docRef = doc(window.db, "pedidos", window.idPedidoEmEdicao.toString());
             await updateDoc(docRef, pedidoFinal);
             window.idPedidoEmEdicao = null;
         } else {
             await salvarPedidoFirebase(pedidoFinal);
         }
-        await darBaixaNoFirebase(pedidoFinal);
 
+        // 📉 BAIXA NO ESTOQUE (se existir)
+        if (typeof darBaixaNoFirebase === "function") {
+            await darBaixaNoFirebase(pedidoFinal);
+        }
+
+        // 💬 MENSAGENS
         if (typeof gerarMensagens === 'function') gerarMensagens(pedidoFinal);
 
         if (clienteFone && clienteFone.length >= 8) {
@@ -790,15 +826,10 @@ async function salvarNovoPedido() {
 
         limparFormulario();
 
-        const btnFinalizar = document.querySelector('button[onclick*="salvarNovoPedido"]');
-        if (btnFinalizar) {
-            btnFinalizar.textContent = "🚀 FINALIZAR PEDIDO";
-            btnFinalizar.style.backgroundColor = "";
-        }
+        console.log("✅ Pedido salvo com sucesso:", pedidoFinal);
 
-        console.log("Pedido processado com sucesso!");
     } catch (error) {
-        console.error("Erro completo:", error);
+        console.error("❌ Erro ao salvar pedido:", error);
         alert("Erro ao salvar. Verifique o console.");
     }
 }
@@ -948,7 +979,7 @@ function gerarMensagens(pedido) {
             itensLista += `✅ Jantinha(s) x${pedido.jantinhas.quantidade}\n`;
         }
 
-        const categorias = ['espetos', 'lanches', 'refrigerantes', 'acai'];
+        const categorias = ['espetos', 'lanches', 'refrigerantes', 'acai', 'acaiAdicionais'];
         categorias.forEach(cat => {
             if (pedido[cat]) {
                 Object.entries(pedido[cat]).forEach(([nome, qtd]) => {
@@ -1009,45 +1040,6 @@ ${infoPagamento}
         console.error("Erro ao gerar mensagens:", erro);
     }
 }
-function renderizarRankingEspetos() {
-    const container = document.getElementById('ranking-espetos-container');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    let vendasEspetos = {};
-
-    pedidosSalvos.forEach(p => {
-        Object.entries(p.espetos).forEach(([nome, qtd]) => {
-            if (qtd > 0) {
-                vendasEspetos[nome] = (vendasEspetos[nome] || 0) + qtd;
-            }
-        });
-    });
-
-    const ranking = Object.entries(vendasEspetos)
-        .sort((a, b) => b[1] - a[1]);
-
-    if (ranking.length === 0) {
-        container.innerHTML = '<p style="padding: 10px;">Ainda não há espetos vendidos.</p>';
-        return;
-    }
-
-    ranking.forEach(([nome, qtd], index) => {
-        const div = document.createElement('div');
-        div.style.flex = '1 1 45%';
-        div.style.fontWeight = 'bold';
-
-        const cor = index < 3 ? '#007bff' : '#333';
-        const icone = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}º`;
-
-        div.innerHTML = `
-            <p style="color: ${cor}; margin: 0;">${icone} ${nome}: **${qtd}** vendido(s)</p>
-        `;
-        container.appendChild(div);
-    });
-}
-
 
 
 
@@ -1113,9 +1105,7 @@ function atualizarRelatorioEListas() {
     if (typeof renderizarTabelaPedidos === 'function') {
         renderizarTabelaPedidos();
     }
-    if (typeof renderizarRankingEspetos === 'function') {
-        renderizarRankingEspetos();
-    }
+
 }
 
 function renderizarTabelaPedidos() {
@@ -1220,9 +1210,6 @@ function carregarPedidoParaEdicao(pedido) {
 
     // Limpa tudo antes
     document.querySelectorAll(
-        '#espetos-container input[data-name], ' +
-        '#refris-container input[data-name], ' +
-        '#lanches-container input[data-name], ' +
         '#acai-container input[data-name], ' +
         '#acai-adicionais-container input[data-name]'
     ).forEach(input => input.value = 0);
@@ -1230,7 +1217,6 @@ function carregarPedidoParaEdicao(pedido) {
     // Lanches
     Object.entries(pedido.lanches || {}).forEach(([nome, qtd]) => {
         const input = document.querySelector(
-            `#lanches-container input[data-name="${nome}"]`
         );
         if (input) input.value = qtd;
     });
@@ -1238,7 +1224,6 @@ function carregarPedidoParaEdicao(pedido) {
     // Espetos
     Object.entries(pedido.espetos || {}).forEach(([nome, qtd]) => {
         const input = document.querySelector(
-            `#espetos-container input[data-name="${nome}"]`
         );
         if (input) input.value = qtd;
     });
@@ -1246,7 +1231,6 @@ function carregarPedidoParaEdicao(pedido) {
     // Refrigerantes
     Object.entries(pedido.refrigerantes || {}).forEach(([nome, qtd]) => {
         const input = document.querySelector(
-            `#refris-container input[data-name="${nome}"]`
         );
         if (input) input.value = qtd;
     });
@@ -1421,36 +1405,10 @@ function exportarParaCSV() {
 }
 
 function gerarEstoqueDisplay() {
-    gerarInputItem('estoque-espetos-container', ESTOQUE.espetos, true);
     gerarInputItem('estoque-refris-container', ESTOQUE.refrigerantes, true);
 }
 
-function salvarEstoque() {
-    document.querySelectorAll('#estoque-espetos-container input').forEach(input => {
-        ESTOQUE.espetos[input.dataset.estoqueName] = parseInt(input.value) || 0;
-    });
-    document.querySelectorAll('#estoque-refris-container input').forEach(input => {
-        ESTOQUE.refrigerantes[input.dataset.estoqueName] = parseInt(input.value) || 0;
-    });
-    salvarDados();
-    alert("Estoque atualizado e salvo com sucesso!");
-}
 
-function toggleEstoque(tipo) {
-    let containerId;
-    if (tipo === 'espetos') {
-        containerId = 'estoque-espetos-container';
-    } else if (tipo === 'refrigerantes') {
-        containerId = 'estoque-refris-container';
-    } else if (tipo === 'ranking') {
-        containerId = 'ranking-espetos-container';
-    } else {
-        return;
-    }
-
-    const container = document.getElementById(containerId);
-    container.style.display = container.style.display === 'flex' ? 'none' : 'flex';
-}
 
 function updateRealTimeDisplay() {
     // 1. Captura e Cálculo do Total
@@ -1461,15 +1419,12 @@ function updateRealTimeDisplay() {
     const acaiAdicionais = {};
 
 
-    document.querySelectorAll('#espetos-container input[data-name]').forEach(input => espetos[input.dataset.name] = parseInt(input.value) || 0);
-    document.querySelectorAll('#refris-container input[data-name]').forEach(input => refris[input.dataset.name] = parseInt(input.value) || 0);
     document.querySelectorAll('#acai-container input[data-name]')
         .forEach(input => acai[input.dataset.name] = parseInt(input.value) || 0);
     document
         .querySelectorAll('#acai-adicionais-container input[data-name]')
         .forEach(input => acaiAdicionais[input.dataset.name] = parseInt(input.value) || 0);
 
-    document.querySelectorAll('#lanches-container input[data-name]').forEach(input => lanches[input.dataset.name] = parseInt(input.value) || 0);
 
     const qtdJantinhas = parseInt(document.getElementById('qtd-jantinhas').value) || 0;
 
@@ -1676,21 +1631,18 @@ function atualizarTotalPedido() {
 
 
 // Gera os campos de input de espetos e refris no formulário de pedido
-if (document.getElementById('espetos-container')) {
-    gerarInputItem('espetos-container', PRECOS.espetos);
-    gerarInputItem('lanches-container', PRECOS.lanches);
-    gerarInputItem('refris-container', PRECOS.refrigerantes);
 
 
-    document.getElementById('qtd-jantinhas').addEventListener('input', updateRealTimeDisplay);
-    document.getElementById('valor-recebido').addEventListener('input', updateRealTimeDisplay);
 
-    document.getElementById('metodo-pagamento').addEventListener('change', (e) => {
-        const trocoInput = document.getElementById('troco-input-group');
-        trocoInput.style.display = e.target.value === 'Dinheiro' ? 'block' : 'none';
-        updateRealTimeDisplay();
-    });
-}
+document.getElementById('qtd-jantinhas').addEventListener('input', updateRealTimeDisplay);
+document.getElementById('valor-recebido').addEventListener('input', updateRealTimeDisplay);
+
+document.getElementById('metodo-pagamento').addEventListener('change', (e) => {
+    const trocoInput = document.getElementById('troco-input-group');
+    trocoInput.style.display = e.target.value === 'Dinheiro' ? 'block' : 'none';
+    updateRealTimeDisplay();
+});
+
 
 
 // --- 1. Inicializa o relatório e listas gerais ---
@@ -2864,9 +2816,6 @@ window.editarPedido = async (id) => {
             });
         };
 
-        preencherInputs('espetos-container', p.espetos);
-        preencherInputs('lanches-container', p.lanches);
-        preencherInputs('refris-container', p.refrigerantes);
         preencherInputs('acai-container', p.acai);
 
         // 3. Guarda o ID para saber que é uma EDIÇÃO, não um novo pedido
@@ -2925,9 +2874,6 @@ window.carregarParaEditar = async (idDocumento) => {
                 });
             };
 
-            preencherInputs('espetos-container', p.espetos);
-            preencherInputs('lanches-container', p.lanches);
-            preencherInputs('refris-container', p.refrigerantes);
             preencherInputs('acai-container', p.acai);
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2983,7 +2929,7 @@ function enviarWhatsApp(pedido) {
         itensLista += `✅ Jantinha(s) x${pedido.jantinhas.quantidade}\n`;
     }
 
-    ['espetos', 'lanches', 'refrigerantes', 'acai'].forEach(cat => {
+    ['espetos', 'lanches', 'refrigerantes', 'acai', 'acaiAdicionais'].forEach(cat => {
         if (pedido[cat]) {
             Object.entries(pedido[cat]).forEach(([nome, qtd]) => {
                 if (qtd > 0) itensLista += `✅ ${nome} x${qtd}\n`;
@@ -3002,7 +2948,7 @@ function enviarWhatsApp(pedido) {
     const metodo = pedido.pagamento?.metodo || "Dinheiro";
 
     if (metodo.toLowerCase() === 'pix') {
-        const minhaChavePix = "704.131.246-14";
+        const minhaChavePix = "34997741051";
         infoPagamento = `*Pagamento:* PIX\n*Chave Pix:* ${minhaChavePix}\n_(Favor enviar o comprovante)_`;
     } else if (metodo.toLowerCase() === 'dinheiro') {
         const troco = pedido.pagamento.troco || 0;
@@ -3013,20 +2959,28 @@ function enviarWhatsApp(pedido) {
 
     // --- 4. MONTAGEM DA MENSAGEM ---
     const mensagemTexto = `
-*F&B Burguer - Pedido Confirmado!*🍔
----------------------------------------
-*Olá, ${pedido.cliente_nome}!*
+💜 *Nova Origem Açaí* 💜
+━━━━━━━━━━━━━━━━━━
 
-*ITENS:*
+✅ *Pedido confirmado!*
+
+Olá, *${pedido.cliente_nome}*! 👋  
+Seu pedido foi recebido e já está sendo preparado com todo cuidado 🫶
+
+🍧 *SEU PEDIDO:*
 ${itensLista}${textoObs}
----------------------------------------
-*Total: R$ ${pedido.total.toFixed(2)}*
-${infoPagamento}
 
-*Você aceita barbecure, molho de alho, molho verde e mostarda para acompanhar seu lanche?*
-*Previsão:* 20 a 40 min.
-*Agradecemos a preferência! 🍟*
----------------------------------------`.trim();
+━━━━━━━━━━━━━━━━━━
+💰 *Total: R$ ${pedido.total.toFixed(2)}*
+${infoPagamento}
+━━━━━━━━━━━━━━━━━━
+
+
+💬 Qualquer dúvida, estamos à disposição!
+
+💜 Obrigado pela preferência!
+*Nova Origem Açaí*
+`.trim();
 
     // Codifica a mensagem corretamente
     const mensagemFinal = window.encodeURIComponent(mensagemTexto);
@@ -3140,9 +3094,6 @@ window.carregarParaEditar = (pedido) => {
         });
     };
 
-    popular('espetos-container', pedido.espetos);
-    popular('lanches-container', pedido.lanches);
-    popular('refris-container', pedido.refrigerantes);
     popular('acai-container', pedido.acai);
 
     // 4. Rola a tela para o formulário
@@ -3377,12 +3328,10 @@ window.limparZeros = limparZeros;
 window.salvarNovoPedido = salvarNovoPedido;
 window.atualizarTotalPedido = atualizarTotalPedido;
 window.fecharCaixa = fecharCaixa;
-window.toggleEstoque = toggleEstoque;
 window.copiarMensagem = copiarMensagem;
 window.atualizarTotalFixo = atualizarTotalFixo;
 // No final do seu script.js
 
-window.salvarEstoque = salvarEstoque;
 window.resetarEstoque = resetarEstoque;
 window.atualizarItensEntrada = atualizarItensEntrada;
 window.registrarEntradaEstoque = registrarEntradaEstoque;
@@ -3411,19 +3360,12 @@ document.addEventListener('DOMContentLoaded', () => {
     salvarBaseEstoqueDiaria();
 
     // 4. Gera Inputs se estiver na tela de venda
-    if (document.getElementById('espetos-container')) {
-        gerarInputItem('espetos-container', PRECOS.espetos);
-        gerarInputItem('lanches-container', PRECOS.lanches);
-        gerarInputItem('refris-container', PRECOS.refrigerantes);
-        gerarInputItem('acai-container', PRECOS.acai);
-        gerarInputItem('acai-adicionais-container', PRECOS.acaiAdicionais);
+    gerarInputItem('acai-container', PRECOS.acai);
+    gerarInputItem('acai-adicionais-container', PRECOS.acaiAdicionais);
 
-        aplicarBloqueioEstoque("espetos-container", "espetos");
-        aplicarBloqueioEstoque("lanches-container", "lanches");
-        aplicarBloqueioEstoque("refris-container", "refrigerantes");
-        aplicarBloqueioEstoque("acai-container", "acai");
-        aplicarBloqueioEstoque("acai-adicionais-container", "acaiAdicionais");
-    }
+    aplicarBloqueioEstoque("acai-container", "acai");
+    aplicarBloqueioEstoque("acai-adicionais-container", "acaiAdicionais");
+
 
     // Limpa campo de observação
     const obsCampo = document.getElementById("observacao");
@@ -3510,3 +3452,4 @@ function atualizarTotalAcaiNoADM(pedidosDoDia) {
         display.innerText = `R$ ${totalAcaiHoje.toFixed(2)}`;
     }
 }
+console.log("ACAI CONTAINER:", document.getElementById("acai-container"));

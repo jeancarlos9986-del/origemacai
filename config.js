@@ -1,7 +1,8 @@
 // config.js
 export const FICHA_TECNICA = {
     // ESPECIAIS / LANCHES
-    "Cheesebacon Simples": { "Pão": 1, "Hambúrguer": 1, "Cheddar": 1, "Bacon": 1 },
+
+    "Cheesebacon Simples": { "Pão": 1, "Hambúrguer": 5, "Cheddar": 1, "Bacon": 1 },
     "Cheesebacon Duplo": { "Pão": 1, "Hambúrguer": 2, "Cheddar": 2, "Bacon": 2 },
     "Tropical Simples": { "Pão": 1, "Hambúrguer": 1, "Queijo": 1, "Bacon": 1, "Abacaxi": 1 },
     "Tropical Duplo": { "Pão": 1, "Hambúrguer": 2, "Queijo": 2, "Bacon": 2, "Abacaxi": 1 },

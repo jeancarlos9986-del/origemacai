@@ -1,167 +1,344 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Painel do Entregador - F&B Burguer</title>
 
-    <link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Entregador | Nova Origem Açaí
+    </title>
+
+    <link rel="manifest" href="./manifest.json">
+
     <meta name="apple-mobile-web-app-capable" content="yes">
+
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="F&B Entregas">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1048/1048329.png">
+
+    <meta name="apple-mobile-web-app-title" content="Nova Origem">
+
+    <link rel="apple-touch-icon" href="./logonovonova.png.jpeg">
 
     <style>
-        /* FUNDO DA PÁGINA */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        :root {
+
+            --bg: #0b0b0f;
+            --card: #17171f;
+            --primary: #7c3aed;
+            --green: #00c853;
+            --yellow: #f59e0b;
+            --red: #ff1744;
+            --text: #ffffff;
+            --muted: #9ca3af;
+
+        }
+
         body {
-            background-color: #121212 !important;
-            color: #ffffff !important;
-            font-family: sans-serif;
-            padding: 10px;
-            /* Previne comportamentos indesejados de toque em apps */
-            touch-action: manipulation;
-            user-select: none;
+
+            background: var(--bg);
+            color: var(--text);
+            padding: 20px;
+
         }
 
-        /* BARRA DE AVISO DE INSTALAÇÃO */
+        .topbar {
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+
+        }
+
+        .logo-area {
+
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+        }
+
+        .logo-area img {
+
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+
+        }
+
+        .logo-area h1 {
+
+            font-size: 1.8rem;
+            font-weight: 800;
+
+        }
+
+        .online {
+
+            background: rgba(0, 200, 83, .15);
+            color: #00ff84;
+            border: 1px solid rgba(0, 200, 83, .4);
+            padding: 10px 15px;
+            border-radius: 12px;
+            font-weight: 700;
+
+        }
+
         #aviso-instalar {
+
             display: none;
+
             background: #ff9800;
-            color: #000;
-            padding: 12px;
-            text-align: center;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 9999;
-            font-size: 0.9rem;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
-        }
+            color: black;
 
-        /* O CARD DE ENTREGA */
-        .card-entrega {
-            background-color: #f8f9fa !important;
-            border: 3px solid #000000 !important;
-            border-radius: 10px;
-            padding: 15px;
+            padding: 14px;
+
+            text-align: center;
+
+            font-weight: 700;
+
+            border-radius: 12px;
+
             margin-bottom: 20px;
-            color: #000000 !important;
+
         }
 
-        /* A ÁREA DE VALOR E PAGAMENTO */
+        .card-entrega {
+
+            background: var(--card);
+
+            border-radius: 20px;
+
+            padding: 20px;
+
+            margin-bottom: 18px;
+
+            border: 2px solid rgba(255, 255, 255, .05);
+
+        }
+
         .info-valor {
-            background-color: #ffffff !important;
-            border: 2px solid #ff9800 !important;
-            padding: 10px;
-            margin: 10px 0;
-            color: #000000 !important;
+
+            background: rgba(255, 255, 255, 0.04);
+
+            border-radius: 14px;
+
+            padding: 15px;
+
+            margin: 15px 0;
+
         }
 
-        /* TEXTOS INTERNOS DOS CARDS */
-        .info-valor p,
-        .info-valor strong,
-        .card-entrega p,
-        .card-entrega h3 {
-            color: #000000 !important;
-            display: block;
-            font-weight: bold !important;
-            margin: 5px 0;
-        }
-
-        .info-valor strong {
-            font-size: 1.4rem !important;
-            color: #d32f2f !important;
-        }
-
-        /* BOTÕES */
         .btn-rota {
-            background-color: #1a73e8 !important;
-            color: white !important;
-            display: block;
-            padding: 18px;
-            /* Botão maior para facilitar o toque */
-            text-align: center;
+
+            background: #4285F4;
+
+            color: white;
+
             text-decoration: none;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 1.1rem;
+
+            display: block;
+
+            text-align: center;
+
+            padding: 14px;
+
+            border-radius: 12px;
+
+            font-weight: 700;
+
         }
 
         .btn-concluir {
-            background-color: #2e7d32 !important;
-            color: white !important;
-            display: block;
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            cursor: pointer;
-        }
 
-        .title {
-            background-color: #ff9800 !important;
-            color: black !important;
-            display: block;
-            width: 100%;
-            padding: 15px;
+            background: var(--green);
+
+            color: white;
+
             border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 15px;
+
+            width: 100%;
+
+            padding: 14px;
+
+            border-radius: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
         }
 
         .sem-pedidos {
+
             text-align: center;
-            margin-top: 30px;
-            font-size: 1.1rem;
-            opacity: 0.8;
+
+            margin-top: 100px;
+
+            color: var(--muted);
+
+        }
+
+        .sem-pedidos h2 {
+
+            margin-bottom: 10px;
+
+        }
+
+        @media(max-width:700px) {
+
+            body {
+
+                padding: 15px;
+
+            }
+
+            .topbar {
+
+                align-items: flex-start;
+
+            }
+
+            .logo-area h1 {
+
+                font-size: 1.4rem;
+
+            }
+
         }
     </style>
 
-    <script>
-        // Registro do Service Worker
-        if ('service-worker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('App pronto:', reg.scope))
-                    .catch(err => console.log('Erro no registro:', err));
-            });
-        }
-
-        // Lógica para mostrar aviso de instalação apenas em celulares e se não for App
-        document.addEventListener('DOMContentLoaded', () => {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-            if (isMobile && !isStandalone) {
-                document.getElementById('aviso-instalar').style.display = 'block';
-            }
-        });
-    </script>
 </head>
 
 <body>
 
     <div id="aviso-instalar">
-        📢 Toque nos 3 pontinhos (ou compartilhar) e selecione "Instalar" ou "Tela de Início"
+
+        📲 Instale o aplicativo na tela inicial para acessar mais rápido.
+
     </div>
 
-    <header>
-        <h1 class="title">📦 ENTREGAS PENDENTES</h1>
+    <header class="topbar">
+
+        <div class="logo-area">
+
+            <img src="./logonovonova.png.jpeg" alt="Nova Origem">
+
+            <div>
+
+                <h1>
+                    Painel do Entregador
+                </h1>
+
+                <p style="
+                        color:#9ca3af;
+                    ">
+
+                    Nova Origem Açaí
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="online">
+
+            🟢 Sistema Online
+
+        </div>
+
     </header>
 
     <main id="lista-entregas">
-        <div class="sem-pedidos">Carregando entregas...</div>
+
+        <div class="sem-pedidos">
+
+            <h2>
+                Nenhuma entrega pendente
+            </h2>
+
+            <p>
+
+                Os pedidos prontos para entrega aparecerão aqui automaticamente.
+
+            </p>
+
+        </div>
+
     </main>
 
-    <script type="module" src="entregador.js"></script>
+    <script>
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener(
+                "load",
+                () => {
+
+                    navigator.serviceWorker
+                        .register("./sw.js");
+
+                }
+            );
+
+        }
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => {
+
+                const isStandalone =
+
+                    window.matchMedia(
+                        "(display-mode: standalone)"
+                    ).matches
+
+                    ||
+
+                    window.navigator.standalone;
+
+                const isMobile =
+
+                    /Android|iPhone|iPad|iPod/i
+                        .test(
+                            navigator.userAgent
+                        );
+
+                if (
+                    isMobile
+                    &&
+                    !isStandalone
+                ) {
+
+                    document
+                        .getElementById(
+                            "aviso-instalar"
+                        )
+                        .style.display =
+                        "block";
+
+                }
+
+            }
+        );
+
+    </script>
+
+    <script type="module" src="./entregador.js">
+    </script>
+
 </body>
 
 </html>
