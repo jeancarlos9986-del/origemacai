@@ -1,192 +1,100 @@
-const express = require("express");
-const cors = require("cors");
-const { MercadoPagoConfig, Payment } = require("mercadopago");
-const admin = require("firebase-admin");
-
+const express = require('express');
+const admin = require('firebase-admin');
+const bodyParser = require('body-parser');
+const fetch = require('node-fetch');
 const app = express();
 
-/* =========================
-   CORS (Ajustado para produção)
-========================= */
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"]
-}));
+// ✅ CONFIGURAÇÃO DO FIREBASE (BAIXE A CHAVE NO PAINEL DO FIREBASE)
+const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
 
-app.use(express.json());
-
-/* =========================
-   FIREBASE (Inicialização Segura)
-========================= */
-if (!admin.apps.length) {
-    try {
-        admin.initializeApp({
-            // Se estiver usando o Render, as credenciais devem estar nas variáveis de ambiente
-            credential: admin.credential.applicationDefault()
-        });
-        console.log("🔥 Firebase conectado com sucesso");
-    } catch (e) {
-        console.error("❌ Erro ao inicializar Firebase:", e);
-    }
-}
-
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
 const db = admin.firestore();
 
-/* =========================
-   CONFIG MERCADO PAGO
-========================= */
-const ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
+app.use(bodyParser.json());
 
-if (!ACCESS_TOKEN) {
-    console.error("❌ CRÍTICO: MP_ACCESS_TOKEN não encontrado nas variáveis de ambiente!");
-}
+// ✅ SUAS CHAVES
+const MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112"; // COLOQUE SEU TOKEN AQUI
+const WHATSAPP = "5534997741051";
 
-const client = new MercadoPagoConfig({
-    accessToken: ACCESS_TOKEN,
-    options: { timeout: 7000 } // Aumentado levemente para evitar timeouts em conexões lentas
-});
-
-const payment = new Payment(client);
-
-/* =========================
-   URL WEBHOOK (Render)
-========================= */
-const WEBHOOK_URL = "https://f-burguer.onrender.com/webhook";
-
-/* =========================
-   ROTAS
-========================= */
-
-app.get("/", (req, res) => {
-    res.send("🚀 Servidor PIX F&B Burguer operacional");
-});
-
-// CRIAR PAGAMENTO PIX
-app.post("/pix", async (req, res) => {
-    const { valor, descricao, pedidoId } = req.body;
-
-    if (!valor || !pedidoId) {
-        return res.status(400).json({ erro: "Valor e ID do pedido são obrigatórios" });
-    }
-
+// 🚨 ESSE É O ENDEREÇO QUE VOCÊ VAI COLOCAR NO WEBHOOK DO MERCADO PAGO
+// Ex: https://seu-site.onrender.com/webhook
+app.post('/webhook', async (req, res) => {
     try {
-        const paymentData = {
-            body: {
-                transaction_amount: Number(valor),
-                description: descricao || "Pedido F&B Burguer",
-                payment_method_id: "pix",
-                payer: {
-                    email: "cliente@fbburguer.com", // Email genérico obrigatório pelo MP
-                    first_name: "Cliente",
-                    last_name: "F&B"
-                },
-                metadata: { pedido_id: pedidoId },
-                notification_url: WEBHOOK_URL
-            }
-        };
+        const { action, data } = req.body;
 
-        const result = await payment.create(paymentData);
-        const qr = result.point_of_interaction?.transaction_data;
+        // Só processa se for atualização de pagamento
+        if (action === 'payment.updated') {
+            const paymentId = data.id;
+            console.log("🔔 Recebido aviso do Mercado Pago ID:", paymentId);
 
-        console.log(`✅ PIX Gerado - Pedido: ${pedidoId} | Pagamento: ${result.id}`);
+            // 1. Consulta status real na API do Mercado Pago
+            const resposta = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                headers: { Authorization: `Bearer ${MP_TOKEN}` }
+            });
+            const dadosPagamento = await resposta.json();
 
-        res.json({
-            pagamento_id: result.id,
-            status: result.status,
-            qr_code: qr.qr_code,
-            qr_base64: qr.qr_code_base64
-        });
+            // 2. Se foi APROVADO
+            if (dadosPagamento.status === 'approved') {
+                console.log("✅ PAGAMENTO APROVADO!", paymentId);
 
-    } catch (error) {
-        console.error("❌ ERRO AO GERAR PIX:", error.message);
-        res.status(500).json({ erro: "Erro ao processar pagamento", detalhe: error.message });
-    }
-});
+                // 3. Busca o pedido no Firebase
+                const pedidosRef = db.collection("pedidos");
+                const consulta = pedidosRef.where("id_pagamento_mp", "==", Number(paymentId));
+                const resultado = await consulta.get();
 
-// CONSULTAR STATUS (Polling do Front-end)
-app.get("/status/:id", async (req, res) => {
-    try {
-        const pagamentoId = req.params.id;
-        const result = await payment.get({ id: pagamentoId });
+                if (resultado.empty) return res.send("Pedido não encontrado");
 
-        res.json({
-            id: result.id,
-            status: result.status
-        });
-    } catch (error) {
-        console.error("❌ ERRO AO CONSULTAR STATUS:", error.message);
-        res.status(500).json({ erro: "Erro ao consultar pagamento" });
-    }
-});
-
-// WEBHOOK (Notificação do Mercado Pago)
-app.post("/webhook", async (req, res) => {
-    try {
-        const { type, data } = req.body;
-
-        // O Mercado Pago envia notificações de vários tipos, filtramos apenas 'payment'
-        if (type !== "payment" || !data?.id) {
-            return res.status(200).send("OK");
-        }
-
-        const paymentId = data.id;
-        const result = await payment.get({ id: paymentId });
-
-        const status = result.status;
-        const pedidoId = result.metadata?.pedido_id;
-
-        console.log(`📩 Webhook: Pagamento ${paymentId} está ${status} (Pedido: ${pedidoId})`);
-
-        // Verificamos se foi aprovado ou creditado
-        if (status === "approved" || status === "accredited") {
-
-            if (!pedidoId || pedidoId === "sem_pedido") {
-                console.log("⚠️ Webhook ignorado: ID do pedido ausente no metadata");
-                return res.sendStatus(200);
-            }
-
-            const pedidoRef = db.collection("pedidos").doc(pedidoId);
-            const pedidoSnap = await pedidoRef.get();
-
-            if (!pedidoSnap.exists) {
-                console.log(`❌ Pedido ${pedidoId} não encontrado no banco de dados.`);
-                return res.sendStatus(200);
-            }
-
-            const pedidoData = pedidoSnap.data();
-
-            // Só atualiza se o pedido ainda não estiver marcado como pago
-            if (pedidoData.pago !== true) {
-                await pedidoRef.update({
-                    status: "Pendente", // STATUS EXATO PARA APARECER NA COZINHA
-                    pago: true,
-                    pagoEm: admin.firestore.FieldValue.serverTimestamp(), // Data oficial do servidor Firebase
-                    mercadopago_id: paymentId
+                // 4. Atualiza status para "novo" (cai na cozinha)
+                let dadosPedido;
+                resultado.forEach(async (doc) => {
+                    dadosPedido = doc.data();
+                    await doc.ref.update({ status: "novo", data_pagamento: new Date() });
                 });
-                console.log(`🚀 Pedido ${pedidoId} ENVIADO PARA COZINHA (Status: Pendente)`);
-            } else {
-                console.log(`ℹ️ Pedido ${pedidoId} já estava processado.`);
+
+                // 5. 🚀 ENVIA WHATSAPP AUTOMÁTICO
+                const itensTexto = dadosPedido.itens.map(item => `
+• ${item.nome}
+${item.gratis?.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
+${item.extras?.length ? `Extras: ${item.extras.join(", ")}` : ""}
+${item.obs ? `Obs: ${item.obs}` : ""}
+        `).join("\n");
+
+                const mensagem = encodeURIComponent(`
+✅ PAGAMENTO CONFIRMADO!
+
+🛒 NOVO PEDIDO - NOVA ORIGEM
+
+👤 Cliente: ${dadosPedido.nome}
+📞 WhatsApp: ${dadosPedido.fone}
+📦 Entrega: ${dadosPedido.entrega}
+📍 Endereço: ${dadosPedido.endereco || "Retirada"}
+
+📋 ITENS:
+${itensTexto}
+
+💰 Total: R$ ${dadosPedido.total.toFixed(2)}
+💳 Pagamento: PIX ✅
+
+Já estamos preparando seu Açaí 🧡
+        `);
+
+                // Abre o WhatsApp do cliente
+                await fetch(`https://wa.me/${WHATSAPP}?text=${mensagem}`);
+
             }
         }
 
-        res.status(200).send("OK");
-
-    } catch (error) {
-        console.error("❌ ERRO NO WEBHOOK:", error.message);
-        // Retornamos 500 para o Mercado Pago tentar enviar a notificação novamente mais tarde
+        res.sendStatus(200); // Responde pro Mercado Pago que deu certo
+    } catch (erro) {
+        console.error("❌ ERRO WEBHOOK:", erro);
         res.sendStatus(500);
     }
 });
 
-/* =========================
-   START SERVIDOR
-========================= */
+// Servir o site (se quiser, ou mantenha no GitHub Pages)
+app.use(express.static('public'));
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-    console.log("====================================");
-    console.log("🔥 SERVIDOR F&B BURGUER ATIVO");
-    console.log(`PORTA: ${PORT}`);
-    console.log(`WEBHOOK CONFIGURADO: ${WEBHOOK_URL}`);
-    console.log("====================================");
-});
+app.listen(PORT, () => console.log(`🚀 Rodando na porta ${PORT}`));
