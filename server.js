@@ -2,7 +2,31 @@ const express = require('express');
 const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
 const fetch = require('node-fetch');
+const cors = require('cors');
+
 const app = express();
+
+// ✅ CONFIGURAÇÃO DE CORS - VERSÃO FORÇADA E GARANTIDA
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Permite exatamente o seu site GitHub e localhost
+        const allowedOrigins = [
+            'https://jeancarlos9986-del.github.io',
+            'http://127.0.0.1:5500',
+            'http://localhost:5500'
+        ];
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido por CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // ✅ Responde requisições prévias (RESOLVE O ERRO DE PREFLIGHT)
 
 // ✅ CONFIGURAÇÃO DO FIREBASE
 const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
@@ -16,29 +40,70 @@ app.use(bodyParser.json());
 
 // ✅ SUAS CHAVES
 const MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
-const WHATSAPP = "5534997741051"; // SEU NÚMERO PARA RECEBER OS PEDIDOS
+const WHATSAPP = "5534997741051";
 
-// 🚨 ROTA DO WEBHOOK
+// 🚀 ROTA GERAR PIX
+app.post('/gerar-pix', async (req, res) => {
+    try {
+        const { total, descricao, email, nome } = req.body;
+
+        const idempotencyKey = "pedido-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
+
+        const resposta = await fetch("https://api.mercadopago.com/v1/payments", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${MP_TOKEN}`,
+                "Content-Type": "application/json",
+                "X-Idempotency-Key": idempotencyKey
+            },
+            body: JSON.stringify({
+                transaction_amount: Number(total.toFixed(2)),
+                description: descricao,
+                payment_method_id: "pix",
+                payer: {
+                    email: email,
+                    first_name: nome.substring(0, 15)
+                },
+                date_of_expiration: new Date(Date.now() + 30 * 60000).toISOString()
+            })
+        });
+
+        const dados = await resposta.json();
+
+        if (dados.id && (dados.status === "pending" || dados.status === "in_process")) {
+            res.json({
+                sucesso: true,
+                idPagamento: dados.id,
+                codigoPix: dados.point_of_interaction.transaction_data.qr_code,
+                imagemPix: dados.point_of_interaction.transaction_data.qr_code_base64
+            });
+        } else {
+            res.json({ sucesso: false, erro: dados.message || "Erro ao gerar pagamento" });
+        }
+
+    } catch (erro) {
+        console.error("❌ ERRO AO GERAR PIX:", erro);
+        res.json({ sucesso: false, erro: "Falha na conexão com o servidor" });
+    }
+});
+
+// 🚨 ROTA WEBHOOK
 app.post('/webhook', async (req, res) => {
     try {
         const { action, data } = req.body;
 
-        // Só processa se for atualização de pagamento
         if (action === 'payment.updated') {
             const paymentId = data.id;
             console.log("🔔 Recebido aviso do Mercado Pago ID:", paymentId);
 
-            // 1. Consulta status real na API do Mercado Pago
             const resposta = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                 headers: { Authorization: `Bearer ${MP_TOKEN}` }
             });
             const dadosPagamento = await resposta.json();
 
-            // 2. Se foi APROVADO
             if (dadosPagamento.status === 'approved') {
                 console.log("✅ PAGAMENTO APROVADO!", paymentId);
 
-                // 3. Busca o pedido no Firebase
                 const pedidosRef = db.collection("pedidos");
                 const consulta = pedidosRef.where("id_pagamento_mp", "==", Number(paymentId));
                 const resultado = await consulta.get();
@@ -48,7 +113,6 @@ app.post('/webhook', async (req, res) => {
                     return res.send("Pedido não encontrado");
                 }
 
-                // 4. Pegar dados e atualizar status (CORRIGIDO: variável definida)
                 let dadosPedido = null;
                 let idDoDocumento = null;
 
@@ -57,7 +121,6 @@ app.post('/webhook', async (req, res) => {
                     idDoDocumento = doc.id;
                 });
 
-                // ✅ Agora temos certeza que dadosPedido existe
                 await pedidosRef.doc(idDoDocumento).update({
                     status: "novo",
                     data_pagamento: new Date()
@@ -65,7 +128,6 @@ app.post('/webhook', async (req, res) => {
 
                 console.log("✅ Pedido atualizado para 'novo' e já aparece na cozinha!");
 
-                // 5. 🚀 PREPARA MENSAGEM DO WHATSAPP
                 const itensTexto = dadosPedido.itens.map(item => `
 • ${item.nome}
 ${item.gratis?.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
@@ -92,25 +154,19 @@ ${itensTexto}
 Já estamos preparando seu Açaí 🧡
                 `);
 
-                // ✅ CORRIGIDO: Apenas monta o link, não usa fetch aqui
                 const linkWhatsapp = `https://wa.me/${WHATSAPP}?text=${mensagem}`;
-                console.log("📱 Link para envio:", linkWhatsapp);
-
-                // OBS: O navegador do cliente abre, o servidor só registra
+                console.log("📱 Link para envio automático:", linkWhatsapp);
             }
         }
 
-        // ✅ Responde 200 OBRIGATÓRIO pro Mercado Pago parar de tentar enviar
         res.sendStatus(200);
 
     } catch (erro) {
-        // Se der erro, mostra detalhe completo no log do Render
         console.error("❌ ERRO WEBHOOK DETALHADO:", erro.message, erro.stack);
         res.sendStatus(500);
     }
 });
 
-// Servir o site
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
