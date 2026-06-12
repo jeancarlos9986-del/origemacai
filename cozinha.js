@@ -39,7 +39,7 @@ let filtroAtivo = "todos";
 let primeiraCarga = true;
 let somAtivado = false;
 
-const audioNovoPedido = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-software-interface-alert-2762.mp3");
+const audioNovoPedido = new Audio("./alerta.mp3");
 audioNovoPedido.volume = 0.8;
 
 // ======================================
