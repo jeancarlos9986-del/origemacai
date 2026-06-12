@@ -2,13 +2,13 @@ const express = require('express');
 const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
 const fetch = require('node-fetch');
-const cors = require('cors'); // ✅ Adicionei para liberar acesso
+const cors = require('cors'); // ✅ ESSENCIAL PARA RESOLVER SEU ERRO
 
 const app = express();
 
-// ✅ LIBERA ACESSO PARA O SEU SITE (RESOLVE ERRO CORS)
+// ✅ LIBERA ACESSO EXATAMENTE PARA O SEU SITE DO GITHUB
 app.use(cors({
-    origin: ['https://jeancarlos9986-del.github.io', 'http://127.0.0.1:5500'], // Seus endereços
+    origin: ['https://jeancarlos9986-del.github.io', 'http://127.0.0.1:5500'],
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type']
 }));
@@ -25,16 +25,15 @@ app.use(bodyParser.json());
 
 // ✅ SUAS CHAVES
 const MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
-const WHATSAPP = "5534997741051"; // SEU NÚMERO PARA RECEBER OS PEDIDOS
+const WHATSAPP = "5534997741051";
 
-// 🚀 NOVA ROTA: GERAR PIX (resolve o erro CORS)
+// 🚀 ROTA PARA GERAR PIX (CORRIGIDA E LIBERADA)
 app.post('/gerar-pix', async (req, res) => {
     try {
         const { total, descricao, email, nome } = req.body;
 
         const idempotencyKey = "pedido-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
 
-        // 🔹 AGORA O SERVIDOR CHAMA A API, NÃO O NAVEGADOR
         const resposta = await fetch("https://api.mercadopago.com/v1/payments", {
             method: "POST",
             headers: {
@@ -57,7 +56,6 @@ app.post('/gerar-pix', async (req, res) => {
         const dados = await resposta.json();
 
         if (dados.id && (dados.status === "pending" || dados.status === "in_process")) {
-            // Devolve os dados do Pix para o site
             res.json({
                 sucesso: true,
                 idPagamento: dados.id,
@@ -74,27 +72,23 @@ app.post('/gerar-pix', async (req, res) => {
     }
 });
 
-// 🚨 ROTA DO WEBHOOK
+// 🚨 ROTA DO WEBHOOK (CORRIGIDA)
 app.post('/webhook', async (req, res) => {
     try {
         const { action, data } = req.body;
 
-        // Só processa se for atualização de pagamento
         if (action === 'payment.updated') {
             const paymentId = data.id;
             console.log("🔔 Recebido aviso do Mercado Pago ID:", paymentId);
 
-            // 1. Consulta status real na API do Mercado Pago
             const resposta = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                 headers: { Authorization: `Bearer ${MP_TOKEN}` }
             });
             const dadosPagamento = await resposta.json();
 
-            // 2. Se foi APROVADO
             if (dadosPagamento.status === 'approved') {
                 console.log("✅ PAGAMENTO APROVADO!", paymentId);
 
-                // 3. Busca o pedido no Firebase
                 const pedidosRef = db.collection("pedidos");
                 const consulta = pedidosRef.where("id_pagamento_mp", "==", Number(paymentId));
                 const resultado = await consulta.get();
@@ -104,7 +98,6 @@ app.post('/webhook', async (req, res) => {
                     return res.send("Pedido não encontrado");
                 }
 
-                // 4. Pegar dados e atualizar status
                 let dadosPedido = null;
                 let idDoDocumento = null;
 
@@ -113,7 +106,6 @@ app.post('/webhook', async (req, res) => {
                     idDoDocumento = doc.id;
                 });
 
-                // ✅ Atualiza para "novo" e já cai na cozinha
                 await pedidosRef.doc(idDoDocumento).update({
                     status: "novo",
                     data_pagamento: new Date()
@@ -121,7 +113,6 @@ app.post('/webhook', async (req, res) => {
 
                 console.log("✅ Pedido atualizado para 'novo' e já aparece na cozinha!");
 
-                // 5. 🚀 PREPARA MENSAGEM DO WHATSAPP
                 const itensTexto = dadosPedido.itens.map(item => `
 • ${item.nome}
 ${item.gratis?.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
@@ -153,7 +144,6 @@ Já estamos preparando seu Açaí 🧡
             }
         }
 
-        // ✅ Responde 200 OBRIGATÓRIO pro Mercado Pago
         res.sendStatus(200);
 
     } catch (erro) {
@@ -162,7 +152,6 @@ Já estamos preparando seu Açaí 🧡
     }
 });
 
-// Servir o site
 app.use(express.static('public'));
 
 const PORT = process.env.PORT || 3000;
