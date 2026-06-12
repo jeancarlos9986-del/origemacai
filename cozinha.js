@@ -80,6 +80,16 @@ function renderizarPedidos() {
     semPedidos.style.display = "none";
 
     ativos.forEach((pedido) => {
+
+        const ativos = pedidos
+            .filter(p =>
+                p.status !== "concluido" &&
+                p.nome &&
+                p.numero &&
+                p.status
+            )
+            .sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+
         const card = document.createElement("div");
         card.className = `pedido-card ${pedido.status}`;
 
