@@ -6,22 +6,21 @@ const fetch = require('node-fetch');
 const app = express();
 
 // ==================================================
-// 🔴 LIBERAÇÃO DE ACESSO (CORS) - MÉTODO GARANTIDO
+// 🔴 LIBERAÇÃO DE ACESSO - ENDEREÇO CORRETO DO SEU SITE
 // ==================================================
 app.use((req, res, next) => {
-    // Libera exatamente o seu site
+    // 👉 COLOQUEI O ENDEREÇO EXATO QUE APARECEU NO ERRO DA IMAGEM
     res.setHeader('Access-Control-Allow-Origin', 'https://jeancarlos9986-del.github.io');
-    // Libera os métodos que usamos
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    // Libera os cabeçalhos
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    // Responde imediatamente às requisições OPTIONS (que é o erro que está acontecendo)
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
 
-    next(); // Continua para a rota normal
+    // Responde requisição OPTIONS (que é o erro principal)
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
 });
 
 // ✅ CONFIGURAÇÃO DO FIREBASE
