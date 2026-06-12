@@ -2,31 +2,36 @@ const express = require('express');
 const admin = require('firebase-admin');
 const bodyParser = require('body-parser');
 const fetch = require('node-fetch');
-const cors = require('cors');
 
 const app = express();
 
-// ✅ CONFIGURAÇÃO DE CORS - VERSÃO FORÇADA E GARANTIDA
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Permite exatamente o seu site GitHub e localhost
-        const allowedOrigins = [
-            'https://jeancarlos9986-del.github.io',
-            'http://127.0.0.1:5500',
-            'http://localhost:5500'
-        ];
-        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-            callback(null, true);
-        } else {
-            callback(new Error('Não permitido por CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
+// ==================================================
+// 🧪 ROTA DE TESTE
+// ==================================================
+app.get('/teste', (req, res) => {
+    res.json({
+        sucesso: true,
+        mensagem: "Servidor online e funcionando!"
+    });
+});
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // ✅ Responde requisições prévias (RESOLVE O ERRO DE PREFLIGHT)
+// ==================================================
+// 🔴 LIBERAÇÃO DE ACESSO - ENDEREÇO CORRETO DO SEU SITE
+// ==================================================
+app.use((req, res, next) => {
+    // 👉 COLOQUEI O ENDEREÇO EXATO QUE APARECEU NO ERRO DA IMAGEM
+    res.setHeader('Access-Control-Allow-Origin', 'https://jeancarlos9986-del.github.io');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Responde requisição OPTIONS (que é o erro principal)
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+    } else {
+        next();
+    }
+});
 
 // ✅ CONFIGURAÇÃO DO FIREBASE
 const serviceAccount = JSON.parse(process.env.FIREBASE_KEY);
@@ -42,7 +47,7 @@ app.use(bodyParser.json());
 const MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
 const WHATSAPP = "5534997741051";
 
-// 🚀 ROTA GERAR PIX
+// 🚀 ROTA PARA GERAR O PIX
 app.post('/gerar-pix', async (req, res) => {
     try {
         const { total, descricao, email, nome } = req.body;
@@ -87,7 +92,7 @@ app.post('/gerar-pix', async (req, res) => {
     }
 });
 
-// 🚨 ROTA WEBHOOK
+// 🚨 ROTA DO WEBHOOK
 app.post('/webhook', async (req, res) => {
     try {
         const { action, data } = req.body;
