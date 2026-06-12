@@ -2242,120 +2242,135 @@ Deseja continuar?`
                         // ==============================================
                         // 🚀 GERA O PIX E SALVA ESPERANDO PAGAMENTO
                         // ==============================================
-                   const gerarPix = async () => {
-    try {
-        // Pegar os dados atuais do pedido
-        const total = cart.reduce((acc, item) => acc + item.preco, 0);
-        const nome = document.getElementById("nome").value || "Cliente";
-        const fone = document.getElementById("fone").value || "";
-        const entrega = document.getElementById("entrega").value || "";
-        const endereco = document.getElementById("endereco").value || "";
-        const troco = document.getElementById("troco").value || null;
-        const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-        const email = "vendas@novaorigemacai.com.br"; // seu email fixo
+                        const gerarPix = async () => {
+                            try {
+                                // Pegar os dados atuais do pedido
+                                const total = cart.reduce((acc, item) => acc + item.preco, 0);
+                                const nome = document.getElementById("nome").value || "Cliente";
+                                const fone = document.getElementById("fone").value || "";
+                                const entrega = document.getElementById("entrega").value || "";
+                                const endereco = document.getElementById("endereco").value || "";
+                                const troco = document.getElementById("troco").value || null;
+                                const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                                const email = "vendas@novaorigemacai.com.br"; // seu email fixo
 
-        console.log("🔄 Solicitando PIX ao servidor...");
+                                console.log("🔄 Solicitando PIX ao servidor...");
 
-        // 🔹 AGORA CHAMA O SEU SERVIDOR NO RENDER (SEM ERRO DE CORS)
-        const resposta = await fetch("https://origemacai.onrender.com/gerar-pix", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                total: total,
-                descricao: `Pedido - Nova Origem Açaí`,
-                nome: nome,
-                email: email
-            })
-        });
+                                // 🔹 AGORA CHAMA O SEU SERVIDOR NO RENDER (SEM ERRO DE CORS)
+                                const resposta = await fetch("https://origemacai.onrender.com/gerar-pix", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        total: total,
+                                        descricao: `Pedido - Nova Origem Açaí`,
+                                        nome: nome,
+                                        email: email
+                                    })
+                                });
 
-        const dados = await resposta.json();
-        console.log("✅ RESPOSTA DO SERVIDOR:", dados);
+                                const dados = await resposta.json();
+                                console.log("✅ RESPOSTA DO SERVIDOR:", dados);
 
-        if (dados.sucesso) {
-            const codigoPix = dados.codigoPix;
-            const imagemPix = dados.imagemPix;
-            const idPagamentoMP = dados.idPagamento;
-            idPagamentoAtual = idPagamentoMP;
+                                if (dados.sucesso) {
+                                    const codigoPix = dados.codigoPix;
+                                    const imagemPix = dados.imagemPix;
+                                    const idPagamentoMP = dados.idPagamento;
+                                    idPagamentoAtual = idPagamentoMP;
 
-            // 📌 MOSTRA TELA PARA O CLIENTE
-            const pixArea = document.getElementById("pixArea");
-            const pixCodeEl = document.getElementById("pixCode");
-            const qr = document.getElementById("pixQrCode");
-            const valorTotalEl = document.getElementById("pixValorTotal");
-            const nomeRecebedorEl = document.getElementById("pixNomeRecebedor");
+                                    // 📌 MOSTRA TELA PARA O CLIENTE
+                                    const pixArea = document.getElementById("pixArea");
+                                    const pixCodeEl = document.getElementById("pixCode");
+                                    const qr = document.getElementById("pixQrCode");
+                                    const valorTotalEl = document.getElementById("pixValorTotal");
+                                    const nomeRecebedorEl = document.getElementById("pixNomeRecebedor");
 
-            pixArea.classList.remove("hidden");
-            pixArea.style.display = "block";
-            pixCodeEl.value = codigoPix;
-            qr.innerHTML = `<img src="data:image/png;base64,${imagemPix}" width="220" height="220" style="background:white; border-radius:12px; padding:8px;">`;
-            valorTotalEl.innerText = totalFormatado;
-            nomeRecebedorEl.innerText = "Nova Origem Açaí";
+                                    pixArea.classList.remove("hidden");
+                                    pixArea.style.display = "block";
+                                    pixCodeEl.value = codigoPix;
+                                    qr.innerHTML = `<img src="data:image/png;base64,${imagemPix}" width="220" height="220" style="background:white; border-radius:12px; padding:8px;">`;
+                                    valorTotalEl.innerText = totalFormatado;
+                                    nomeRecebedorEl.innerText = "Nova Origem Açaí";
 
-            // ==============================================
-            // 📝 SALVA NO FIREBASE - STATUS AGUARDANDO PAGAMENTO
-            // ==============================================
-            await addDoc(collection(db, "pedidos"), {
-                numero: Date.now(),
-                nome: nome,
-                fone: fone,
-                entrega: entrega,
-                endereco: endereco,
-                pagamento: "Pix",
-                troco: troco || null,
-                itens: cart,
-                total: total,
-                status: "aguardando_pagamento", // 🔴 FICA OCULTO ATÉ PAGAR
-                id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA O WEBHOOK
-                criadoEm: Date.now(),
-                hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-            });
+                                    // ==============================================
+                                    // 📝 SALVA NO FIREBASE - STATUS AGUARDANDO PAGAMENTO
+                                    // ==============================================
+                                    await addDoc(collection(db, "pedidos"), {
+                                        numero: Date.now(),
+                                        nome: nome,
+                                        fone: fone,
+                                        entrega: entrega,
+                                        endereco: endereco,
+                                        pagamento: "Pix",
+                                        troco: troco || null,
+                                        itens: cart,
+                                        total: total,
+                                        status: "aguardando_pagamento", // 🔴 FICA OCULTO ATÉ PAGAR
+                                        id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA O WEBHOOK
+                                        criadoEm: Date.now(),
+                                        hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                                    });
 
-            alert("✅ PIX gerado! Efetue o pagamento para concluir.");
-            return; // 👈 PARADA AQUI: NÃO ENVIA WHATSAPP AINDA
+                                    alert("✅ PIX gerado! Efetue o pagamento para concluir.");
+                                    return; // 👈 PARADA AQUI: NÃO ENVIA WHATSAPP AINDA
 
-        } else {
-            alert("❌ Erro: " + dados.erro);
-            console.error("ERRO:", dados);
-        }
+                                } else {
+                                    alert("❌ Erro: " + dados.erro);
+                                    console.error("ERRO:", dados);
+                                }
 
-    } catch (erro) {
-        console.error("❌ FALHA:", erro);
-        alert("Falha ao conectar com o servidor.");
-    }
-};git add 
+                            } catch (erro) {
+                                console.error("❌ FALHA:", erro);
+                                alert("Falha ao conectar com o servidor.");
+                            }
+                        };
+
+                        // 🚀 CHAMA A FUNÇÃO PARA GERAR O PIX
+                        gerarPix();
+
+                    } else {
+                        // ==============================================
+                        // ✅ DINHEIRO OU CARTÃO: CAI NA COZINHA E ENVIA WHATSAPP DIRETO
+                        // ==============================================
 
                         // ✅ GERA MENSAGEM E ABRE WHATSAPP NORMALMENTE
                         const itensTexto = cart.map(item => `
-
 • ${item.nome}
 ${item.gratis.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
 ${item.extras.length ? `Extras: ${item.extras.join(", ")}` : ""}
 ${item.obs ? `Obs: ${item.obs}` : ""}
-
-            `).join("\n");
+    `).join("\n");
 
                         const mensagem = encodeURIComponent(`
-
 🛒 NOVO PEDIDO - NOVA ORIGEM
 
 👤 Cliente: ${nome}
-
 📞 WhatsApp: ${fone}
-
 📦 Entrega: ${entrega}
-
 📍 Endereço: ${endereco || "Retirada"}
+💳 Pagamento: ${pagamento}
 
 📋 ITENS:
 ${itensTexto}
 
 💰 Total: ${money(total)}
-
-💳 Pagamento: ${pagamento}
-
 ${troco ? `💵 Troco para: R$ ${troco}` : ""}
+    `);
 
-            `);
+                        // 📝 SALVA NO FIREBASE COM STATUS "NOVO" (JÁ APARECE NA COZINHA)
+                        await addDoc(collection(db, "pedidos"), {
+                            numero: Date.now(),
+                            nome: nome,
+                            fone: fone,
+                            entrega: entrega,
+                            endereco: endereco,
+                            pagamento: pagamento,
+                            troco: troco || null,
+                            itens: cart,
+                            total: total,
+                            status: "novo", // ✅ CAI NA COZINHA DIRETO
+                            criadoEm: Date.now(),
+                            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                        });
 
                         // ✅ FINALIZAÇÃO NORMAL
                         alert("Pedido enviado com sucesso!");
