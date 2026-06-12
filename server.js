@@ -54,7 +54,7 @@ const db = admin.firestore();
 app.use(bodyParser.json());
 
 // ✅ SUAS CHAVES
-const MP_TOKEN = process.env.MP_TOKEN || "SEU_TOKEN";
+const MP_TOKEN = process.env.MP_TOKEN || "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
 const WHATSAPP = "5534997741051";
 
 // 🚀 ROTA PARA GERAR O PIX
