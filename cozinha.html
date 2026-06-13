@@ -2,14 +2,10 @@
 <html lang="pt-BR">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Cozinha | Nova Origem Açaí</title>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
@@ -29,8 +25,14 @@
             --green: #00c853;
             --yellow: #f59e0b;
             --red: #ff1744;
+            --blue: #0284c7;
             --text: #ffffff;
             --muted: #9ca3af;
+            --novo: #7c3aed;
+            --preparo: #f59e0b;
+            --pronto: #00c853;
+            --entrega: #0284c7;
+            --concluido: #64748b;
         }
 
         body {
@@ -46,6 +48,8 @@
             margin-bottom: 30px;
             flex-wrap: wrap;
             gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .logo-area {
@@ -59,25 +63,76 @@
             height: 65px;
             border-radius: 18px;
             object-fit: cover;
+            border: 2px solid var(--primary);
         }
 
         .logo-area h1 {
             font-size: 2rem;
             font-weight: 800;
+            background: linear-gradient(to right, #fff, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .online-status {
             background: rgba(0, 200, 83, .15);
             border: 1px solid rgba(0, 200, 83, .4);
             color: #00ff84;
-            padding: 12px 18px;
+            padding: 10px 16px;
             border-radius: 16px;
             font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        #ativarSom {
+            background: rgba(124, 58, 237, 0.2);
+            color: #c084fc;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+            padding: 10px 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #ativarSom:hover {
+            background: rgba(124, 58, 237, 0.3);
+        }
+
+        .filtros {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filtro-btn {
+            background: var(--card);
+            color: var(--muted);
+            border: 1px solid transparent;
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 600;
+        }
+
+        .filtro-btn.ativo {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(124, 58, 237, 0.1);
         }
 
         .painel {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
             gap: 20px;
         }
 
@@ -86,20 +141,60 @@
             border-radius: 24px;
             padding: 22px;
             border: 2px solid rgba(255, 255, 255, .05);
-            transition: .2s;
+            transition: .3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pedido-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
         }
 
         .pedido-card.novo {
             border-color: rgba(124, 58, 237, .5);
         }
 
+        .pedido-card.novo::before {
+            background: var(--novo);
+        }
+
         .pedido-card.preparo {
             border-color: rgba(245, 158, 11, .5);
         }
 
-        .pedido-card.finalizado {
+        .pedido-card.preparo::before {
+            background: var(--preparo);
+        }
+
+        .pedido-card.pronto {
             border-color: rgba(0, 200, 83, .5);
-            opacity: .9;
+        }
+
+        .pedido-card.pronto::before {
+            background: var(--pronto);
+        }
+
+        .pedido-card.em_rota {
+            border-color: rgba(2, 132, 199, .5);
+            opacity: 0.95;
+        }
+
+        .pedido-card.em_rota::before {
+            background: var(--entrega);
+        }
+
+        .pedido-card.concluido {
+            border-color: rgba(100, 116, 139, .3);
+            opacity: 0.75;
+        }
+
+        .pedido-card.concluido::before {
+            background: var(--concluido);
         }
 
         .pedido-top {
@@ -111,23 +206,27 @@
         }
 
         .pedido-numero {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: #c084fc;
         }
 
         .pedido-hora {
             color: var(--muted);
-            font-size: .9rem;
+            font-size: .85rem;
             margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .pedido-status {
-            padding: 10px 14px;
+            padding: 8px 12px;
             border-radius: 12px;
-            font-size: .8rem;
+            font-size: .75rem;
             font-weight: 800;
             white-space: nowrap;
+            text-transform: uppercase;
         }
 
         .status-novo {
@@ -140,9 +239,19 @@
             color: #fbbf24;
         }
 
-        .status-finalizado {
+        .status-pronto {
             background: rgba(0, 200, 83, .15);
             color: #00ff84;
+        }
+
+        .status-em_rota {
+            background: rgba(2, 132, 199, .15);
+            color: #38bdf8;
+        }
+
+        .status-concluido {
+            background: rgba(100, 116, 139, .15);
+            color: #94a3b8;
         }
 
         .cliente-box {
@@ -151,10 +260,18 @@
             padding: 16px;
             margin-bottom: 18px;
             line-height: 1.8;
+            font-size: 0.95rem;
+        }
+
+        .cliente-box div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .cliente-box strong {
             color: white;
+            font-weight: 700;
         }
 
         .pedido-itens {
@@ -162,10 +279,21 @@
             border-radius: 18px;
             padding: 16px;
             margin-bottom: 18px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pedido-itens::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .pedido-itens::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
         }
 
         .pedido-item {
-            padding: 14px 0;
+            padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, .05);
         }
 
@@ -176,24 +304,34 @@
         .pedido-item strong {
             display: block;
             margin-bottom: 6px;
+            font-size: 0.95rem;
         }
 
         .item-extra {
             color: #c084fc;
-            font-size: .9rem;
+            font-size: .85rem;
             line-height: 1.5;
         }
 
         .item-gratis {
             color: #00ff84;
-            font-size: .9rem;
+            font-size: .85rem;
             line-height: 1.5;
         }
 
         .item-obs {
             color: #facc15;
-            font-size: .9rem;
+            font-size: .85rem;
             line-height: 1.5;
+            font-style: italic;
+        }
+
+        .valor-item {
+            margin-top: 8px;
+            color: #00ff84;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-align: right;
         }
 
         .pedido-footer {
@@ -202,18 +340,30 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .pedido-total {
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: 800;
             color: #00ff84;
+        }
+
+        .info-pagamento {
+            font-size: 0.8rem;
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 8px;
         }
 
         .acoes {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            width: 100%;
+            margin-top: 10px;
         }
 
         .acoes button {
@@ -224,6 +374,8 @@
             font-weight: 800;
             color: white;
             transition: .2s;
+            flex: 1;
+            font-size: 0.85rem;
         }
 
         .acoes button:hover {
@@ -231,15 +383,24 @@
         }
 
         .btn-preparo {
-            background: var(--yellow);
+            background: var(--preparo);
         }
 
-        .btn-finalizar {
-            background: var(--green);
+        .btn-pronto {
+            background: var(--pronto);
+        }
+
+        .btn-entrega {
+            background: var(--entrega);
+        }
+
+        .btn-concluir {
+            background: var(--concluido);
         }
 
         .btn-remover {
             background: var(--red);
+            flex: 0.5;
         }
 
         .sem-pedidos {
@@ -254,8 +415,21 @@
             opacity: .5;
         }
 
-        @media(max-width:700px) {
+        .novo-pedido-animado {
+            animation: novoPedido 1s ease infinite alternate;
+        }
 
+        @keyframes novoPedido {
+            from {
+                box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+            }
+
+            to {
+                box-shadow: 0 0 25px rgba(124, 58, 237, 0.8);
+            }
+        }
+
+        @media(max-width:700px) {
             body {
                 padding: 18px;
             }
@@ -283,61 +457,42 @@
             }
         }
     </style>
-
 </head>
 
 <body>
-
     <header class="topbar">
-
         <div class="logo-area">
-
-            <img src="./logonovonova.png.jpeg" alt="Logo">
-
+            <img src="./logonovonova.png.jpeg" alt="Logo Nova Origem Açaí">
             <div>
-
                 <h1>Painel da Cozinha</h1>
-
-                <p style="color:#9ca3af;">
-                    Nova Origem Açaí
-                </p>
-
+                <p style="color:#9ca3af;">Gestão de Pedidos em Tempo Real</p>
             </div>
-
         </div>
-
-
-        <div class="online-status">
-
-            <i class="fa-solid fa-circle"></i>
-            Sistema Online
-            <button id="ativarSom">
-                🔔 Ativar Som
-            </button>
+        <div class="status-bar">
+            <div class="online-status">
+                <i class="fa-solid fa-circle-pulse"></i> Sistema Online
+            </div>
+            <button id="ativarSom">🔔 Ativar Som</button>
         </div>
-
     </header>
 
+    <div class="filtros">
+        <button class="filtro-btn ativo" data-filtro="todos">Todos</button>
+        <button class="filtro-btn" data-filtro="novo">Novos</button>
+        <button class="filtro-btn" data-filtro="preparo">Em Preparo</button>
+        <button class="filtro-btn" data-filtro="pronto">Prontos</button>
+    </div>
+
     <main>
-
         <div id="painelPedidos" class="painel"></div>
-
         <div id="semPedidos" class="sem-pedidos">
-
             <i class="fa-solid fa-burger"></i>
-
             <h2>Nenhum pedido no momento</h2>
-
-            <p>
-                Os pedidos realizados no site aparecerão aqui automaticamente.
-            </p>
-
+            <p>Os pedidos realizados no site aparecerão aqui automaticamente.</p>
         </div>
-
     </main>
 
     <script type="module" src="./cozinha.js"></script>
-
 </body>
 
 </html>
