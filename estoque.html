@@ -1,102 +1,118 @@
-<!-- ===================== estoque.html ===================== -->
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estoque Inteligente - F&B Burguer</title>
+    <title>Controle de Estoque - Nova Origem Açaí</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        :root {
+            --bg: #0b0b0f; --bg2: #0f0f14; --card: #17171f; --card2: #1f2937;
+            --primary: #7c3aed; --primary2: #9333ea; --green: #00c853; --red: #ff1744;
+            --yellow: #f59e0b; --muted: #9ca3af; --border: rgba(255,255,255,.08);
+        }
         body {
-            font-family: sans-serif;
-            background: #121212;
-            color: white;
-            padding: 20px;
+            background: radial-gradient(circle at top, rgba(124,58,237,.12), transparent 30%), var(--bg);
+            color: #fff; padding: 15px; min-height: 100vh;
         }
-
-        .container {
-            max-width: 900px;
-            margin: auto;
+        .container { max-width: 900px; margin: 0 auto; }
+        .voltar {
+            display: inline-flex; align-items: center; gap: 8px; color: var(--primary);
+            text-decoration: none; font-weight: 700; margin-bottom: 15px;
         }
-
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            padding: 18px; border-radius: 16px; text-align: center; margin-bottom: 20px;
+            font-size: 1.3rem; font-weight: 800; display: flex; align-items: center;
+            justify-content: center; gap: 10px; box-shadow: 0 10px 35px rgba(124,58,237,.35);
+        }
         .card {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            background: var(--card); padding: 20px; border-radius: 16px;
+            border: 1px solid var(--border); margin-bottom: 20px;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .card h3 { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
+        .form-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+        input, select, button {
+            padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--card2); color: white; flex: 1; min-width: 140px; font-family: inherit;
         }
-
-        th,
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #333;
-        }
-
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
         button {
-            cursor: pointer;
-            padding: 8px;
-            border: none;
-            border-radius: 5px;
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            border: none; font-weight: 700; cursor: pointer; transition: .2s;
         }
-
-        .btn {
-            background: #2196F3;
-            color: white;
-            margin-top: 5px;
-        }
-
-        .alerta {
-            color: #ff5252;
-            font-weight: bold;
-        }
-
-        pre {
-            background: #000;
-            padding: 10px;
-            border-radius: 8px;
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+        th { background: var(--card2); font-weight: 700; }
+        @media (max-width: 768px) {
+            .form-grid { flex-direction: column; }
+            input, select, button { width: 100%; }
+            table { display: block; overflow-x: auto; }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
+        <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
+        <div class="header"><i class="fas fa-boxes"></i> CONTROLE DE ESTOQUE</div>
 
-        <h2>📦 Estoque Inteligente</h2>
+        <section class="card">
+            <h3><i class="fas fa-plus-circle"></i> Adicionar / Atualizar Insumo</h3>
+            <div class="form-grid">
+                <input type="text" id="nome-item" placeholder="Nome do insumo" required>
+                <select id="unidade-item">
+                    <option value="kg">Quilograma (kg)</option>
+                    <option value="l">Litro (L)</option>
+                    <option value="un">Unidade (un)</option>
+                    <option value="pote">Pote</option>
+                    <option value="cx">Caixa</option>
+                </select>
+                <input type="number" id="qtd-item" placeholder="Quantidade" step="0.01" required>
+                <input type="number" id="custo-item" placeholder="Custo unitário R$" step="0.01" required>
+                <button type="button" id="btn-salvar-item">Salvar Item</button>
+            </div>
+        </section>
 
+        <section class="card">
+            <h3><i class="fas fa-exchange-alt"></i> Movimentação de Estoque</h3>
+            <div class="form-grid">
+                <select id="select-item"><option value="">Selecione um insumo...</option></select>
+                <select id="tipo-mov">
+                    <option value="entrada">Entrada (Compra)</option>
+                    <option value="saida">Saída (Uso)</option>
+                    <option value="ajuste">Ajuste de Contagem</option>
+                </select>
+                <input type="number" id="qtd-mov" placeholder="Quantidade" step="0.01" required>
+                <input type="text" id="obs-mov" placeholder="Observação">
+                <button type="button" id="btn-movimentar">Registrar</button>
+            </div>
+        </section>
 
-
-        <div class="card">
-            <h3>📋 Controle</h3>
-            <button class="btn" onclick="gerarListaCompra()">🛒 Lista de Compra</button>
-            <button class="btn" onclick="verEstoque()">📦 Ver Estoque</button>
-            <button class="btn" onclick="exportarWhats()">📲 Enviar WhatsApp</button>
-            <pre id="saida"></pre>
-        </div>
-
-        <div class="card">
-            <h3>📊 Itens</h3>
-            <table>
+        <section class="card">
+            <h3><i class="fas fa-list"></i> Estoque Atual</h3>
+            <table id="tabela-estoque">
                 <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Qtd</th>
-                        <th>Mín</th>
-                        <th>Ação</th>
-                    </tr>
+                    <tr><th>Insumo</th><th>Unidade</th><th>Quantidade Atual</th><th>Custo Unitário</th><th>Total em Estoque</th><th>Ações</th></tr>
                 </thead>
-                <tbody id="tabela"></tbody>
+                <tbody><tr><td colspan="6" style="text-align:center; color:var(--muted)">Carregando...</td></tr></tbody>
             </table>
-        </div>
+        </section>
 
+        <section class="card">
+            <h3><i class="fas fa-history"></i> Últimas Movimentações</h3>
+            <table id="tabela-mov">
+                <thead>
+                    <tr><th>Data</th><th>Insumo</th><th>Tipo</th><th>Quantidade</th><th>Observação</th></tr>
+                </thead>
+                <tbody><tr><td colspan="5" style="text-align:center; color:var(--muted)">Carregando...</td></tr></tbody>
+            </table>
+        </section>
     </div>
 
-    <script type="module" src="estoque.js"></script>
+    <script type="module" src="./estoque.js"></script>
 </body>
-
 </html>
