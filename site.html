@@ -1225,7 +1225,7 @@
                 id: 9,
                 cat: "Copos",
                 nome: "Cone Trufado",
-                preco: 13.00,
+                preco: 2.00,
                 desc: "Cone com açai e muitaaaaaaaa Nutella",
                 imagens: [
                     "./cone.jpeg"
@@ -1294,9 +1294,9 @@
 
             { nome: "Ouro Branco", preco: 3, ativo: true },
 
-            { nome: "Choco Ball", preco: 3, ativo: false },
+            { nome: "Choco Ball", preco: 3, ativo: true },
 
-            { nome: "Amendoim", preco: 2, ativo: false },
+            { nome: "Amendoim", preco: 2, ativo: true },
 
 
 
@@ -1371,11 +1371,11 @@
 
             if (aberto) {
 
-                status.innerText = "ABERTO";
+                status.innerText = "ECHADO";
 
-                status.className = "status aberto";
+                status.className = "status fechado";
 
-                info.innerText = "Estamos recebendo pedidos";
+                info.innerText = "Estamos Fechados";
 
             } else {
 
