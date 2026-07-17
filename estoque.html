@@ -1,78 +1,323 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Estoque - Nova Origem Açaí</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
         :root {
-            --bg: #0b0b0f; --bg2: #0f0f14; --card: #17171f; --card2: #1f2937;
-            --primary: #7c3aed; --primary2: #9333ea; --green: #00c853; --red: #ff1744;
-            --yellow: #f59e0b; --muted: #9ca3af; --border: rgba(255,255,255,.08);
+            --bg: #0b0b0f;
+            --bg2: #0f0f14;
+            --card: #17171f;
+            --card2: #1f2937;
+            --primary: #7c3aed;
+            --primary2: #9333ea;
+            --green: #00c853;
+            --red: #ff1744;
+            --yellow: #f59e0b;
+            --muted: #9ca3af;
+            --border: rgba(255, 255, 255, .08);
         }
+
         body {
-            background: radial-gradient(circle at top, rgba(124,58,237,.12), transparent 30%), var(--bg);
-            color: #fff; padding: 15px; min-height: 100vh;
+            background: radial-gradient(circle at top, rgba(124, 58, 237, .12), transparent 30%), var(--bg);
+            color: #fff;
+            padding: 15px;
+            min-height: 100vh;
         }
-        .container { max-width: 900px; margin: 0 auto; }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
         .voltar {
-            display: inline-flex; align-items: center; gap: 8px; color: var(--primary);
-            text-decoration: none; font-weight: 700; margin-bottom: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            margin-bottom: 15px;
         }
+
         .header {
             background: linear-gradient(135deg, var(--primary), var(--primary2));
-            padding: 18px; border-radius: 16px; text-align: center; margin-bottom: 20px;
-            font-size: 1.3rem; font-weight: 800; display: flex; align-items: center;
-            justify-content: center; gap: 10px; box-shadow: 0 10px 35px rgba(124,58,237,.35);
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 35px rgba(124, 58, 237, .35);
         }
+
         .card {
-            background: var(--card); padding: 20px; border-radius: 16px;
-            border: 1px solid var(--border); margin-bottom: 20px;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
         }
-        .card h3 { margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-weight: 700; }
-        .form-grid { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
-        input, select, button {
-            padding: 12px; border-radius: 12px; border: 1px solid var(--border);
-            background: var(--card2); color: white; flex: 1; min-width: 140px; font-family: inherit;
+
+        .card h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
         }
-        input:focus, select:focus { outline: none; border-color: var(--primary); }
+
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .form-grid div {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .form-grid label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        input,
+        select,
+        button {
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            color: white;
+            flex: 1;
+            min-width: 140px;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
         button {
             background: linear-gradient(135deg, var(--primary), var(--primary2));
-            border: none; font-weight: 700; cursor: pointer; transition: .2s;
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+            flex: none;
+            min-width: auto;
         }
-        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-        th { background: var(--card2); font-weight: 700; }
+
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .resumo-geral {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(124, 58, 237, .08);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(124, 58, 237, .2);
+        }
+
+        .resumo-item {
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .resumo-item strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+
+        .previsao {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .previsao ul {
+            margin: 10px 0 0 20px;
+        }
+
+        .previsao li {
+            margin: 5px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: var(--card2);
+            font-weight: 700;
+        }
+
         @media (max-width: 768px) {
-            .form-grid { flex-direction: column; }
-            input, select, button { width: 100%; }
-            table { display: block; overflow-x: auto; }
+            .form-grid {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .resumo-geral {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
         <div class="header"><i class="fas fa-boxes"></i> CONTROLE DE ESTOQUE</div>
 
+        <!-- NOVO: ALERTAS DE ESTOQUE CRÍTICO / PROMPT DE NOTIFICAÇÃO -->
+        <div id="alertas-estoque"></div>
+
+        <!-- Resumo Geral e Previsão -->
+        <div id="total-estoque" class="resumo-geral">
+            <div class="resumo-item">Carregando valores...</div>
+        </div>
+        <div id="previsao-estoque" class="previsao card">
+            Calculando previsão de consumo...
+        </div>
+        <!-- NOVO: INSIGHTS ESTRATÉGICOS DE ESTOQUE -->
+        <div class="card" style="border-color: var(--primary); margin-bottom: 20px;">
+            <h3><i class="fas fa-lightbulb"></i> Insights Estratégicos de Produção</h3>
+
+            <!-- ITENS BLOQUEADORES PRINCIPAIS -->
+            <div
+                style="background: rgba(255,23,68,0.08); border: 1px solid var(--red); border-radius: 12px; padding: 12px; margin-bottom: 15px;">
+                <strong style="color: var(--red);"><i class="fas fa-exclamation-triangle"></i> Itens que bloqueiam as
+                    vendas:</strong>
+                <p style="margin: 5px 0 0 0; font-size: 0.9rem;">Sem esses itens, não é possível produzir nenhum copo,
+                    mesmo que tenha todo o resto!</p>
+            </div>
+
+            <!-- CAPACIDADE DE PRODUÇÃO -->
+            <div class="divisao" style="margin-bottom: 15px;">
+                <div class="item-divisao">
+                    <i class="fas fa-blender" style="color: var(--primary); font-size: 1.2rem;"></i>
+                    <p style="margin: 8px 0 4px 0; font-size: 0.85rem;">Copos de 400ml possíveis</p>
+                    <strong id="max-copos-400">0</strong>
+                </div>
+                <div class="item-divisao">
+                    <i class="fas fa-blender" style="color: var(--primary); font-size: 1.2rem;"></i>
+                    <p style="margin: 8px 0 4px 0; font-size: 0.85rem;">Copos de 500ml possíveis</p>
+                    <strong id="max-copos-500">0</strong>
+                </div>
+                <div class="item-divisao">
+                    <i class="fas fa-stopwatch" style="color: var(--yellow); font-size: 1.2rem;"></i>
+                    <p style="margin: 8px 0 4px 0; font-size: 0.85rem;">Duração na média (25/dia)</p>
+                    <strong id="dias-disponiveis">0 dias</strong>
+                </div>
+            </div>
+
+            <!-- POTENCIAL DE FATURAMENTO -->
+            <div class="divisao" style="margin-bottom: 15px;">
+                <div class="item-divisao">
+                    <i class="fas fa-money-bill-wave" style="color: var(--green); font-size: 1.2rem;"></i>
+                    <p style="margin: 8px 0 4px 0; font-size: 0.85rem;">Faturamento máximo possível</p>
+                    <strong id="faturamento-max">R$ 0,00</strong>
+                </div>
+                <div class="item-divisao">
+                    <i class="fas fa-coins" style="color: var(--green); font-size: 1.2rem;"></i>
+                    <p style="margin: 8px 0 4px 0; font-size: 0.85rem;">Lucro real estimado</p>
+                    <strong id="lucro-real" style="color: var(--green);">R$ 0,00</strong>
+                </div>
+                <div class="item-divisao">
+                    <i class="fas fa-minus-circle" style="color: var(--red); font-size: 1.2rem;"></i>
+                    <p style="margin: 8px 0 4px 0; font-size: 0.85rem;">Limite atual</p>
+                    <strong id="item-limitante" style="color: var(--red);">—</strong>
+                </div>
+            </div>
+
+            <!-- EXPLICAÇÃO SIMPLES -->
+            <p style="font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 10px;">
+                * Cálculo baseado no estoque de Açaí, Copos e Tampas — os únicos itens que impedem a produção total.
+            </p>
+        </div>
         <section class="card">
             <h3><i class="fas fa-plus-circle"></i> Adicionar / Atualizar Insumo</h3>
             <div class="form-grid">
-                <input type="text" id="nome-item" placeholder="Nome do insumo" required>
-                <select id="unidade-item">
-                    <option value="kg">Quilograma (kg)</option>
-                    <option value="l">Litro (L)</option>
-                    <option value="un">Unidade (un)</option>
-                    <option value="pote">Pote</option>
-                    <option value="cx">Caixa</option>
-                </select>
-                <input type="number" id="qtd-item" placeholder="Quantidade" step="0.01" required>
-                <input type="number" id="custo-item" placeholder="Custo unitário R$" step="0.01" required>
+                <div>
+                    <input type="text" id="nome-item" placeholder="Nome do insumo" required>
+                </div>
+                <div>
+                    <select id="unidade-item">
+                        <option value="kg">Quilograma (kg)</option>
+                        <option value="l">Litro (L)</option>
+                        <option value="un">Unidade (un)</option>
+                        <option value="pote">Pote</option>
+                        <option value="cx">Caixa</option>
+                    </select>
+                </div>
+                <div>
+                    <input type="number" id="qtd-item" placeholder="Quantidade" step="0.01" required>
+                </div>
+                <div>
+                    <input type="number" id="custo-item" placeholder="Custo unitário R$" step="0.01" required>
+                </div>
+                <div>
+                    <input type="number" id="preco-venda-item" placeholder="Preço de venda R$" step="0.01">
+                </div>
+                <div>
+                    <input type="number" id="nivel-minimo" placeholder="Nível mínimo" step="0.01">
+                </div>
+                <div>
+                    <input type="number" id="nivel-ideal" placeholder="Nível ideal" step="0.01">
+                </div>
                 <button type="button" id="btn-salvar-item">Salvar Item</button>
             </div>
         </section>
@@ -80,7 +325,9 @@
         <section class="card">
             <h3><i class="fas fa-exchange-alt"></i> Movimentação de Estoque</h3>
             <div class="form-grid">
-                <select id="select-item"><option value="">Selecione um insumo...</option></select>
+                <select id="select-item">
+                    <option value="">Selecione um insumo...</option>
+                </select>
                 <select id="tipo-mov">
                     <option value="entrada">Entrada (Compra)</option>
                     <option value="saida">Saída (Uso)</option>
@@ -91,14 +338,47 @@
                 <button type="button" id="btn-movimentar">Registrar</button>
             </div>
         </section>
+        <!-- 🛒 LISTA DE COMPRA AUTOMÁTICA -->
+        <div class="card" style="border-color: var(--green); margin-bottom: 25px;">
+            <h3><i class="fas fa-shopping-cart"></i> Lista de Compra Sugerida</h3>
+            <p style="font-size:0.9rem; color:var(--muted); margin-bottom:10px;">Baseada no nível ideal para 1 semana de
+                vendas</p>
 
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding:10px; text-align:left;">Prioridade</th>
+                        <th style="padding:10px; text-align:left;">Item</th>
+                        <th style="padding:10px; text-align:center;">Quantidade</th>
+                        <th style="padding:10px; text-align:right;">Custo Unit.</th>
+                        <th style="padding:10px; text-align:right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-compra-corpo"></tbody>
+            </table>
+        </div>
         <section class="card">
             <h3><i class="fas fa-list"></i> Estoque Atual</h3>
             <table id="tabela-estoque">
                 <thead>
-                    <tr><th>Insumo</th><th>Unidade</th><th>Quantidade Atual</th><th>Custo Unitário</th><th>Total em Estoque</th><th>Ações</th></tr>
+                    <tr>
+                        <th>Insumo</th>
+                        <th>Unidade</th>
+                        <th>Quantidade Atual</th>
+                        <th>Status</th>
+                        <th>Custo Unitário</th>
+                        <th>Preço Venda</th>
+                        <th>Valor Investido</th>
+                        <th>Lucro Estimado</th>
+                        <th>Margem %</th>
+                        <th>Ações</th>
+                    </tr>
                 </thead>
-                <tbody><tr><td colspan="6" style="text-align:center; color:var(--muted)">Carregando...</td></tr></tbody>
+                <tbody>
+                    <tr>
+                        <td colspan="10" style="text-align:center; color:var(--muted)">Carregando...</td>
+                    </tr>
+                </tbody>
             </table>
         </section>
 
@@ -106,13 +386,24 @@
             <h3><i class="fas fa-history"></i> Últimas Movimentações</h3>
             <table id="tabela-mov">
                 <thead>
-                    <tr><th>Data</th><th>Insumo</th><th>Tipo</th><th>Quantidade</th><th>Observação</th></tr>
+                    <tr>
+                        <th>Data</th>
+                        <th>Insumo</th>
+                        <th>Tipo</th>
+                        <th>Quantidade</th>
+                        <th>Observação</th>
+                    </tr>
                 </thead>
-                <tbody><tr><td colspan="5" style="text-align:center; color:var(--muted)">Carregando...</td></tr></tbody>
+                <tbody>
+                    <tr>
+                        <td colspan="5" style="text-align:center; color:var(--muted)">Carregando...</td>
+                    </tr>
+                </tbody>
             </table>
         </section>
     </div>
 
     <script type="module" src="./estoque.js"></script>
 </body>
+
 </html>
