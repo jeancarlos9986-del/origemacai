@@ -1367,15 +1367,15 @@
 
             const hour = now.getHours();
 
-            const aberto = hour >= 14 && hour <= 23;
+            const aberto = hour >= 15 && hour <= 23;
 
             if (aberto) {
 
-                status.innerText = "ECHADO";
+                status.innerText = "ABERTO";
 
                 status.className = "status fechado";
 
-                info.innerText = "Estamos Fechados";
+                info.innerText = "Estamos Recebendo Pedidos";
 
             } else {
 
@@ -1383,7 +1383,7 @@
 
                 status.className = "status fechado";
 
-                info.innerText = "Abrimos às 14:00";
+                info.innerText = "Abrimos às 15:00";
 
             }
 
