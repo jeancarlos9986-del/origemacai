@@ -448,6 +448,295 @@
         }
 
         /* =========================
+       TRACK BAR (acompanhar pedido)
+    ========================= */
+        .track-bar {
+            position: fixed;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            max-width: 900px;
+            margin: auto;
+            padding: 14px 20px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 9998;
+            cursor: pointer;
+            box-shadow: 0 15px 40px rgba(2, 132, 199, .45);
+            animation: cartUp .3s ease;
+        }
+
+        .track-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .track-pulse {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #fff;
+            animation: pulseDot 1.2s ease infinite;
+        }
+
+        @keyframes pulseDot {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, .6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        .track-subtitle {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Timeline do modal de acompanhamento */
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin: 20px 0;
+        }
+
+        .timeline-step {
+            display: flex;
+            gap: 14px;
+            position: relative;
+            padding-bottom: 26px;
+        }
+
+        .timeline-step:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 32px;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, .1);
+        }
+
+        .timeline-step:last-child::before {
+            display: none;
+        }
+
+        .timeline-dot {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .06);
+            border: 2px solid rgba(255, 255, 255, .15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            color: var(--muted);
+            transition: .3s;
+        }
+
+        .timeline-step.done .timeline-dot {
+            background: var(--green);
+            border-color: var(--green);
+            color: #fff;
+        }
+
+        .timeline-step.current .timeline-dot {
+            background: #0284c7;
+            border-color: #38bdf8;
+            color: #fff;
+            animation: pulseDot 1.2s ease infinite;
+        }
+
+        .timeline-step.current::before {
+            background: rgba(2, 132, 199, .3);
+        }
+
+        .timeline-step.done::before {
+            background: var(--green);
+        }
+
+        .timeline-text strong {
+            display: block;
+            font-size: .95rem;
+            color: #fff;
+        }
+
+        .timeline-step:not(.done):not(.current) .timeline-text strong {
+            color: var(--muted);
+        }
+
+        .timeline-text small {
+            color: var(--muted);
+            font-size: .8rem;
+        }
+
+        .notif-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            border: none;
+            font-family: inherit;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: .8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            cursor: default;
+        }
+
+        .notif-status.ok {
+            background: rgba(0, 200, 83, .1);
+            border: 1px solid rgba(0, 200, 83, .3);
+            color: #6ee7b7;
+        }
+
+        .notif-status.off {
+            background: rgba(124, 58, 237, .1);
+            border: 1px solid rgba(124, 58, 237, .3);
+            color: #d8b4fe;
+        }
+
+        button.notif-status.off {
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        button.notif-status.off:hover {
+            background: rgba(124, 58, 237, .2);
+        }
+
+        .estimate-box {
+            background: rgba(2, 132, 199, .1);
+            border: 1px solid rgba(2, 132, 199, .3);
+            border-radius: 14px;
+            padding: 14px;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .estimate-box strong {
+            display: block;
+            font-size: 1.3rem;
+            color: #38bdf8;
+        }
+
+        .estimate-box small {
+            color: var(--muted);
+        }
+
+        .aviso-loja-fechada {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(245, 158, 11, .12);
+            border: 1px solid rgba(245, 158, 11, .35);
+            color: #fbbf24;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: .85rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .estimate-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #38bdf8;
+            font-size: .85rem;
+            font-weight: 700;
+            margin: -8px 0 8px 0;
+        }
+
+        /* Sugestões / combos */
+        #sugestoesArea {
+            margin-bottom: 6px;
+        }
+
+        .sugestoes-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+        }
+
+        .sugestao-card {
+            flex: 0 0 130px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 14px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .sugestao-card img {
+            width: 100%;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+
+        .sugestao-extra-icon {
+            width: 100%;
+            height: 70px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            background: rgba(124, 58, 237, .12);
+            border: 1px dashed rgba(124, 58, 237, .35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #c084fc;
+        }
+
+        .sugestao-card strong {
+            display: block;
+            font-size: .78rem;
+            line-height: 1.2;
+            margin-bottom: 4px;
+            min-height: 28px;
+        }
+
+        .sugestao-card span {
+            display: block;
+            color: #d8b4fe;
+            font-weight: 800;
+            font-size: .85rem;
+            margin-bottom: 6px;
+        }
+
+        .sugestao-add {
+            border: none;
+            width: 100%;
+            padding: 7px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            color: #fff;
+            font-weight: 800;
+            cursor: pointer;
+            font-size: .8rem;
+        }
+
+        /* =========================
        MODAL
     ========================= */
         .modal {
@@ -920,9 +1209,11 @@
                 </div>
             </div>
 
-            <div style="text-align:right;">
-                <div id="status" class="status"></div>
-                <small id="openInfo" style="color:#9ca3af; font-size:0.75rem;"></small>
+            <div style="text-align:right; display:flex; align-items:center; gap:12px;">
+                <div>
+                    <div id="status" class="status"></div>
+                    <small id="openInfo" style="color:#9ca3af; font-size:0.75rem;"></small>
+                </div>
             </div>
         </div>
     </header>
@@ -949,15 +1240,48 @@
             <button class="tab active" data-cat="Copos">
                 <i class="fa-solid fa-cup-straw"></i> Copos de Açaí
             </button>
-            <button class="tab" data-cat="Barcas">
-                <i class="fa-solid fa-ship"></i> Barcas de Açaí
-            </button>
+
+
+            <!-- GRID -->
+            <div class="grid" id="grid"></div>
+    </main>
+    <!-- =========================
+   FEEDBACKS COM PRINTS DE CLIENTES
+========================= -->
+    <section class="container" style="margin-top: 70px; padding-top: 20px; border-top: 1px solid var(--border);">
+        <div style="text-align: center; margin-bottom: 35px;">
+            <h2
+                style="font-size: 1.7rem; font-weight: 800; background: linear-gradient(to right, #fff, #d8b4fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                O que nossos clientes dizem 📸</h2>
         </div>
 
-        <!-- GRID -->
-        <div class="grid" id="grid"></div>
-    </main>
+        <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important; gap: 20px;">
+            <!-- Print 1 -->
+            <div class="card" style="padding: 12px;">
+                <img src="./print01.jpeg" alt="Feedback de cliente"
+                    style="width: 100%; border-radius: 12px; display: block;">
+            </div>
 
+            <!-- Print 2 -->
+            <div class="card" style="padding: 12px;">
+                <img src="./print02.jpeg" alt="Feedback de cliente"
+                    style="width: 100%; border-radius: 12px; display: block;">
+            </div>
+
+            <!-- Print 3 -->
+            <div class="card" style="padding: 12px;">
+                <img src="./print03.jpeg" alt="Feedback de cliente"
+                    style="width: 100%; border-radius: 12px; display: block;">
+            </div>
+
+            <div class="card" style="padding: 12px;">
+                <img src="./print04.jpeg" alt="Feedback de cliente"
+                    style="width: 100%; border-radius: 12px; display: block;">
+            </div>
+
+            <!-- Adicione mais prints copiando o bloco acima -->
+        </div>
+    </section>
     <!-- CART BAR -->
     <div class="cart-bar" id="cartBar">
         <div class="cart-left">
@@ -971,6 +1295,32 @@
             </div>
         </div>
         <strong id="cartTotal">R$ 0,00</strong>
+    </div>
+
+    <!-- BARRA DE ACOMPANHAMENTO DE PEDIDO -->
+    <div class="track-bar" id="trackBar">
+        <div class="track-left">
+            <div class="track-pulse"></div>
+            <div>
+                <strong id="trackBarTitulo">Acompanhar Pedido</strong>
+                <div class="track-subtitle" id="trackBarSubtitulo">Toque para ver o status</div>
+            </div>
+        </div>
+        <i class="fa-solid fa-chevron-up"></i>
+    </div>
+
+    <!-- MODAL ACOMPANHAMENTO -->
+    <div class="modal" id="trackModal">
+        <div class="modal-content">
+            <div class="modal-top">
+                <div>
+                    <h2>Status do Pedido</h2>
+                    <small style="color:#9ca3af;" id="trackNumero">Pedido</small>
+                </div>
+                <i class="fa fa-times close" id="closeTrack"></i>
+            </div>
+            <div id="trackContent"></div>
+        </div>
     </div>
 
     <!-- MODAL PERSONALIZAÇÃO -->
@@ -1035,8 +1385,17 @@
                 <i class="fa fa-times close" id="closeCheckout"></i>
             </div>
 
+            <!-- 🆕 AVISO DE LOJA FECHADA -->
+            <div class="aviso-loja-fechada" id="avisoLojaFechada" style="display:none;">
+                <i class="fa-solid fa-clock"></i>
+                <span></span>
+            </div>
+
             <!-- REVIEW -->
             <div id="reviewArea"></div>
+
+            <!-- SUGESTÕES / COMBOS -->
+            <div id="sugestoesArea"></div>
 
             <!-- DADOS -->
             <div class="section-title">Seus Dados</div>
@@ -1064,6 +1423,11 @@
 
             <div id="trocoBox" class="hidden">
                 <input type="number" id="troco" placeholder="Precisa de troco para quanto? Ex: 50">
+            </div>
+
+            <!-- TEMPO ESTIMADO -->
+            <div class="estimate-time" id="estimateTime">
+                <i class="fa-solid fa-clock"></i> <span id="estimateTimeTexto"></span>
             </div>
 
             <!-- TOTAL -->
@@ -1134,7 +1498,9 @@
             query,        // ✅ ADICIONE ESSA
             where,        // ✅ ADICIONE ESSA
             getDocs,      // ✅ ADICIONE ESSA
-            updateDoc     // ✅ ADICIONE ESSA
+            updateDoc,    // ✅ ADICIONE ESSA
+            doc,          // 🆕 acompanhamento em tempo real
+            onSnapshot    // 🆕 acompanhamento em tempo real
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         // =========================
         // FIREBASE
@@ -1178,9 +1544,10 @@
                 preco: 18.90,
                 desc: "Escolha até 2 adicionais grátis.",
                 imagens: [
-                    "./copo4001.jpeg",
-                    "./copo4002.jpeg",
-                    "./unnamed.jpg"
+
+                    "./unnamed.jpg",
+                    "./copo401.jpeg",
+
                 ],
                 limiteGratis: 2
             },
@@ -1192,9 +1559,11 @@
                 preco: 22.90,
                 desc: "Escolha até 3 adicionais grátis.",
                 imagens: [
-                    "./copo4001.jpeg",
-                    "./copo4002.jpeg",
-                    "./unnamed.jpg"
+                    "./copo506.jpeg",
+                    "./copo507.jpeg",
+                    "./copo508.jpeg",
+                    "./copo501.jpeg",
+
                 ],
                 limiteGratis: 3
             },
@@ -1212,6 +1581,7 @@
                 preco: 34.90,
                 desc: "Copo recheado de nutella, sinta nutella em cada colherada",
                 imagens: [
+                    "./copotrufado3.jpeg",
                     "./copotrufado2.jpeg",
                     "./Copo Trufado.jpeg"
 
@@ -1224,10 +1594,11 @@
             {
                 id: 9,
                 cat: "Copos",
-                nome: "Cone Trufado",
+                nome: "Cone Trufado - ESGOTADO",
                 preco: 13.00,
                 desc: "Cone com açai e muitaaaaaaaa Nutella",
                 imagens: [
+                    "./cone02.jpeg",
                     "./cone.jpeg"
                 ],
 
@@ -1236,33 +1607,7 @@
 
 
 
-            {
-                id: 3,
-                cat: "Barcas",
-                nome: "Barca Explosão",
-                preco: 32.90,
-                desc: "Morango, banana, leite em pó e ovomaltine.",
-                imagens: [
-                    "./copo4001.jpeg",
-                    "./copo4002.jpeg",
-                    "./unnamed.jpg"
-                ],
-                limiteGratis: 0
-            },
 
-            {
-                id: 4,
-                cat: "Barcas",
-                nome: "Barca Premium",
-                preco: 36.90,
-                desc: "Nutella, morango e granola.",
-                imagens: [
-                    "./copo4001.jpeg",
-                    "./copo4002.jpeg",
-                    "./unnamed.jpg"
-                ],
-                limiteGratis: 0
-            }
 
         ];
 
@@ -1296,6 +1641,8 @@
 
             { nome: "Choco Ball", preco: 3, ativo: false },
 
+            { nome: "Disquete/Confete", preco: 3, ativo: true },
+
             { nome: "Amendoim", preco: 2, ativo: true },
 
 
@@ -1315,6 +1662,211 @@
         let cart = JSON.parse(localStorage.getItem("cartNovaOrigem")) || [];
         let idPagamentoAtual = null;
         let MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
+
+        // =========================
+        // 🆕 TEMPO ESTIMADO DE PREPARO/ENTREGA
+        // =========================
+        const TEMPO_PREPARO_BASE = 15;       // minutos para o 1º item
+        const TEMPO_POR_ITEM_EXTRA = 3;      // minutos a mais por item adicional
+        const TEMPO_ENTREGA_EXTRA = 20;      // minutos a mais quando é entrega (não retirada)
+
+        function calcularTempoEstimadoMin(itens, tipoEntrega) {
+            const itensExtras = Math.max(0, (itens?.length || 1) - 1);
+            let minutos = TEMPO_PREPARO_BASE + itensExtras * TEMPO_POR_ITEM_EXTRA;
+            if (tipoEntrega === "entrega") minutos += TEMPO_ENTREGA_EXTRA;
+            return minutos;
+        }
+
+        function atualizarEstimativaCheckout() {
+            const el = document.getElementById("estimateTimeTexto");
+            if (!el) return;
+            if (cart.length === 0) { el.innerText = ""; return; }
+            const tipoEntrega = document.getElementById("entrega")?.value || "retirada";
+            const minutos = calcularTempoEstimadoMin(cart, tipoEntrega);
+            const previsao = new Date(Date.now() + minutos * 60000);
+            const horaTexto = previsao.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            el.innerText = tipoEntrega === "entrega"
+                ? `Chega por volta de ${minutos} min (≈ ${horaTexto})`
+                : `Pronto para retirar em ≈ ${minutos} min (≈ ${horaTexto})`;
+        }
+
+        // =========================
+        // 🆕 ACOMPANHAMENTO DE PEDIDO EM TEMPO REAL
+        // =========================
+        let unsubscribeTracking = null;
+
+        const ETAPAS_RETIRADA = [
+            { status: "novo", label: "Pedido recebido", icone: "fa-receipt" },
+            { status: "preparo", label: "Em preparo", icone: "fa-fire" },
+            { status: "pronto", label: "Pronto para retirada", icone: "fa-check-circle" },
+            { status: "concluido", label: "Retirado", icone: "fa-hand-holding" }
+        ];
+
+        const ETAPAS_ENTREGA = [
+            { status: "novo", label: "Pedido recebido", icone: "fa-receipt" },
+            { status: "preparo", label: "Em preparo", icone: "fa-fire" },
+            { status: "pronto", label: "Pronto", icone: "fa-check-circle" },
+            { status: "em_rota", label: "Saiu para entrega", icone: "fa-motorcycle" },
+            { status: "concluido", label: "Entregue", icone: "fa-house-circle-check" }
+        ];
+
+        function gerarLinkAcompanhamento(id) {
+            const base = window.location.origin + window.location.pathname;
+            return `${base}?pedido=${id}`;
+        }
+
+        // =========================
+        // 🆕 NOTIFICAÇÃO AUTOMÁTICA DE STATUS (reduz "cadê meu pedido?")
+        // =========================
+        function solicitarPermissaoNotificacao() {
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+        }
+
+        function dispararNotificacaoStatus(pedido) {
+            if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+            const textos = {
+                preparo: "🔥 Seu pedido está em preparo!",
+                pronto: pedido.entrega === "entrega" ? "✅ Seu pedido está pronto e logo sai para entrega!" : "✅ Seu pedido está pronto para retirada!",
+                em_rota: "🛵 Saiu para entrega! Já está a caminho.",
+                concluido: pedido.entrega === "entrega" ? "🎉 Pedido entregue! Bom apetite!" : "🎉 Até a próxima!"
+            };
+
+            const texto = textos[pedido.status];
+            if (!texto) return;
+
+            try {
+                new Notification("Nova Origem Açaí 🍇", {
+                    body: texto,
+                    icon: "./logonovonova.png.jpeg"
+                });
+            } catch (e) {
+                // navegador pode bloquear silenciosamente, sem problema
+            }
+        }
+
+        function iniciarAcompanhamento(id, abrirModalAutomaticamente = false) {
+            if (!id) return;
+            localStorage.setItem("pedidoAtivoId", id);
+            if (unsubscribeTracking) unsubscribeTracking();
+            let modalJaAberto = false;
+            let ultimoStatusNotificado = null; // 🆕 evita notificar no carregamento inicial
+
+            solicitarPermissaoNotificacao(); // 🆕 pede permissão assim que começa a acompanhar
+
+            unsubscribeTracking = onSnapshot(doc(db, "pedidos", id), (snap) => {
+                if (!snap.exists()) { pararAcompanhamento(); return; }
+                const pedido = snap.data();
+
+                if (pedido.status === "aguardando_pagamento") return; // ainda não confirmado
+
+                document.getElementById("trackBar").style.display = "flex";
+                renderizarAcompanhamento(id, pedido);
+
+                // 🆕 só notifica quando o status MUDA (não na primeira leitura)
+                if (ultimoStatusNotificado !== null && ultimoStatusNotificado !== pedido.status) {
+                    dispararNotificacaoStatus(pedido);
+                }
+                ultimoStatusNotificado = pedido.status;
+
+                if (abrirModalAutomaticamente && !modalJaAberto) {
+                    document.getElementById("trackModal").style.display = "flex";
+                    modalJaAberto = true;
+                }
+            }, () => {
+                // erro de conexão: apenas mantém o último estado exibido
+            });
+        }
+
+        function pararAcompanhamento() {
+            if (unsubscribeTracking) unsubscribeTracking();
+            unsubscribeTracking = null;
+            localStorage.removeItem("pedidoAtivoId");
+            document.getElementById("trackBar").style.display = "none";
+            document.getElementById("trackModal").style.display = "none";
+        }
+
+        function renderizarAcompanhamento(id, pedido) {
+            const etapas = pedido.entrega === "entrega" ? ETAPAS_ENTREGA : ETAPAS_RETIRADA;
+            const indiceAtual = etapas.findIndex(e => e.status === pedido.status);
+
+            // Barra flutuante
+            document.getElementById("trackBarTitulo").innerText =
+                pedido.status === "concluido" ? "Pedido finalizado 🎉" : "Acompanhar Pedido";
+            const etapaAtualObj = etapas[indiceAtual] || etapas[0];
+            document.getElementById("trackBarSubtitulo").innerText =
+                pedido.status === "concluido" ? "Toque para avaliar" : etapaAtualObj.label;
+
+            // Conteúdo do modal
+            document.getElementById("trackNumero").innerText =
+                `Pedido #${String(pedido.numero || "").slice(-4)} • ${pedido.hora || ""}`;
+
+            let previsaoTexto = "";
+            if (pedido.previsaoEntrega && pedido.status !== "concluido") {
+                const restanteMs = pedido.previsaoEntrega - Date.now();
+                const restanteMin = Math.max(1, Math.round(restanteMs / 60000));
+                const horaPrevisao = new Date(pedido.previsaoEntrega).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                previsaoTexto = `
+                    <div class="estimate-box">
+                        <small>${pedido.entrega === "entrega" ? "Previsão de entrega" : "Previsão de retirada"}</small>
+                        <strong>${restanteMin > 0 ? `≈ ${restanteMin} min (${horaPrevisao})` : "a qualquer momento"}</strong>
+                    </div>`;
+            }
+
+            const timelineHtml = etapas.map((etapa, i) => {
+                let classe = "";
+                if (i < indiceAtual) classe = "done";
+                else if (i === indiceAtual) classe = "current";
+                return `
+                    <div class="timeline-step ${classe}">
+                        <div class="timeline-dot"><i class="fa-solid ${i < indiceAtual ? "fa-check" : etapa.icone}"></i></div>
+                        <div class="timeline-text">
+                            <strong>${etapa.label}</strong>
+                            ${i === indiceAtual ? "<small>Etapa atual</small>" : ""}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            const notifSuportada = "Notification" in window;
+            const notifAtiva = notifSuportada && Notification.permission === "granted";
+            const notifNegada = notifSuportada && Notification.permission === "denied";
+
+            let notifHtml = "";
+            if (notifSuportada && pedido.status !== "concluido") {
+                notifHtml = notifAtiva
+                    ? `<div class="notif-status ok"><i class="fa-solid fa-bell"></i> Você será avisado automaticamente a cada mudança</div>`
+                    : notifNegada
+                        ? `<div class="notif-status off"><i class="fa-solid fa-bell-slash"></i> Notificações bloqueadas — ative nas configurações do navegador</div>`
+                        : `<button class="notif-status off" id="btnAtivarNotif"><i class="fa-solid fa-bell"></i> Ativar aviso automático de status</button>`;
+            }
+
+            document.getElementById("trackContent").innerHTML = `
+                ${notifHtml}
+                ${previsaoTexto}
+                <div class="timeline">${timelineHtml}</div>
+                ${pedido.status === "concluido" ? `
+                    <button class="finish-btn" id="btnEncerrarAcompanhamento">
+                        <i class="fa-solid fa-thumbs-up"></i> Ok, obrigado!
+                    </button>
+                ` : ""}
+            `;
+
+            const btnEncerrar = document.getElementById("btnEncerrarAcompanhamento");
+            if (btnEncerrar) {
+                btnEncerrar.addEventListener("click", pararAcompanhamento);
+            }
+
+            const btnAtivarNotif = document.getElementById("btnAtivarNotif");
+            if (btnAtivarNotif) {
+                btnAtivarNotif.addEventListener("click", async () => {
+                    await Notification.requestPermission();
+                    renderizarAcompanhamento(id, pedido);
+                });
+            }
+        }
         // =========================
         // ELEMENTOS
         // =========================
@@ -1357,23 +1909,34 @@
         // STATUS
         // =========================
 
+        // =========================
+        // 🆕 HORÁRIO DE FUNCIONAMENTO (mesmo horário todos os dias)
+        // =========================
+        const HORARIO_FUNCIONAMENTO = { abertura: 14, fechamento: 23 }; // 15h às 23h59
+        let lojaAbertaAgora = true;
+
+        function estaAberto() {
+            const hour = new Date().getHours();
+            return hour >= HORARIO_FUNCIONAMENTO.abertura && hour <= HORARIO_FUNCIONAMENTO.fechamento;
+        }
+
+        function proximaAberturaTexto() {
+            return `${String(HORARIO_FUNCIONAMENTO.abertura).padStart(2, "0")}:00`;
+        }
+
         function updateStatus() {
 
             const status = document.getElementById("status");
 
             const info = document.getElementById("openInfo");
 
-            const now = new Date();
+            lojaAbertaAgora = estaAberto();
 
-            const hour = now.getHours();
-
-            const aberto = hour >= 14 && hour <= 23;
-
-            if (aberto) {
+            if (lojaAbertaAgora) {
 
                 status.innerText = "ABERTO";
 
-                status.className = "status fechado";
+                status.className = "status aberto"; // 🔧 corrigido (antes ficava "fechado" mesmo aberto)
 
                 info.innerText = "Estamos Recebendo Pedidos";
 
@@ -1383,10 +1946,24 @@
 
                 status.className = "status fechado";
 
-                info.innerText = "Abrimos às 15:00";
+                info.innerText = `Abrimos às ${proximaAberturaTexto()}`;
 
             }
 
+            atualizarAvisoLojaFechada();
+
+        }
+
+        function atualizarAvisoLojaFechada() {
+            const aviso = document.getElementById("avisoLojaFechada");
+            if (!aviso) return;
+            if (lojaAbertaAgora) {
+                aviso.style.display = "none";
+            } else {
+                aviso.style.display = "flex";
+                aviso.querySelector("span").innerText =
+                    `Estamos fechados agora. Seu pedido só começa a ser preparado às ${proximaAberturaTexto()}.`;
+            }
         }
 
         // =========================
@@ -1593,7 +2170,90 @@
                 : "none";
 
             saveCart();
+            atualizarEstimativaCheckout();
 
+        }
+
+        // =========================
+        // 🆕 SUGESTÕES DE COMBOS / ADICIONAIS
+        // =========================
+        function adicionarExtraAoCarrinho(nomeExtra, precoExtra) {
+            if (cart.length === 0) return;
+
+            let index = 0;
+            if (cart.length > 1) {
+                const opcoes = cart.map((item, i) => `${i + 1} - ${item.nome}`).join("\n");
+                const escolha = prompt(`Adicionar "${nomeExtra}" em qual item?\n\n${opcoes}\n\nDigite o número:`);
+                const num = parseInt(escolha, 10);
+                if (!num || num < 1 || num > cart.length) return;
+                index = num - 1;
+            }
+
+            cart[index].extras = [...(cart[index].extras || []), nomeExtra];
+            cart[index].preco += precoExtra;
+
+            updateCart();
+            openCheckout();
+            confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+        }
+
+        function renderSugestoes() {
+            const box = document.getElementById("sugestoesArea");
+            if (!box) return;
+
+            if (cart.length === 0) { box.innerHTML = ""; return; }
+
+            const nomesNoCarrinho = new Set(cart.map(i => i.nome));
+            const produtosSugeridos = PRODUCTS
+                .filter(p => !nomesNoCarrinho.has(p.nome) && !p.nome.toLowerCase().includes("copo"))
+                .slice(0, 3);
+
+            // Adicionais que ainda não foram usados em nenhum item do carrinho
+            const extrasJaUsados = new Set(cart.flatMap(i => i.extras || []));
+            const extrasSugeridos = EXTRAS.filter(e => e.ativo && !extrasJaUsados.has(e.nome)).slice(0, 4);
+
+            if (produtosSugeridos.length === 0 && extrasSugeridos.length === 0) { box.innerHTML = ""; return; }
+
+            box.innerHTML = `
+                <div class="section-title"><i class="fa-solid fa-star"></i> Peça também</div>
+                <div class="sugestoes-scroll">
+                    ${produtosSugeridos.map(p => `
+                        <div class="sugestao-card">
+                            <img src="${p.imagens[0]}" alt="${p.nome}">
+                            <strong>${p.nome}</strong>
+                            <span>${money(p.preco)}</span>
+                            <button class="sugestao-add" data-tipo="produto" data-id="${p.id}">
+                                <i class="fa-solid fa-plus"></i> Adicionar
+                            </button>
+                        </div>
+                    `).join("")}
+                    ${extrasSugeridos.map(e => `
+                        <div class="sugestao-card sugestao-extra">
+                            <div class="sugestao-extra-icon"><i class="fa-solid fa-candy-cane"></i></div>
+                            <strong>${e.nome}</strong>
+                            <span>+ ${money(e.preco)}</span>
+                            <button class="sugestao-add" data-tipo="extra" data-nome="${e.nome}" data-preco="${e.preco}">
+                                <i class="fa-solid fa-plus"></i> Adicionar
+                            </button>
+                        </div>
+                    `).join("")}
+                </div>
+            `;
+
+            document.querySelectorAll(".sugestao-add").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    if (btn.dataset.tipo === "produto") {
+                        const p = PRODUCTS.find(x => x.id === Number(btn.dataset.id));
+                        if (!p) return;
+                        cart.push({ nome: p.nome, preco: p.preco, gratis: [], extras: [], obs: "" });
+                        updateCart();
+                        openCheckout();
+                        confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+                    } else {
+                        adicionarExtraAoCarrinho(btn.dataset.nome, Number(btn.dataset.preco));
+                    }
+                });
+            });
         }
 
         // =========================
@@ -1685,6 +2345,10 @@
 
             });
 
+            renderSugestoes();
+            atualizarEstimativaCheckout();
+            atualizarAvisoLojaFechada();
+
             document.getElementById("checkoutModal")
                 .style.display = "flex";
 
@@ -1748,6 +2412,19 @@
 
                     );
 
+                atualizarEstimativaCheckout();
+
+            });
+
+        // 🆕 BARRA/MODAL DE ACOMPANHAMENTO
+        document.getElementById("trackBar")
+            .addEventListener("click", () => {
+                document.getElementById("trackModal").style.display = "flex";
+            });
+
+        document.getElementById("closeTrack")
+            .addEventListener("click", () => {
+                document.getElementById("trackModal").style.display = "none";
             });
 
         document.getElementById("pagamento")
@@ -1927,6 +2604,14 @@ Deseja continuar?`
 
                     }
 
+                    // 🆕 Loja fechada: cliente pode montar o pedido, mas confirma que sabe do horário
+                    if (!lojaAbertaAgora) {
+                        const continuar = confirm(
+                            `Estamos fechados no momento. Seu pedido será enviado, mas só começa a ser preparado a partir das ${proximaAberturaTexto()}. Deseja continuar?`
+                        );
+                        if (!continuar) return;
+                    }
+
                     if (
 
                         entrega === "entrega" &&
@@ -2015,6 +2700,8 @@ Deseja continuar?`
                                     // ==============================================
                                     // 📝 SALVA NO FIREBASE - STATUS AGUARDANDO PAGAMENTO
                                     // ==============================================
+                                    const tempoEstimadoMinPix = calcularTempoEstimadoMin(cart, entrega);
+
                                     await addDoc(collection(db, "pedidos"), {
                                         numero: Date.now(),
                                         nome: nome,
@@ -2027,6 +2714,9 @@ Deseja continuar?`
                                         total: total,
                                         status: "aguardando_pagamento", // 🔴 FICA OCULTO ATÉ PAGAR
                                         id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA O WEBHOOK
+                                        tempoEstimadoMin: tempoEstimadoMinPix, // 🆕 tempo estimado
+                                        previsaoEntrega: Date.now() + tempoEstimadoMinPix * 60000, // 🆕 recalculado quando o pagamento for confirmado
+
                                         criadoEm: Date.now(),
                                         hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
                                     });
@@ -2053,7 +2743,6 @@ Deseja continuar?`
                         // ✅ DINHEIRO OU CARTÃO: CAI NA COZINHA E ENVIA WHATSAPP DIRETO
                         // ==============================================
 
-                        // ✅ GERA MENSAGEM E ABRE WHATSAPP NORMALMENTE
                         const itensTexto = cart.map(item => `
 • ${item.nome}
 ${item.gratis.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
@@ -2061,6 +2750,36 @@ ${item.extras.length ? `Extras: ${item.extras.join(", ")}` : ""}
 ${item.obs ? `Obs: ${item.obs}` : ""}
     `).join("\n");
 
+                        // 🆕 Tempo estimado de preparo/entrega
+                        const tempoEstimadoMin = calcularTempoEstimadoMin(cart, entrega);
+                        const previsaoEntrega = Date.now() + tempoEstimadoMin * 60000;
+
+                        // 📝 SALVA NO FIREBASE COM STATUS "NOVO" (JÁ APARECE NA COZINHA)
+                        const pedidoRef = await addDoc(collection(db, "pedidos"), {
+                            numero: Date.now(),
+                            nome: nome,
+                            fone: fone,
+                            entrega: entrega,
+                            endereco: endereco,
+                            pagamento: pagamento,
+                            troco: troco || null,
+                            itens: cart,
+                            total: total,
+                            status: "novo", // ✅ CAI NA COZINHA DIRETO
+                            tempoEstimadoMin: tempoEstimadoMin, // 🆕
+                            previsaoEntrega: previsaoEntrega,   // 🆕
+
+                            criadoEm: Date.now(),
+                            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+                        });
+
+                        // 🆕 Inicia o acompanhamento em tempo real deste pedido
+                        iniciarAcompanhamento(pedidoRef.id);
+
+                        // 🆕 Link direto para o cliente acompanhar o status do pedido
+                        const linkAcompanhamento = gerarLinkAcompanhamento(pedidoRef.id);
+
+                        // ✅ GERA MENSAGEM (COM LINK DE ACOMPANHAMENTO) E ABRE WHATSAPP
                         const mensagem = encodeURIComponent(`
 🛒 NOVO PEDIDO - NOVA ORIGEM
 
@@ -2075,26 +2794,14 @@ ${itensTexto}
 
 💰 Total: ${money(total)}
 ${troco ? `💵 Troco para: R$ ${troco}` : ""}
+
+⏱️ Previsão: ${tempoEstimadoMin} min
+📲 Acompanhe seu pedido em tempo real:
+${linkAcompanhamento}
     `);
 
-                        // 📝 SALVA NO FIREBASE COM STATUS "NOVO" (JÁ APARECE NA COZINHA)
-                        await addDoc(collection(db, "pedidos"), {
-                            numero: Date.now(),
-                            nome: nome,
-                            fone: fone,
-                            entrega: entrega,
-                            endereco: endereco,
-                            pagamento: pagamento,
-                            troco: troco || null,
-                            itens: cart,
-                            total: total,
-                            status: "novo", // ✅ CAI NA COZINHA DIRETO
-                            criadoEm: Date.now(),
-                            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-                        });
-
                         // ✅ FINALIZAÇÃO NORMAL
-                        alert("Pedido enviado com sucesso!");
+                        alert(`Pedido enviado com sucesso! Previsão: ${tempoEstimadoMin} min.`);
                         cart = [];
                         saveCart();
                         updateCart();
@@ -2115,9 +2822,22 @@ ${troco ? `💵 Troco para: R$ ${troco}` : ""}
 
         updateStatus();
 
+        // 🆕 Reavalia o horário de funcionamento a cada minuto (sem precisar recarregar a página)
+        setInterval(updateStatus, 60000);
+
         updateCart();
 
         renderProducts();
+
+        // 🆕 Retoma o acompanhamento: prioriza o link recebido (?pedido=ID),
+        // senão usa o último pedido salvo neste dispositivo
+        const pedidoNaUrl = new URLSearchParams(window.location.search).get("pedido");
+        if (pedidoNaUrl) {
+            iniciarAcompanhamento(pedidoNaUrl, true);
+        } else {
+            const pedidoAtivoSalvo = localStorage.getItem("pedidoAtivoId");
+            if (pedidoAtivoSalvo) iniciarAcompanhamento(pedidoAtivoSalvo);
+        }
 
         document.querySelectorAll(".product-image").forEach(img => {
 
@@ -2216,10 +2936,21 @@ ${troco ? `💵 Troco para: R$ ${troco}` : ""}
                     if (snap.empty) throw new Error("Pedido não localizado");
 
                     let pedido;
-                    snap.forEach(async (doc) => {
-                        pedido = doc.data();
-                        await updateDoc(doc.ref, { status: "novo", data_pagamento: new Date() });
+                    let pedidoIdConfirmado = null;
+                    snap.forEach(async (docSnap) => {
+                        pedido = docSnap.data();
+                        pedidoIdConfirmado = docSnap.id;
+                        // 🆕 recalcula a previsão a partir da confirmação do pagamento
+                        const tempoEstimadoMin = pedido.tempoEstimadoMin || calcularTempoEstimadoMin(pedido.itens, pedido.entrega);
+                        await updateDoc(docSnap.ref, {
+                            status: "novo",
+                            data_pagamento: new Date(),
+                            previsaoEntrega: Date.now() + tempoEstimadoMin * 60000
+                        });
                     });
+
+                    // 🆕 Inicia o acompanhamento em tempo real
+                    if (pedidoIdConfirmado) iniciarAcompanhamento(pedidoIdConfirmado);
 
                     // ✅ ABRE WHATSAPP
                     const itensTexto = pedido.itens.map(item => `
@@ -2246,9 +2977,13 @@ ${itensTexto}
 💳 Pagamento: PIX ✅
 
 Já estamos preparando seu Açaí 🧡
+
+📲 Acompanhe seu pedido em tempo real:
+${pedidoIdConfirmado ? gerarLinkAcompanhamento(pedidoIdConfirmado) : ""}
             `);
 
-                    cart = []; saveCart(); updateCart(); closeCheckout();
+                    cart = []; saveCart(); updateCart();
+                    closeCheckout();
                     window.open(`https://wa.me/55${pedido.fone.replace(/\D/g, '')}?text=${msg}`, '_blank');
                     alert("✅ Pagamento confirmado! Pedido enviado para a cozinha.");
 
