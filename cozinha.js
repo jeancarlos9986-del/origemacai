@@ -24,6 +24,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ======================================
+// 🆕 LINK DE ACOMPANHAMENTO DO PEDIDO
+// ======================================
+// ⚠️ TROQUE PELA URL REAL ONDE O site.html ESTÁ PUBLICADO
+const SITE_URL = "https://jeancarlos9986-del.github.io/origemacai/site";
+
+function gerarLinkAcompanhamento(pedidoId) {
+    return `${SITE_URL}?pedido=${pedidoId}`;
+}
+
+// ======================================
 // VARIÁVEIS ELEMENTOS
 // ======================================
 const painelPedidos = document.getElementById("painelPedidos");
@@ -135,6 +145,15 @@ function renderizarPedidos() {
                 ${pedido.endereco ? `<div><strong>Endereço:</strong> <span>${pedido.endereco}</span></div>` : ""}
             </div>
 
+            <div class="link-acompanhamento">
+                <button class="btn-copiar-link" data-id="${pedido.id}">
+                    <i class="fa-solid fa-link"></i> Copiar Link
+                </button>
+                <button class="btn-whatsapp-link" data-id="${pedido.id}" data-fone="${pedido.fone || ""}" data-nome="${pedido.nome || ""}">
+                    <i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp
+                </button>
+            </div>
+
             <div class="pedido-itens">
                 ${pedido.itens && pedido.itens.length > 0 ? pedido.itens.map(item => `
                     <div class="pedido-item">
@@ -192,6 +211,37 @@ function renderizarPedidos() {
 // EVENTOS DOS BOTÕES DE AÇÃO
 // ======================================
 function adicionarEventosBotoes() {
+    // 🆕 Copiar link de acompanhamento
+    document.querySelectorAll(".btn-copiar-link").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const link = gerarLinkAcompanhamento(btn.dataset.id);
+            try {
+                await navigator.clipboard.writeText(link);
+                const original = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Copiado!`;
+                setTimeout(() => btn.innerHTML = original, 1500);
+            } catch (e) {
+                prompt("Copie o link manualmente:", link);
+            }
+        });
+    });
+
+    // 🆕 Enviar link direto pelo WhatsApp
+    document.querySelectorAll(".btn-whatsapp-link").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const fone = (btn.dataset.fone || "").replace(/\D/g, "");
+            if (!fone) {
+                alert("Este pedido não tem telefone cadastrado.");
+                return;
+            }
+            const link = gerarLinkAcompanhamento(btn.dataset.id);
+            const msg = encodeURIComponent(
+                `Olá ${btn.dataset.nome || ""}! Aqui está o link para acompanhar seu pedido em tempo real 👇\n${link}`
+            );
+            window.open(`https://wa.me/55${fone}?text=${msg}`, "_blank");
+        });
+    });
+
     // Preparar
     document.querySelectorAll(".btn-preparo").forEach(btn => {
         btn.addEventListener("click", async () => {
@@ -224,7 +274,12 @@ function adicionarEventosBotoes() {
     document.querySelectorAll(".btn-remover").forEach(btn => {
         btn.addEventListener("click", async () => {
             if (confirm("Tem certeza que deseja remover esse pedido?")) {
-                await deleteDoc(doc(db, "pedidos", btn.dataset.id));
+                try {
+                    await deleteDoc(doc(db, "pedidos", btn.dataset.id));
+                } catch (e) {
+                    console.error("Erro ao remover pedido:", e);
+                    alert("Erro ao remover pedido! Tente novamente.");
+                }
             }
         });
     });
@@ -245,7 +300,12 @@ async function atualizarStatus(id, novoStatus) {
 // ======================================
 // REALTIME LISTENER FIREBASE
 // ======================================
+const avisoConexao = document.getElementById("avisoConexao");
+
 onSnapshot(collection(db, "pedidos"), (snapshot) => {
+    // Conexão ok — esconde aviso caso estivesse visível
+    if (avisoConexao) avisoConexao.style.display = "none";
+
     pedidos = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -272,6 +332,11 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
     primeiraCarga = false;
 
     renderizarPedidos();
+}, (erro) => {
+    // ✅ Novo: se a conexão com o Firestore cair, avisa visualmente
+    // em vez de deixar o painel travado sem explicação.
+    console.error("Erro no listener de pedidos:", erro);
+    if (avisoConexao) avisoConexao.style.display = "block";
 });
 
 // ======================================
