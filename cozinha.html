@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cozinha | Nova Origem Açaí</title>
+    <!-- Preconnect: acelera o carregamento das fontes e ícones -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -274,6 +278,37 @@
             font-weight: 700;
         }
 
+        .link-acompanhamento {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .link-acompanhamento button {
+            flex: 1;
+            border: none;
+            padding: 9px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: .2s;
+            color: white;
+        }
+
+        .link-acompanhamento button:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-copiar-link {
+            background: var(--card2);
+            border: 1px solid rgba(255, 255, 255, .1) !important;
+        }
+
+        .btn-whatsapp-link {
+            background: #25D366;
+        }
+
         .pedido-itens {
             background: var(--card2);
             border-radius: 18px;
@@ -415,6 +450,19 @@
             opacity: .5;
         }
 
+        /* ✅ Novo: aviso de conexão perdida */
+        .aviso-conexao {
+            display: none;
+            background: rgba(255, 23, 68, .15);
+            border: 1px solid rgba(255, 23, 68, .4);
+            color: #ff8a8a;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
         .novo-pedido-animado {
             animation: novoPedido 1s ease infinite alternate;
         }
@@ -475,6 +523,10 @@
             <button id="ativarSom">🔔 Ativar Som</button>
         </div>
     </header>
+
+    <div id="avisoConexao" class="aviso-conexao">
+        <i class="fa-solid fa-triangle-exclamation"></i> Conexão perdida com o servidor. Tentando reconectar...
+    </div>
 
     <div class="filtros">
         <button class="filtro-btn ativo" data-filtro="todos">Todos</button>
