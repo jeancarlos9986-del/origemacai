@@ -1,126 +1,594 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão Financeira - Nova Origem Açaí</title>
+    <title>Gestão Financeira Completa - Nova Origem Açaí</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        :root {
-            --primary: #2563eb; --sec: #1e40af; --sucesso: #10b981; --alerta: #f59e0b; --erro: #ef4444;
-            --fundo: #f8fafc; --card: #ffffff; --texto: #1e293b; --borda: #e2e8f0;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
         }
-        body { background: var(--fundo); color: var(--texto); padding: 15px; max-width: 1200px; margin: 0 auto; }
-        .voltar { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); text-decoration: none; margin-bottom: 15px; font-weight: 500; }
-        h1 { color: var(--primary); margin-bottom: 20px; font-size: 1.6rem; }
-        .card { background: var(--card); border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--borda); }
-        .card h3 { margin-bottom: 12px; color: var(--primary); font-size: 1.15rem; }
-        .card h4 { margin: 15px 0 8px; font-size: 1rem; color: var(--texto); }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
-        input, select, button { width: 100%; padding: 10px; border: 1px solid var(--borda); border-radius: 8px; font-size: 0.95rem; }
-        button { background: var(--primary); color: white; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
-        button:hover { background: var(--sec); }
-        hr { border: none; border-top: 1px solid var(--borda); margin: 15px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--borda); }
-        th { background: var(--fundo); font-weight: 600; }
-        .resumo-final { margin-top: 12px; font-weight: 500; display: flex; flex-wrap: wrap; gap: 15px; }
+
+        :root {
+            --bg: #0b0b0f;
+            --bg2: #0f0f14;
+            --card: #17171f;
+            --card2: #1f2937;
+            --primary: #7c3aed;
+            --primary2: #9333ea;
+            --green: #00c853;
+            --red: #ff1744;
+            --yellow: #f59e0b;
+            --muted: #9ca3af;
+            --border: rgba(255, 255, 255, .08);
+        }
+
+        body {
+            background: radial-gradient(circle at top, rgba(124, 58, 237, .12), transparent 30%), var(--bg);
+            color: #fff;
+            padding: 15px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .voltar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .voltar:hover {
+            color: var(--primary2);
+            transform: translateX(-3px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 35px rgba(124, 58, 237, .35);
+        }
+
+        .alertas {
+            background: rgba(245, 158, 11, .1);
+            border: 1px solid var(--yellow);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .alertas.visivel {
+            display: block;
+        }
+
+        .topo-acoes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 1;
+            background: var(--card);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        select,
+        input {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            color: white;
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primario {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primario:hover {
+            background: var(--primary2);
+            transform: translateY(-1px);
+        }
+
+        .btn-sucesso {
+            background: var(--green);
+            color: white;
+        }
+
+        .btn-perigo {
+            background: var(--red);
+            color: white;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+
+        .btn-editar {
+            background: var(--yellow);
+            color: white;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+
+        .cards-resumo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-resumo {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: .2s;
+        }
+
+        .card-resumo:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .card-resumo .valor {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 6px 0 2px;
+        }
+
+        .card-resumo .rotulo {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .card-resumo .destaque {
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+
+        .alerta-negativo {
+            border-color: var(--red);
+            background: rgba(255, 23, 68, .08);
+        }
+
+        .progresso-meta {
+            height: 8px;
+            background: var(--card2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .barra-meta {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: .3s;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media(max-width:768px) {
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #d8b4fe;
+        }
+
+        .divisao {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .item-divisao {
+            flex: 1;
+            min-width: 140px;
+            background: var(--card2);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .item-divisao strong {
+            display: block;
+            font-size: 1.2rem;
+            margin-top: 6px;
+            color: var(--primary);
+        }
+
+        .form-lancamento {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-top: 10px;
+        }
+
+        .form-lancamento input,
+        .form-lancamento select {
+            flex: 1;
+            min-width: 110px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: var(--card2);
+            color: #d8b4fe;
+        }
+
+        .entrada {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .saida {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        .acoes-col {
+            width: 100px;
+            text-align: center;
+        }
+
+        .grafico-container {
+            height: 200px;
+            margin-top: 10px;
+        }
+
+        .categorias-gastos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .cat-gasto {
+            background: var(--card2);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .7);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal.aberto {
+            display: flex;
+        }
+
+        .modal-conteudo {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            width: 90%;
+            max-width: 480px;
+        }
+
+        .modal-conteudo h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .botoes-modal {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+
+        .lista-contas,
+        .lista-fechamento {
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .item-conta,
+        .item-fechamento {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+        }
+
+        .vencendo {
+            color: var(--yellow);
+            font-weight: 700;
+        }
+
+        .vencido {
+            color: var(--red);
+            font-weight: 700;
+        }
     </style>
 </head>
+
 <body>
+    <div class="container">
+        <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
+        <div class="header"><i class="fas fa-coins"></i> GESTÃO FINANCEIRA COMPLETA</div>
 
-<a href="index.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
-<h1>💼 GESTÃO FINANCEIRA</h1>
+        <div class="alertas" id="caixaAlertas"></div>
 
-<!-- RESUMO GERAL -->
-<div class="card">
-    <h3>📊 Resumo Financeiro</h3>
-    <div class="grid-2">
-        <div><strong>Vendas Hoje:</strong> <span id="vendas-dia">R$ 0,00</span></div>
-        <div><strong>Vendas Mês:</strong> <span id="vendas-mes">R$ 0,00</span></div>
-        <div><strong>Custo de Insumos:</strong> <span id="custo-insumos">R$ 0,00</span></div>
-        <div><strong>Gastos da Empresa:</strong> <span id="gastos-empresa">R$ 0,00</span></div>
-        <div><strong>Lucro Bruto:</strong> <span id="lucro-bruto">R$ 0,00</span></div>
-        <div><strong>Lucro Líquido:</strong> <span id="lucro-liquido">R$ 0,00</span></div>
-        <div><strong>Margem Bruta:</strong> <span id="margem-bruta">0%</span></div>
-        <div><strong>Margem Líquida:</strong> <span id="margem-liquida">0%</span></div>
-        <div><strong>Ticket Médio:</strong> <span id="ticket-medio">R$ 0,00</span></div>
+        <div class="topo-acoes">
+            <div class="filtros">
+                <i class="fas fa-filter"></i>
+                <select id="filtro-periodo">
+                    <option value="dia">Hoje</option>
+                    <option value="mes" selected>Este Mês</option>
+                    <option value="todos">Todo o Período</option>
+                </select>
+            </div>
+            <button class="btn btn-primario" id="btnReceitaExtra"><i class="fas fa-plus-circle"></i> Receita
+                Extra</button>
+            <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar Dia</button>
+            <button class="btn btn-primario" id="btnContas"><i class="fas fa-file-invoice-dollar"></i> Contas</button>
+            <button class="btn btn-primario" id="btnMeta"><i class="fas fa-bullseye"></i> Meta</button>
+            <button class="btn btn-primario" id="btnExportar"><i class="fas fa-download"></i> Exportar</button>
+        </div>
+
+        <div class="cards-resumo" id="cards-principais"></div>
+        <div id="resumo-extra"></div>
+
+        <div class="grid-3">
+            <div class="card">
+                <h3><i class="fas fa-chart-pie"></i> Divisão do Lucro</h3>
+                <div class="divisao">
+                    <div class="item-divisao"><i class="fas fa-user-tie" style="color:var(--yellow);"></i>
+                        <div>Salário (40%)</div><strong id="salario">R$ 0,00</strong>
+                    </div>
+                    <div class="item-divisao"><i class="fas fa-building" style="color:var(--primary);"></i>
+                        <div>Caixa (35%)</div><strong id="caixa">R$ 0,00</strong>
+                    </div>
+                    <div class="item-divisao"><i class="fas fa-shield-alt" style="color:var(--green);"></i>
+                        <div>Reserva (25%)</div><strong id="reserva">R$ 0,00</strong>
+                    </div>
+                </div>
+                <div class="grafico-container"><canvas id="graficoDivisao"></canvas></div>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-tags"></i> Gastos por Categoria</h3>
+                <div class="categorias-gastos" id="categoriasGastos"></div>
+                <div class="grafico-container"><canvas id="graficoVendas"></canvas></div>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-bullseye"></i> Meta do Período</h3>
+                <div style="text-align:center; margin-bottom:10px;">
+                    <div id="textoMeta">Defina sua meta</div>
+                    <div class="progresso-meta">
+                        <div class="barra-meta" id="barraMeta"></div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted);">
+                    <span>Alcançado</span><span id="valorMeta">R$ 0,00 / R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-receipt"></i> Registrar Gasto</h3>
+            <div class="form-lancamento">
+                <input type="text" id="descricao" placeholder="Ex: Energia, aluguel..." required>
+                <input type="number" id="valor-gasto" placeholder="Valor R$" min="0.01" step="0.01" required>
+                <select id="tipo-gasto">
+                    <option value="insumo">Insumos / Estoque</option>
+                    <option value="fixo">Custo Fixo</option>
+                    <option value="taxa">Taxas / Pagamentos</option>
+                    <option value="outros">Outros</option>
+                </select>
+                <button class="btn btn-primario" id="btnLancar"><i class="fas fa-plus"></i> Adicionar</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-list-alt"></i> Extrato Completo</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th style="text-align:right">Entrada</th>
+                        <th style="text-align:right">Saída</th>
+                        <th style="text-align:right">Saldo</th>
+                        <th class="acoes-col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-extrato">
+                    <tr>
+                        <td colspan="6" style="text-align:center; color:var(--muted)">Carregando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <hr>
-    <h4>💰 Valor Recebido por Forma de Pagamento</h4>
-    <div class="grid-3">
-        <div>Dinheiro: <span id="rec-dinheiro">R$ 0,00</span></div>
-        <div>Pix: <span id="rec-pix">R$ 0,00</span></div>
-        <div>Cartão: <span id="rec-cartao">R$ 0,00</span></div>
+    <!-- MODAIS -->
+    <div class="modal" id="modalEditar">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-edit"></i> Editar Lançamento</h4>
+            <input type="hidden" id="editar-id">
+            <input type="text" id="editar-desc" placeholder="Descrição" style="width:100%; margin-bottom:10px;">
+            <input type="number" id="editar-valor" placeholder="Valor" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <select id="editar-tipo" style="width:100%; margin-bottom:10px;">
+                <option value="insumo">Insumos</option>
+                <option value="fixo">Fixo</option>
+                <option value="taxa">Taxas</option>
+                <option value="outros">Outros</option>
+            </select>
+            <div class="botoes-modal"><button class="btn" id="btnCancelar">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarEdicao">Salvar</button></div>
+        </div>
     </div>
 
-    <hr>
-    <h4>📂 Divisão do Lucro Líquido</h4>
-    <div class="grid-3">
-        <div>Salário (40%): <span id="div-salario">R$ 0,00</span></div>
-        <div>Caixa Empresa (35%): <span id="div-caixa">R$ 0,00</span></div>
-        <div>Reserva Emergência (25%): <span id="div-reserva">R$ 0,00</span></div>
+    <div class="modal" id="modalReceita">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-plus-circle"></i> Receita Extra</h4>
+            <input type="text" id="descRec" placeholder="Ex: Venda de copo avulso"
+                style="width:100%; margin-bottom:10px;">
+            <input type="number" id="valorRec" placeholder="Valor R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarRec">Cancelar</button><button
+                    class="btn btn-sucesso" id="btnSalvarRec">Registrar</button></div>
+        </div>
     </div>
-</div>
 
-<!-- REGISTRAR GASTO -->
-<div class="card">
-    <h3>💸 Registrar Novo Gasto</h3>
-    <div class="grid-2">
-        <input type="text" id="desc-gasto" placeholder="Ex: Compra de açaí, energia, taxa..." required>
-        <input type="number" id="valor-gasto" step="0.01" placeholder="Valor R$" required>
-        <select id="tipo-gasto" required>
-            <option value="">É da Empresa ou Pessoal?</option>
-            <option value="Empresa">🏢 Empresa</option>
-            <option value="Pessoal">👤 Pessoal</option>
-        </select>
-        <select id="pag-gasto" required>
-            <option value="">Forma de Pagamento</option>
-            <option value="Dinheiro">💵 Dinheiro</option>
-            <option value="Pix">🔵 Pix</option>
-            <option value="Cartão">💳 Cartão</option>
-            <option value="Transferência">🔁 Transferência</option>
-        </select>
-        <select id="cat-gasto">
-            <option value="">Categoria</option>
-            <option value="Insumos">Insumos</option>
-            <option value="Embalagens">Embalagens</option>
-            <option value="Fixos">Custos Fixos</option>
-            <option value="Pessoal">Despesas Pessoais</option>
-            <option value="Outros">Outros</option>
-        </select>
-        <input type="date" id="data-gasto">
+    <div class="modal" id="modalFechar">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-cash-register"></i> Fechar Caixa do Dia</h4>
+            <p style="margin-bottom:10px; font-size:0.9rem;">Saldo calculado: <strong id="saldoCalc">R$ 0,00</strong>
+            </p>
+            <input type="number" id="saldoReal" placeholder="Valor que realmente tem no caixa" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="lista-fechamento" id="listaFechamento"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarFechar">Cancelar</button><button
+                    class="btn btn-sucesso" id="btnConfirmarFechar">Confirmar Fechamento</button></div>
+        </div>
     </div>
-    <button id="btn-gasto">Salvar Gasto</button>
-</div>
 
-<!-- LISTA DE GASTOS -->
-<div class="card">
-    <h3>📋 Gastos do Mês</h3>
-    <table id="tab-gastos">
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Descrição</th>
-                <th>Valor</th>
-                <th>Tipo</th>
-                <th>Pagamento</th>
-                <th>Categoria</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-    <div class="resumo-final">
-        <div><strong>Total da Empresa:</strong> <span id="total-empresa">R$ 0,00</span></div>
-        <div><strong>Total Pessoal:</strong> <span id="total-pessoal">R$ 0,00</span></div>
-        <div><strong>Total Geral:</strong> <span id="total-geral-gastos">R$ 0,00</span></div>
+    <div class="modal" id="modalContas">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-file-invoice-dollar"></i> Contas a Pagar</h4>
+            <div class="form-lancamento" style="margin-bottom:10px;">
+                <input type="text" id="nomeConta" placeholder="Ex: Aluguel">
+                <input type="number" id="valorConta" placeholder="Valor" step="0.01">
+                <input type="date" id="dataVenc">
+                <button class="btn btn-primario" id="btnAddConta">Adicionar</button>
+            </div>
+            <div class="lista-contas" id="listaContas"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarContas">Fechar</button></div>
+        </div>
     </div>
-</div>
 
-<script type="module" src="financeiro.js"></script>
+    <div class="modal" id="modalMeta">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-bullseye"></i> Definir Meta</h4>
+            <select id="tipoMeta" style="width:100%; margin-bottom:10px;">
+                <option value="dia">Meta do Dia</option>
+                <option value="mes">Meta do Mês</option>
+            </select>
+            <input type="number" id="valorMetaDef" placeholder="Valor da meta R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarMeta">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarMeta">Salvar</button></div>
+        </div>
+    </div>
+
+    <script type="module" src="./financeiro.js"></script>
 </body>
+
 </html>
