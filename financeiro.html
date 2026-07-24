@@ -1,362 +1,126 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão Financeira - Nova Origem Açaí</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
         :root {
-            --bg: #0b0b0f;
-            --bg2: #0f0f14;
-            --card: #17171f;
-            --card2: #1f2937;
-            --primary: #7c3aed;
-            --primary2: #9333ea;
-            --green: #00c853;
-            --red: #ff1744;
-            --yellow: #f59e0b;
-            --muted: #9ca3af;
-            --border: rgba(255, 255, 255, .08);
+            --primary: #2563eb; --sec: #1e40af; --sucesso: #10b981; --alerta: #f59e0b; --erro: #ef4444;
+            --fundo: #f8fafc; --card: #ffffff; --texto: #1e293b; --borda: #e2e8f0;
         }
-
-        body {
-            background: radial-gradient(circle at top, rgba(124, 58, 237, .12), transparent 30%), var(--bg);
-            color: #fff;
-            padding: 15px;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .voltar {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 700;
-            margin-bottom: 15px;
-        }
-
-        .header {
-            background: linear-gradient(135deg, var(--primary), var(--primary2));
-            padding: 18px;
-            border-radius: 16px;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 10px 35px rgba(124, 58, 237, .35);
-        }
-
-        .filtros {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-            align-items: center;
-        }
-
-        .filtros select {
-            padding: 10px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--card);
-            color: white;
-            flex: 1;
-            min-width: 140px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        .cards-resumo {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .card-resumo {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            text-align: center;
-            transition: .2s;
-        }
-
-        .card-resumo:hover {
-            transform: translateY(-3px);
-            border-color: var(--primary);
-        }
-
-        .card-resumo .valor {
-            font-size: 1.3rem;
-            font-weight: 800;
-            margin: 5px 0;
-        }
-
-        .card-resumo .rotulo {
-            font-size: 0.8rem;
-            color: var(--muted);
-        }
-
-        .card {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-        }
-
-        .card h3 {
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 700;
-        }
-
-        .divisao {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .item-divisao {
-            flex: 1;
-            min-width: 140px;
-            background: var(--card2);
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
-
-        .item-divisao strong {
-            display: block;
-            font-size: 1.1rem;
-            margin-top: 4px;
-            color: var(--primary);
-        }
-
-        .form-lancamento {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        input,
-        select {
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--card2);
-            color: white;
-            flex: 1;
-            min-width: 120px;
-            font-family: inherit;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        .btn {
-            padding: 12px 16px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: .2s;
-            font-family: inherit;
-        }
-
-        .btn-saida {
-            background: linear-gradient(135deg, var(--yellow), #f59e0b);
-            color: white;
-        }
-
-        .btn-saida:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            padding: 12px 8px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
-        }
-
-        th {
-            background: var(--card2);
-            font-weight: 700;
-        }
-
-        .entrada {
-            color: var(--green);
-            font-weight: 700;
-        }
-
-        .saida {
-            color: var(--red);
-            font-weight: 700;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 5px;
-            }
-
-            .cards-resumo {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .form-lancamento {
-                flex-direction: column;
-            }
-
-            input,
-            select,
-            .btn {
-                width: 100%;
-            }
-
-            .divisao {
-                flex-direction: column;
-            }
-
-            table {
-                display: block;
-                overflow-x: auto;
-            }
-        }
+        body { background: var(--fundo); color: var(--texto); padding: 15px; max-width: 1200px; margin: 0 auto; }
+        .voltar { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); text-decoration: none; margin-bottom: 15px; font-weight: 500; }
+        h1 { color: var(--primary); margin-bottom: 20px; font-size: 1.6rem; }
+        .card { background: var(--card); border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid var(--borda); }
+        .card h3 { margin-bottom: 12px; color: var(--primary); font-size: 1.15rem; }
+        .card h4 { margin: 15px 0 8px; font-size: 1rem; color: var(--texto); }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+        input, select, button { width: 100%; padding: 10px; border: 1px solid var(--borda); border-radius: 8px; font-size: 0.95rem; }
+        button { background: var(--primary); color: white; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+        button:hover { background: var(--sec); }
+        hr { border: none; border-top: 1px solid var(--borda); margin: 15px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--borda); }
+        th { background: var(--fundo); font-weight: 600; }
+        .resumo-final { margin-top: 12px; font-weight: 500; display: flex; flex-wrap: wrap; gap: 15px; }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
 
-        <div class="header"><i class="fas fa-coins"></i> GESTÃO FINANCEIRA</div>
+<a href="index.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
+<h1>💼 GESTÃO FINANCEIRA</h1>
 
-        <div class="filtros">
-            <select id="filtro-periodo">
-                <option value="dia">Hoje</option>
-                <option value="mes" selected>Este Mês</option>
-                <option value="todos">Todo o Período</option>
-            </select>
-        </div>
-
-        <div class="cards-resumo">
-            <div class="card-resumo">
-                <div class="rotulo">Total Vendas</div>
-                <div class="valor" id="total-vendas">R$ 0,00</div>
-            </div>
-            <div class="card-resumo">
-                <div class="rotulo">Total Custos</div>
-                <div class="valor" id="total-custos" style="color: var(--yellow)">R$ 0,00</div>
-            </div>
-            <div class="card-resumo">
-                <div class="rotulo">Lucro Operacional</div>
-                <div class="valor" id="lucro-operacional" style="color: var(--green)">R$ 0,00</div>
-            </div>
-            <div class="card-resumo">
-                <div class="rotulo">Total Gastos</div>
-                <div class="valor" id="total-gastos" style="color: var(--red)">R$ 0,00</div>
-            </div>
-            <div class="card-resumo">
-                <div class="rotulo">Saldo Líquido</div>
-                <div class="valor" id="saldo-liquido" style="color: var(--green)">R$ 0,00</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3><i class="fas fa-chart-pie"></i> Divisão do Saldo Líquido</h3>
-            <div class="divisao">
-                <div class="item-divisao">
-                    Salário (40%)
-                    <strong id="salario">R$ 0,00</strong>
-                </div>
-                <div class="item-divisao">
-                    Caixa Empresa (35%)
-                    <strong id="caixa">R$ 0,00</strong>
-                </div>
-                <div class="item-divisao">
-                    Reserva Emerg. (25%)
-                    <strong id="reserva">R$ 0,00</strong>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3><i class="fas fa-shopping-cart"></i> Registrar Gasto / Compra</h3>
-            <div class="form-lancamento">
-                <input type="text" id="descricao" placeholder="Ex: Açaí, Copos, Energia, Taxa Mercado Pago">
-                <input type="number" id="valor-gasto" placeholder="R$" min="0" step="0.01">
-                <select id="tipo-gasto">
-                    <option value="insumo">Insumos / Estoque</option>
-                    <option value="fixo">Custo Fixo</option>
-                    <option value="taxa">Taxas / Pagamentos</option>
-                    <option value="outros">Outros</option>
-                </select>
-                <button type="button" class="btn btn-saida" id="btnLancar">Lançar</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3><i class="fas fa-list"></i> Extrato Detalhado</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Descrição</th>
-                        <th style="text-align:right">Venda</th>
-                        <th style="text-align:right">Custo</th>
-                        <th style="text-align:right">Lucro / Saldo</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-extrato">
-                    <tr>
-                        <td colspan="5" style="text-align:center; color:var(--muted)">Carregando dados...</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+<!-- RESUMO GERAL -->
+<div class="card">
+    <h3>📊 Resumo Financeiro</h3>
+    <div class="grid-2">
+        <div><strong>Vendas Hoje:</strong> <span id="vendas-dia">R$ 0,00</span></div>
+        <div><strong>Vendas Mês:</strong> <span id="vendas-mes">R$ 0,00</span></div>
+        <div><strong>Custo de Insumos:</strong> <span id="custo-insumos">R$ 0,00</span></div>
+        <div><strong>Gastos da Empresa:</strong> <span id="gastos-empresa">R$ 0,00</span></div>
+        <div><strong>Lucro Bruto:</strong> <span id="lucro-bruto">R$ 0,00</span></div>
+        <div><strong>Lucro Líquido:</strong> <span id="lucro-liquido">R$ 0,00</span></div>
+        <div><strong>Margem Bruta:</strong> <span id="margem-bruta">0%</span></div>
+        <div><strong>Margem Líquida:</strong> <span id="margem-liquida">0%</span></div>
+        <div><strong>Ticket Médio:</strong> <span id="ticket-medio">R$ 0,00</span></div>
     </div>
 
-    <script type="module" src="./financeiro.js"></script>
-</body>
+    <hr>
+    <h4>💰 Valor Recebido por Forma de Pagamento</h4>
+    <div class="grid-3">
+        <div>Dinheiro: <span id="rec-dinheiro">R$ 0,00</span></div>
+        <div>Pix: <span id="rec-pix">R$ 0,00</span></div>
+        <div>Cartão: <span id="rec-cartao">R$ 0,00</span></div>
+    </div>
 
+    <hr>
+    <h4>📂 Divisão do Lucro Líquido</h4>
+    <div class="grid-3">
+        <div>Salário (40%): <span id="div-salario">R$ 0,00</span></div>
+        <div>Caixa Empresa (35%): <span id="div-caixa">R$ 0,00</span></div>
+        <div>Reserva Emergência (25%): <span id="div-reserva">R$ 0,00</span></div>
+    </div>
+</div>
+
+<!-- REGISTRAR GASTO -->
+<div class="card">
+    <h3>💸 Registrar Novo Gasto</h3>
+    <div class="grid-2">
+        <input type="text" id="desc-gasto" placeholder="Ex: Compra de açaí, energia, taxa..." required>
+        <input type="number" id="valor-gasto" step="0.01" placeholder="Valor R$" required>
+        <select id="tipo-gasto" required>
+            <option value="">É da Empresa ou Pessoal?</option>
+            <option value="Empresa">🏢 Empresa</option>
+            <option value="Pessoal">👤 Pessoal</option>
+        </select>
+        <select id="pag-gasto" required>
+            <option value="">Forma de Pagamento</option>
+            <option value="Dinheiro">💵 Dinheiro</option>
+            <option value="Pix">🔵 Pix</option>
+            <option value="Cartão">💳 Cartão</option>
+            <option value="Transferência">🔁 Transferência</option>
+        </select>
+        <select id="cat-gasto">
+            <option value="">Categoria</option>
+            <option value="Insumos">Insumos</option>
+            <option value="Embalagens">Embalagens</option>
+            <option value="Fixos">Custos Fixos</option>
+            <option value="Pessoal">Despesas Pessoais</option>
+            <option value="Outros">Outros</option>
+        </select>
+        <input type="date" id="data-gasto">
+    </div>
+    <button id="btn-gasto">Salvar Gasto</button>
+</div>
+
+<!-- LISTA DE GASTOS -->
+<div class="card">
+    <h3>📋 Gastos do Mês</h3>
+    <table id="tab-gastos">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Tipo</th>
+                <th>Pagamento</th>
+                <th>Categoria</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div class="resumo-final">
+        <div><strong>Total da Empresa:</strong> <span id="total-empresa">R$ 0,00</span></div>
+        <div><strong>Total Pessoal:</strong> <span id="total-pessoal">R$ 0,00</span></div>
+        <div><strong>Total Geral:</strong> <span id="total-geral-gastos">R$ 0,00</span></div>
+    </div>
+</div>
+
+<script type="module" src="financeiro.js"></script>
+</body>
 </html>
