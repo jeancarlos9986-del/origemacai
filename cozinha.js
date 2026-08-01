@@ -311,8 +311,8 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
         ...doc.data()
     }));
 
-    // Verifica novos pedidos para tocar som
-    if (!primeiraCarga && somAtivado) {
+    // Verifica novos pedidos para tocar som e notificar
+    if (!primeiraCarga) {
         const idsAtuais = new Set(pedidos.map(p => p.id));
         const novos = [...idsAtuais].filter(id => !pedidosConhecidos.has(id));
 
@@ -320,8 +320,23 @@ onSnapshot(collection(db, "pedidos"), (snapshot) => {
             novos.forEach(id => {
                 const pedido = pedidos.find(p => p.id === id);
                 if (pedido?.status === "novo") {
-                    audioNovoPedido.currentTime = 0;
-                    audioNovoPedido.play().catch(e => console.log("Áudio bloqueado:", e));
+                    if (somAtivado) {
+                        audioNovoPedido.currentTime = 0;
+                        audioNovoPedido.play().catch(e => console.log("Áudio bloqueado:", e));
+                    }
+                    if (notificacoesAtivas && Notification.permission === "granted") {
+                        const numeroExibicao = pedido.numero ? String(pedido.numero).slice(-4) : "----";
+                        const notif = new Notification("🛒 Novo pedido!", {
+                            body: `${pedido.nome || "Cliente"} • R$ ${(pedido.total || 0).toFixed(2)} • Pedido #${numeroExibicao}`,
+                            icon: "./logonovonova.png.jpeg",
+                            tag: "novo-pedido-" + id,
+                            requireInteraction: true
+                        });
+                        notif.onclick = () => {
+                            window.focus();
+                            notif.close();
+                        };
+                    }
                 }
             });
         }
@@ -360,3 +375,41 @@ document.getElementById("ativarSom").addEventListener("click", () => {
 document.body.addEventListener("click", () => {
     audioNovoPedido.load();
 });
+
+// ======================================
+// 🆕 NOTIFICAÇÕES (sem servidor — só permissão do navegador)
+// ======================================
+// Funciona: aba em segundo plano, outra aba/janela aberta, tela ligada.
+// NÃO funciona: celular com a tela bloqueada/app fechado — isso exige
+// notificação push de verdade, que precisa de um servidor por trás.
+const btnPush = document.getElementById("ativarPush");
+let notificacoesAtivas = false;
+
+async function ativarNotificacoesLocais() {
+    if (!("Notification" in window)) {
+        alert("Este navegador não suporta notificações.");
+        return;
+    }
+
+    if (Notification.permission === "denied") {
+        alert("As notificações estão bloqueadas para este site. Vá nas configurações do navegador (ícone de cadeado ao lado do endereço) e permita notificações.");
+        return;
+    }
+
+    const permissao = await Notification.requestPermission();
+    if (permissao !== "granted") {
+        alert("Você precisa permitir as notificações para receber os alertas.");
+        return;
+    }
+
+    notificacoesAtivas = true;
+    btnPush.textContent = "✅ Notificações Ativas";
+    btnPush.classList.add("push-ativo");
+
+    new Notification("🔔 Notificações ativadas!", {
+        body: "Você vai ser avisado quando chegar um novo pedido.",
+        icon: "./logonovonova.png.jpeg"
+    });
+}
+
+btnPush.addEventListener("click", ativarNotificacoesLocais);
