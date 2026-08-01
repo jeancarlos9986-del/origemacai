@@ -56,6 +56,18 @@
             display: none !important;
         }
 
+        /* 🆕 Foco visível ao navegar com teclado (acessibilidade) */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        .close:focus-visible,
+        .tab:focus-visible {
+            outline: 2px solid #d8b4fe;
+            outline-offset: 2px;
+        }
+
         /* =========================
        HEADER
     ========================= */
@@ -122,6 +134,88 @@
             color: #fff;
         }
 
+        /* 🆕 Botão flutuante de dúvidas no WhatsApp */
+        .whats-float {
+            position: fixed;
+            right: 20px;
+            bottom: 100px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #25d366, #1ebe5b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5rem;
+            box-shadow: 0 10px 25px rgba(37, 211, 102, .45);
+            z-index: 9997;
+            text-decoration: none;
+            transition: .25s;
+        }
+
+        .whats-float:hover {
+            transform: scale(1.08);
+        }
+
+        /* 🆕 Faixa de tempo médio no hero */
+        .hero-info-strip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 9px 16px;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: .82rem;
+            font-weight: 700;
+            color: #e5e7eb;
+        }
+
+        .hero-info-strip i {
+            color: #38bdf8;
+        }
+
+        /* 🆕 Mini widget de fidelidade na home */
+        .fidelidade-mini {
+            max-width: 1100px;
+            margin: 0 auto 24px;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, .16), rgba(0, 0, 0, .1));
+            border: 1px solid rgba(124, 58, 237, .35);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .fidelidade-mini-texto {
+            font-size: .85rem;
+            font-weight: 700;
+            color: #e5e7eb;
+        }
+
+        .fidelidade-mini .fidelidade-barra {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        /* 🆕 Contador de expiração do PIX */
+        .pix-timer {
+            text-align: center;
+            font-size: .85rem;
+            font-weight: 700;
+            color: #fbbf24;
+            margin: -4px 0 14px;
+        }
+
+        .pix-timer.expirado {
+            color: var(--red);
+        }
+
         /* =========================
        HERO
     ========================= */
@@ -178,6 +272,96 @@
             margin-inline: auto;
             font-size: 1rem;
             opacity: 0.9;
+        }
+
+        /* =========================
+       PROGRAMA DE FIDELIDADE (destaque no site)
+    ========================= */
+        .fidelidade-destaque {
+            max-width: 1100px;
+            margin: -28px auto 30px;
+            padding: 26px 24px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, .22), rgba(147, 51, 234, .08));
+            border: 1px solid rgba(124, 58, 237, .35);
+            border-radius: 22px;
+            box-shadow: var(--shadow-purple);
+            position: relative;
+            z-index: 2;
+        }
+
+        .fidelidade-destaque-inner {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .fidelidade-destaque-icone {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            box-shadow: var(--shadow-purple);
+        }
+
+        .fidelidade-destaque-texto h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+            background: linear-gradient(to right, #fff, #d8b4fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .fidelidade-destaque-texto p {
+            color: #d1d5db;
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+
+        .fidelidade-destaque-texto strong {
+            color: #fbbf24;
+        }
+
+        .fidelidade-destaque-passos {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        .fidelidade-passo {
+            background: rgba(0, 0, 0, .2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 10px;
+            text-align: center;
+            font-size: .8rem;
+            font-weight: 700;
+            color: #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fidelidade-passo i {
+            font-size: 1.2rem;
+            color: #c084fc;
+        }
+
+        @media (max-width: 720px) {
+            .fidelidade-destaque-passos {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .fidelidade-destaque {
+                margin-top: 0;
+            }
         }
 
         /* =========================
@@ -311,6 +495,73 @@
             transform: translateY(-6px);
             border-color: rgba(124, 58, 237, .35);
             box-shadow: var(--shadow-purple);
+        }
+
+        /* 🆕 Badge de destaque (mais pedido) */
+        .destaque-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 800;
+            z-index: 10;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, .4);
+        }
+
+        /* 🆕 Produto esgotado */
+        .card.esgotado {
+            opacity: .55;
+        }
+
+        .esgotado-badge {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, .55);
+            z-index: 9;
+        }
+
+        .esgotado-badge span {
+            background: rgba(0, 0, 0, .85);
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: .8rem;
+            letter-spacing: .5px;
+        }
+
+        .btn.disabled,
+        .btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            filter: grayscale(.4);
+        }
+
+        .btn.disabled:hover,
+        .btn:disabled:hover {
+            transform: none;
+            filter: grayscale(.4);
+        }
+
+        /* 🆕 Avaliação em estrelas */
+        .stars-row {
+            display: flex;
+            gap: 4px;
+            color: var(--muted);
+            font-size: .85rem;
+            margin-bottom: 6px;
+        }
+
+        .stars-row i {
+            color: #f59e0b;
         }
 
         .card-image {
@@ -586,6 +837,18 @@
             font-size: .8rem;
         }
 
+        /* 🆕 Mensagem divertida rotativa durante o preparo do pedido */
+        .mensagem-divertida {
+            display: block;
+            text-align: center;
+            color: #d8b4fe;
+            font-size: .85rem;
+            font-style: italic;
+            margin: 4px 0 16px 0;
+            min-height: 18px;
+            transition: opacity .3s ease;
+        }
+
         .notif-status {
             display: flex;
             align-items: center;
@@ -663,6 +926,163 @@
             font-size: .85rem;
             font-weight: 700;
             margin: -8px 0 8px 0;
+        }
+
+        /* 🆕 Botões grandes de Tipo de Pedido (retirada / entrega) */
+        .entrega-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .entrega-opcao {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 10px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, .1);
+            background: rgba(255, 255, 255, .04);
+            color: #d1d5db;
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: .2s ease;
+            text-align: center;
+        }
+
+        .entrega-opcao i {
+            font-size: 1.3rem;
+        }
+
+        .entrega-opcao:hover {
+            border-color: rgba(124, 58, 237, .4);
+        }
+
+        .entrega-opcao.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            border-color: transparent;
+            color: #fff;
+            box-shadow: var(--shadow-purple);
+        }
+
+        .entrega-confirmacao {
+            display: block;
+            color: #d8b4fe;
+            font-size: .82rem;
+            font-weight: 700;
+            margin: 8px 0 14px 2px;
+        }
+
+        /* 🆕 Campos de endereço separados */
+        .endereco-numero {
+            font-weight: 800;
+        }
+
+        .endereco-numero::placeholder {
+            color: #fca5a5;
+            font-weight: 700;
+        }
+
+        /* 🆕 Programa de fidelidade */
+        .fone-ajuda {
+            display: block;
+            color: var(--muted);
+            font-size: .78rem;
+            margin: -8px 0 14px 4px;
+        }
+
+        .boas-vindas {
+            background: linear-gradient(135deg, rgba(0, 200, 83, .16), rgba(0, 0, 0, .12));
+            border: 1px solid rgba(0, 200, 83, .4);
+            color: #fff;
+            font-weight: 700;
+            font-size: .88rem;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            animation: fidelidadeIn .4s ease;
+        }
+
+        #camposLiberados {
+            animation: fidelidadeIn .45s ease;
+        }
+
+        .fidelidade-box {
+            background: linear-gradient(135deg, rgba(124, 58, 237, .18), rgba(0, 0, 0, .15));
+            border: 1px solid rgba(124, 58, 237, .4);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            animation: fidelidadeIn .4s ease;
+        }
+
+        @keyframes fidelidadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fidelidade-topo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: .9rem;
+            color: #fbbf24;
+            margin-bottom: 8px;
+        }
+
+        .fidelidade-barra {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .1);
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .fidelidade-barra-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--primary), var(--primary2));
+            transition: width .5s ease;
+        }
+
+        .fidelidade-box small {
+            color: #d1d5db;
+            font-size: .8rem;
+        }
+
+        .repetir-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .06);
+            color: #fff;
+            font-weight: 700;
+            font-size: .85rem;
+            cursor: pointer;
+            transition: .2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .repetir-btn:hover {
+            background: rgba(124, 58, 237, .3);
+            border-color: rgba(124, 58, 237, .6);
         }
 
         /* Sugestões / combos */
@@ -1224,6 +1644,55 @@
             <small>✨ QUALIDADE • SABOR • EXPERIÊNCIA</small>
             <h1>Monte seu Açaí Perfeito</h1>
             <p>Escolha seus complementos favoritos, personalize do seu jeito e receba uma experiência absurda 😍</p>
+            <div class="hero-info-strip" id="heroInfoStrip">
+                <i class="fa-solid fa-clock"></i>
+                <span id="heroInfoTexto">Tempo médio de preparo: consultando...</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 🆕 MINI WIDGET DE FIDELIDADE (aparece na home para quem já é cliente) -->
+    <section class="fidelidade-mini hidden" id="fidelidadeMiniHome">
+        <div class="fidelidade-mini-texto" id="fidelidadeMiniTexto">Bem-vindo(a) de volta!</div>
+        <div class="fidelidade-barra">
+            <div class="fidelidade-barra-fill" id="fidelidadeMiniBarraFill" style="width:0%;"></div>
+        </div>
+        <button type="button" id="repetirPedidoHomeBtn" class="repetir-btn hidden">
+            <i class="fa-solid fa-rotate-right"></i> Repetir meu último pedido
+        </button>
+    </section>
+
+    <!-- 🔒 Programa de fidelidade desativado por enquanto. Para reativar, remova o style="display:none" abaixo. -->
+    <section class="fidelidade-destaque" style="display:none;">
+        <div class="fidelidade-destaque-inner">
+            <div class="fidelidade-destaque-icone">
+                <i class="fa-solid fa-star"></i>
+            </div>
+            <div class="fidelidade-destaque-texto">
+                <h2>Programa de Fidelidade Nova Origem</h2>
+                <p>A cada pedido você acumula <strong>1 ponto</strong> — não importa quantos itens peça. Ao completar
+                    <strong>10 pontos</strong>, você ganha um brinde especial 🎁. Seu cadastro é feito automaticamente
+                    pelo seu WhatsApp na hora de finalizar o pedido!
+                </p>
+            </div>
+        </div>
+        <div class="fidelidade-destaque-passos">
+            <div class="fidelidade-passo">
+                <i class="fa-solid fa-mobile-screen-button"></i>
+                <span>1. Informe seu WhatsApp</span>
+            </div>
+            <div class="fidelidade-passo">
+                <i class="fa-solid fa-bowl-food"></i>
+                <span>2. Peça seu açaí favorito</span>
+            </div>
+            <div class="fidelidade-passo">
+                <i class="fa-solid fa-star"></i>
+                <span>3. Ganhe pontos a cada pedido</span>
+            </div>
+            <div class="fidelidade-passo">
+                <i class="fa-solid fa-gift"></i>
+                <span>4. Ao chegar a 10, ganhe um brinde!</span>
+            </div>
         </div>
     </section>
 
@@ -1282,6 +1751,12 @@
             <!-- Adicione mais prints copiando o bloco acima -->
         </div>
     </section>
+    <!-- 🆕 BOTÃO FLUTUANTE DE DÚVIDAS NO WHATSAPP -->
+    <a class="whats-float" id="whatsFloat" href="#" target="_blank" rel="noopener"
+        title="Alguma dúvida? Fale conosco no WhatsApp" aria-label="Falar no WhatsApp">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
     <!-- CART BAR -->
     <div class="cart-bar" id="cartBar">
         <div class="cart-left">
@@ -1317,7 +1792,8 @@
                     <h2>Status do Pedido</h2>
                     <small style="color:#9ca3af;" id="trackNumero">Pedido</small>
                 </div>
-                <i class="fa fa-times close" id="closeTrack"></i>
+                <i class="fa fa-times close" id="closeTrack" role="button" tabindex="0"
+                    aria-label="Fechar acompanhamento do pedido"></i>
             </div>
             <div id="trackContent"></div>
         </div>
@@ -1331,7 +1807,8 @@
                     <h2 id="customTitle"></h2>
                     <small style="color:#9ca3af;">Personalize seu pedido</small>
                 </div>
-                <i class="fa fa-times close" id="closeCustom"></i>
+                <i class="fa fa-times close" id="closeCustom" role="button" tabindex="0"
+                    aria-label="Fechar personalização do produto"></i>
             </div>
 
             <p id="customDesc" style="color:#9ca3af; line-height:1.6; margin-bottom:16px;"></p>
@@ -1382,7 +1859,8 @@
                     <h2>Finalizar Pedido</h2>
                     <small style="color:#9ca3af;">Confira suas informações</small>
                 </div>
-                <i class="fa fa-times close" id="closeCheckout"></i>
+                <i class="fa fa-times close" id="closeCheckout" role="button" tabindex="0"
+                    aria-label="Fechar finalização do pedido"></i>
             </div>
 
             <!-- 🆕 AVISO DE LOJA FECHADA -->
@@ -1397,49 +1875,131 @@
             <!-- SUGESTÕES / COMBOS -->
             <div id="sugestoesArea"></div>
 
-            <!-- DADOS -->
-            <div class="section-title">Seus Dados</div>
-            <input type="text" id="nome" placeholder="Seu nome">
-            <input type="tel" id="fone" placeholder="WhatsApp com DDD">
+            <!-- 🆕 TELEFONE PRIMEIRO: chave do Programa de Fidelidade -->
+            <div class="section-title"><i class="fa-solid fa-mobile-screen-button"></i> Vamos começar pelo seu
+                WhatsApp</div>
 
-            <!-- ENTREGA -->
-            <div class="section-title">Tipo de Pedido</div>
-            <select id="entrega">
-                <option value="retirada">🏠 Vou retirar na loja</option>
-                <option value="entrega">🛵 Entregar no endereço</option>
-            </select>
+            <input type="tel" id="fone" placeholder="Digite seu WhatsApp com DDD" autocomplete="tel">
+            <br>
+            <br>
+            <small class="fone-ajuda">📱 Usamos seu WhatsApp para confirmar o pedido e te avisar sobre a
+                entrega.</small>
 
-            <div id="enderecoBox" class="hidden">
-                <input type="text" id="endereco" placeholder="Rua, número, bairro e complemento">
+            <!-- 🆕 Mensagem de boas-vindas para quem ainda não tem cadastro -->
+            <div id="boasVindasNovo" class="boas-vindas hidden"></div>
+
+            <!-- 🆕 PROGRAMA DE FIDELIDADE (para quem já tem cadastro) -->
+            <div id="fidelidadeBox" class="fidelidade-box hidden">
+                <div class="fidelidade-topo">
+                    <i class="fa-solid fa-star"></i>
+                    <span id="fidelidadeSaudacao"></span>
+                </div>
+                <div class="fidelidade-barra">
+                    <div class="fidelidade-barra-fill" id="fidelidadeBarraFill"></div>
+                </div>
+                <small id="fidelidadeLegenda"></small>
+
+                <!-- 🆕 "SENTIMOS SUA FALTA": banner de cupom automático para cliente inativo -->
+                <div id="bannerVoltaCliente" class="hidden"
+                    style="margin-top:12px; background:linear-gradient(135deg, rgba(124,58,237,.18), rgba(236,72,153,.18)); border:1px solid rgba(236,72,153,.35); border-radius:14px; padding:12px 14px;">
+                    <strong style="color:#f9a8d4;">💜 Sentimos sua falta!</strong>
+                    <div id="bannerVoltaTexto" style="font-size:.85rem; color:#e5e7eb; margin-top:4px;"></div>
+                </div>
+
+                <!-- 🆕 ESCOLHA DO BRINDE (aparece quando o cliente tem brinde disponível) -->
+                <div id="brindeEscolhaBox" class="hidden" style="margin-top:12px;">
+                    <label style="font-size:.85rem; color:#d1d5db; font-weight:700; display:block; margin-bottom:6px;">
+                        🎁 Escolha seu brinde grátis:
+                    </label>
+                    <select id="brindeTipo">
+                        <option value="cone">🍦 Cone Trufado grátis</option>
+                        <option value="adicional">🍫 Adicional Premium grátis</option>
+                    </select>
+                    <div id="brindeAdicionalBox" class="hidden" style="margin-top:8px;">
+                        <select id="brindeAdicionalEscolha"></select>
+                    </div>
+                </div>
+
+                <button type="button" id="repetirPedidoBtn" class="repetir-btn hidden">
+                    <i class="fa-solid fa-rotate-right"></i> Repetir último pedido
+                </button>
             </div>
 
-            <!-- PAGAMENTO -->
-            <div class="section-title">Forma de Pagamento</div>
-            <select id="pagamento">
-                <option value="Pix">💸 Pix (Mais rápido)</option>
-                <option value="Dinheiro">💵 Dinheiro</option>
-                <option value="Cartão">💳 Cartão (Na entrega/retirada)</option>
-            </select>
+            <!-- 🆕 Campos liberados assim que o WhatsApp é preenchido -->
+            <div id="camposLiberados" class="hidden">
 
-            <div id="trocoBox" class="hidden">
-                <input type="number" id="troco" placeholder="Precisa de troco para quanto? Ex: 50">
+                <!-- DADOS -->
+                <div class="section-title">Seu Nome</div>
+                <input type="text" id="nome" placeholder="Seu nome completo">
+
+                <!-- 🆕 ENTREGA: botões grandes em vez de menu suspenso, para evitar escolha errada -->
+                <div class="section-title">Tipo de Pedido</div>
+                <div class="entrega-toggle" id="entregaToggle">
+                    <button type="button" class="entrega-opcao active" data-valor="retirada">
+                        <i class="fa-solid fa-shop"></i> Vou retirar na loja
+                    </button>
+                    <button type="button" class="entrega-opcao" data-valor="entrega">
+                        <i class="fa-solid fa-motorcycle"></i> Quero receber em casa
+                    </button>
+                </div>
+                <input type="hidden" id="entrega" value="retirada">
+                <small class="entrega-confirmacao" id="entregaConfirmacaoTexto">🏠 Você vai retirar o pedido na
+                    loja.</small>
+
+                <!-- 🆕 ENDEREÇO: campos separados, com Número obrigatório em destaque -->
+                <div id="enderecoBox" class="hidden">
+                    <input type="text" id="enderecoRua" placeholder="Rua / Avenida / Distrito">
+                    <input type="text" id="enderecoNumero" placeholder="Número *" class="endereco-numero"
+                        inputmode="numeric">
+                    <input type="text" id="enderecoComplemento"
+                        placeholder="Complemento / Ponto de referência (opcional)">
+                </div>
+
+                <!-- PAGAMENTO -->
+                <div class="section-title">Forma de Pagamento</div>
+                <select id="pagamento">
+                    <option value="Pix">💸 Pix (Mais rápido)</option>
+                    <option value="Dinheiro">💵 Dinheiro</option>
+                    <option value="Cartão">💳 Cartão (Na entrega/retirada)</option>
+                </select>
+
+                <!-- 🆕 TROCO: pergunta explícita antes de liberar o pedido -->
+                <div id="trocoBox" class="hidden">
+                    <div class="section-title" style="margin-top:14px;">Precisa de troco?</div>
+                    <select id="precisaTroco">
+                        <option value="" disabled selected>Selecione uma opção</option>
+                        <option value="nao">✅ Não, vou pagar com valor exato</option>
+                        <option value="sim">💵 Sim, preciso de troco</option>
+                    </select>
+                    <div id="trocoValorBox" class="hidden">
+                        <input type="number" id="troco" placeholder="Troco para quanto? Ex: 50">
+                    </div>
+                </div>
+
+                <!-- TEMPO ESTIMADO -->
+                <div class="estimate-time" id="estimateTime">
+                    <i class="fa-solid fa-clock"></i> <span id="estimateTimeTexto"></span>
+                </div>
+
+                <!-- 🆕 Linha do desconto do cupom "Sentimos sua falta", quando aplicável -->
+                <div id="cupomDescontoBox" class="hidden"
+                    style="display:flex; justify-content:space-between; align-items:center; color:#4ade80; font-weight:700; font-size:.9rem; margin:4px 2px 10px 2px;">
+                    <span><i class="fa-solid fa-gift"></i> Cupom "Sentimos sua falta"</span>
+                    <span id="cupomDescontoValor">-R$ 0,00</span>
+                </div>
+
+                <!-- TOTAL -->
+                <div class="checkout-total">
+                    <span>Total do Pedido</span>
+                    <span id="checkoutTotal">R$ 0,00</span>
+                </div>
+
+                <!-- BUTTON -->
+                <button class="finish-btn" id="finishOrderBtn">
+                    <i class="fa-solid fa-paper-plane"></i> CONFIRMAR PEDIDO
+                </button>
+
             </div>
-
-            <!-- TEMPO ESTIMADO -->
-            <div class="estimate-time" id="estimateTime">
-                <i class="fa-solid fa-clock"></i> <span id="estimateTimeTexto"></span>
-            </div>
-
-            <!-- TOTAL -->
-            <div class="checkout-total">
-                <span>Total do Pedido</span>
-                <span id="checkoutTotal">R$ 0,00</span>
-            </div>
-
-            <!-- BUTTON -->
-            <button class="finish-btn" id="finishOrderBtn">
-                <i class="fa-solid fa-paper-plane"></i> CONFIRMAR PEDIDO
-            </button>
 
             <!-- PIX ÁREA -->
             <div class="pix-area hidden" id="pixArea">
@@ -1455,6 +2015,9 @@
                     <strong>Atenção:</strong> Após pagar, clique no botão <b>"Já Efetuei o Pagamento"</b> abaixo para
                     confirmar seu pedido.
                 </div>
+
+                <!-- 🆕 CONTADOR DE EXPIRAÇÃO -->
+                <div class="pix-timer" id="pixTimer"></div>
 
                 <!-- QR CODE -->
                 <div id="pixQrCode" class="pix-qr-container"></div>
@@ -1483,6 +2046,21 @@
         </div>
     </div>
 
+    <!-- 🆕 MODAL COMPROVANTE DO PEDIDO -->
+    <div class="modal" id="comprovanteModal">
+        <div class="modal-content">
+            <div class="modal-top">
+                <div>
+                    <h2>Pedido Confirmado ✅</h2>
+                    <small style="color:#9ca3af;" id="comprovanteSubtitulo">Guarde este comprovante</small>
+                </div>
+                <i class="fa fa-times close" id="closeComprovante" role="button" tabindex="0"
+                    aria-label="Fechar comprovante do pedido"></i>
+            </div>
+            <div id="comprovanteContent"></div>
+        </div>
+    </div>
+
     <!-- AQUI VAI O SEU JAVASCRIPT -->
 
 
@@ -1500,7 +2078,9 @@
             getDocs,      // ✅ ADICIONE ESSA
             updateDoc,    // ✅ ADICIONE ESSA
             doc,          // 🆕 acompanhamento em tempo real
-            onSnapshot    // 🆕 acompanhamento em tempo real
+            onSnapshot,   // 🆕 acompanhamento em tempo real
+            getDoc,       // 🆕 SISTEMA DE FIDELIDADE
+            setDoc        // 🆕 SISTEMA DE FIDELIDADE
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         // =========================
         // FIREBASE
@@ -1533,6 +2113,335 @@
         const WHATSAPP = "5534997741051";
         const PIX_NOME = "Jean Carlos Carreiro Reis";
         const PIX_KEY = "34997741051";
+        const SERVER_URL = "https://origemacai.onrender.com";
+
+        // 🆕 Avisa a cozinha via notificação push (mesmo com o painel fechado/tela bloqueada).
+        // "Fire and forget": se falhar, não trava o pedido — o pedido já está salvo no Firestore
+        // e vai aparecer no painel normalmente quando alguém abrir.
+        function notificarCozinha({ numero, nome, total, entrega }) {
+            fetch(`${SERVER_URL}/notificar-cozinha`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ numero, nome, total, entrega })
+            }).catch((e) => console.warn("Não foi possível notificar a cozinha:", e));
+        }
+
+        // =========================
+        // 🆕 PROGRAMA DE FIDELIDADE
+        // =========================
+        // 🔒 Desativado por enquanto (o código fica pronto, sem precisar reconstruir depois).
+        // Para reativar: troque para true.
+        const FIDELIDADE_ATIVA = false;
+        const PONTOS_PARA_BRINDE = 10;
+        const BRINDE_DESCRICAO = "um Cone Trufado grátis ou um Adicional Premium grátis";
+        // 🆕 Adicionais considerados "premium" para o brinde (deve bater com nomes em EXTRAS)
+        const BRINDE_ADICIONAIS_PREMIUM = ["Nutella", "Kit Kat", "Ovomaltine"];
+        const BRINDE_NOME_CONE = "Cone Trufado";
+
+        let clienteFidelidadeAtual = null;
+
+        // 🆕 "SENTIMOS SUA FALTA": cupom automático para cliente fiel que some por um tempo
+        const WINBACK_DIAS_MINIMO = 20; // dias sem pedir para considerar "sumiu"
+        const WINBACK_DESCONTO = 5;     // valor do cupom aplicado automaticamente (R$)
+        let cupomVoltaValor = 0;        // preenchido dinamicamente ao reconhecer o cliente
+
+        // Normaliza o telefone para usar como chave única do cliente (só dígitos, sem DDI)
+        // Normaliza o telefone para usar como chave única do cliente, corrigindo os erros
+        // mais comuns de digitação: DDI (55), zero de operadora (0DDD) e o 9º dígito do celular.
+        function normalizarFone(fone) {
+            let d = (fone || "").replace(/\D/g, "");
+
+            // Remove o código do país (55) quando o número veio com DDI
+            if (d.length >= 12 && d.startsWith("55")) {
+                d = d.slice(2);
+            }
+
+            // Remove o "0" de operadora/discagem (ex: 034997741051)
+            if (d.length >= 11 && d.startsWith("0")) {
+                d = d.slice(1);
+            }
+
+            // Se sobrou só DDD + 8 dígitos (faltou o 9º dígito do celular), completa
+            if (d.length === 10) {
+                const ddd = d.slice(0, 2);
+                const numero = d.slice(2);
+                if (/^[6-9]/.test(numero)) {
+                    d = ddd + "9" + numero;
+                }
+            }
+
+            return d;
+        }
+
+        // Busca o cliente pelo telefone e preenche nome, endereço, pagamento e pontos
+        async function buscarClienteFidelidade() {
+            const foneInput = document.getElementById("fone");
+            const box = document.getElementById("fidelidadeBox");
+            const repetirBtn = document.getElementById("repetirPedidoBtn");
+            const boasVindasNovoEl = document.getElementById("boasVindasNovo");
+            const camposLiberados = document.getElementById("camposLiberados");
+            const foneNormalizado = normalizarFone(foneInput.value);
+
+            if (foneNormalizado.length < 10) {
+                box.classList.add("hidden");
+                boasVindasNovoEl.classList.add("hidden");
+                camposLiberados.classList.add("hidden");
+                document.getElementById("brindeEscolhaBox")?.classList.add("hidden");
+                document.getElementById("bannerVoltaCliente")?.classList.add("hidden");
+                cupomVoltaValor = 0;
+                updateCart();
+                clienteFidelidadeAtual = null;
+                return;
+            }
+
+            // 🔒 Programa de fidelidade desativado: libera os campos normalmente,
+            // sem buscar/mostrar pontos, brindes ou autofill de pedido anterior.
+            if (!FIDELIDADE_ATIVA) {
+                box.classList.add("hidden");
+                boasVindasNovoEl.classList.add("hidden");
+                document.getElementById("brindeEscolhaBox")?.classList.add("hidden");
+                document.getElementById("bannerVoltaCliente")?.classList.add("hidden");
+                cupomVoltaValor = 0;
+                clienteFidelidadeAtual = null;
+                camposLiberados.classList.remove("hidden");
+                return;
+            }
+
+            try {
+                const ref = doc(db, "clientes", foneNormalizado);
+                const snap = await getDoc(ref);
+
+                if (!snap.exists()) {
+                    // 🆕 Cliente novo: libera os campos, esconde a fidelidade e prepara a
+                    // mensagem de boas-vindas (ela aparece assim que ele digitar o nome)
+                    box.classList.add("hidden");
+                    clienteFidelidadeAtual = null;
+                    boasVindasNovoEl.classList.add("hidden");
+                    boasVindasNovoEl.textContent = "";
+                    document.getElementById("brindeEscolhaBox")?.classList.add("hidden");
+                    document.getElementById("bannerVoltaCliente")?.classList.add("hidden");
+                    cupomVoltaValor = 0;
+                    updateCart();
+                    camposLiberados.classList.remove("hidden");
+                    document.getElementById("nome").focus();
+                    return;
+                }
+
+                const dados = snap.data();
+                clienteFidelidadeAtual = { id: foneNormalizado, ...dados };
+                boasVindasNovoEl.classList.add("hidden");
+
+                // 🆕 Autofill dos dados salvos
+                const nomeInput = document.getElementById("nome");
+                if (dados.nome && !nomeInput.value.trim()) nomeInput.value = dados.nome;
+
+                if (dados.entrega) {
+                    setTipoEntrega(dados.entrega);
+                }
+
+                // 🆕 Autofill do endereço: usa os campos separados se já existirem;
+                // se for um cadastro antigo (endereço salvo como texto único), preenche
+                // no campo "Rua/Avenida" para o cliente conferir e completar o número.
+                if (dados.enderecoRua || dados.enderecoNumero) {
+                    document.getElementById("enderecoRua").value = dados.enderecoRua || "";
+                    document.getElementById("enderecoNumero").value = dados.enderecoNumero || "";
+                    document.getElementById("enderecoComplemento").value = dados.enderecoComplemento || "";
+                } else if (dados.endereco) {
+                    document.getElementById("enderecoRua").value = dados.endereco;
+                }
+                if (dados.pagamento) {
+                    const pagamentoSelect = document.getElementById("pagamento");
+                    pagamentoSelect.value = dados.pagamento;
+                    pagamentoSelect.dispatchEvent(new Event("change"));
+                }
+
+                // 🆕 Progresso de pontos
+                const pontos = dados.pontos || 0;
+                const brindesDisponiveis = dados.brindesDisponiveis || 0;
+                const pct = Math.min(100, Math.round((pontos / PONTOS_PARA_BRINDE) * 100));
+                document.getElementById("fidelidadeBarraFill").style.width = pct + "%";
+
+                const primeiroNome = (dados.nome || "").split(" ")[0] || "cliente";
+                const saudacaoEl = document.getElementById("fidelidadeSaudacao");
+                const legendaEl = document.getElementById("fidelidadeLegenda");
+
+                const brindeEscolhaBox = document.getElementById("brindeEscolhaBox");
+
+                // 🆕 "SENTIMOS SUA FALTA": calcula há quantos dias o cliente não pede
+                const bannerVolta = document.getElementById("bannerVoltaCliente");
+                const ultimaData = dados.ultimoPedido?.data;
+                const diasSemPedir = ultimaData ? Math.floor((Date.now() - ultimaData) / 86400000) : null;
+
+                if (diasSemPedir !== null && diasSemPedir >= WINBACK_DIAS_MINIMO) {
+                    cupomVoltaValor = WINBACK_DESCONTO;
+                    document.getElementById("bannerVoltaTexto").innerHTML =
+                        `Faz ${diasSemPedir} dias que você não pede com a gente — ganhe <strong>${money(WINBACK_DESCONTO)} de desconto</strong> neste pedido! Já aplicamos no seu total. 🎉`;
+                    bannerVolta.classList.remove("hidden");
+                } else {
+                    cupomVoltaValor = 0;
+                    bannerVolta.classList.add("hidden");
+                }
+
+                if (brindesDisponiveis > 0) {
+                    saudacaoEl.textContent = `Que alegria ter você de volta, ${primeiroNome}! 🎁`;
+                    legendaEl.textContent = `Você tem ${brindesDisponiveis} brinde(s) disponível(is) — escolha abaixo qual quer resgatar neste pedido.`;
+                    popularOpcoesAdicionalPremium();
+                    brindeEscolhaBox.classList.remove("hidden");
+                } else {
+                    const faltam = Math.max(0, PONTOS_PARA_BRINDE - pontos);
+                    saudacaoEl.textContent = `Que alegria ter você de volta, ${primeiroNome}! 💜`;
+                    legendaEl.textContent = faltam > 0
+                        ? `${pontos}/${PONTOS_PARA_BRINDE} pontos — faltam ${faltam} pedido(s) para ganhar ${BRINDE_DESCRICAO}.`
+                        : `Você já pode ganhar ${BRINDE_DESCRICAO} no próximo pedido!`;
+                    brindeEscolhaBox.classList.add("hidden");
+                }
+
+                box.classList.remove("hidden");
+                camposLiberados.classList.remove("hidden");
+                updateCart(); // 🆕 recalcula o total já com o cupom "Sentimos sua falta", se houver
+
+                // 🆕 Repetir último pedido
+                if (dados.ultimoPedido && dados.ultimoPedido.itens && dados.ultimoPedido.itens.length) {
+                    repetirBtn.classList.remove("hidden");
+                } else {
+                    repetirBtn.classList.add("hidden");
+                }
+
+            } catch (e) {
+                console.error("Erro ao buscar cliente da fidelidade:", e);
+                // Mesmo se der erro na busca, não trava o cliente: libera os campos
+                camposLiberados.classList.remove("hidden");
+            }
+        }
+
+        // 🆕 Mostra a mensagem de boas-vindas para quem ainda não tem cadastro,
+        // assim que ele terminar de digitar o nome
+        function atualizarBoasVindasNovoCliente() {
+            if (!FIDELIDADE_ATIVA) return; // 🔒 programa de fidelidade desativado
+            const boasVindasNovoEl = document.getElementById("boasVindasNovo");
+            if (clienteFidelidadeAtual) {
+                // já é cliente cadastrado — a mensagem dele fica no fidelidadeBox
+                boasVindasNovoEl.classList.add("hidden");
+                return;
+            }
+            const nomeVal = document.getElementById("nome").value.trim();
+            const foneValido = normalizarFone(document.getElementById("fone").value).length >= 10;
+
+            if (foneValido && nomeVal.length >= 2) {
+                const primeiroNome = nomeVal.split(" ")[0];
+                boasVindasNovoEl.textContent = `🌟 Seja bem-vindo(a), ${primeiroNome}! É um prazer ter você como cliente da Nova Origem Açaí 💜`;
+                boasVindasNovoEl.classList.remove("hidden");
+            } else {
+                boasVindasNovoEl.classList.add("hidden");
+            }
+        }
+
+        // 🆕 Preenche o select de "adicional premium" com os itens ativos definidos em BRINDE_ADICIONAIS_PREMIUM
+        function popularOpcoesAdicionalPremium() {
+            const select = document.getElementById("brindeAdicionalEscolha");
+            if (!select) return;
+            const opcoes = EXTRAS.filter(e => BRINDE_ADICIONAIS_PREMIUM.includes(e.nome) && e.ativo);
+            select.innerHTML = opcoes.length
+                ? opcoes.map(e => `<option value="${e.nome}">${e.nome}</option>`).join("")
+                : `<option value="">Nenhum adicional premium disponível</option>`;
+        }
+
+        // 🆕 Monta o item grátis (brinde) escolhido pelo cliente no checkout, sem cobrar nada por ele.
+        // Retorna null quando o cliente não tem brinde disponível.
+        function obterItemBrindeEscolhido() {
+            if (!clienteFidelidadeAtual || !(clienteFidelidadeAtual.brindesDisponiveis > 0)) return null;
+
+            const tipo = document.getElementById("brindeTipo")?.value || "cone";
+
+            if (tipo === "cone") {
+                return {
+                    nome: `🎁 Brinde Fidelidade - ${BRINDE_NOME_CONE}`,
+                    preco: 0,
+                    gratis: [],
+                    extras: [],
+                    obs: "Brinde do programa de fidelidade — não cobrar.",
+                    brinde: true
+                };
+            }
+
+            const nomeAdicional = document.getElementById("brindeAdicionalEscolha")?.value || "Adicional Premium";
+            return {
+                nome: `🎁 Brinde Fidelidade - Adicional Premium (${nomeAdicional})`,
+                preco: 0,
+                gratis: [],
+                extras: [],
+                obs: "Brinde do programa de fidelidade — não cobrar.",
+                brinde: true
+            };
+        }
+
+        // Registra 1 ponto por pedido (independente da quantidade de itens) e controla os brindes
+        async function atualizarFidelidade(fone, nome, entrega, endereco, pagamento, itensPedido) {
+            if (!FIDELIDADE_ATIVA) return null; // 🔒 programa de fidelidade desativado
+            try {
+                const foneNormalizado = normalizarFone(fone);
+                if (!foneNormalizado) return null;
+
+                const ref = doc(db, "clientes", foneNormalizado);
+                const snap = await getDoc(ref);
+                const atual = snap.exists() ? snap.data() : {};
+
+                let pontos = (atual.pontos || 0) + 1;
+                let brindesDisponiveis = atual.brindesDisponiveis || 0;
+                let brindeConsumido = false;
+
+                // Se já tinha um brinde disponível, ele é resgatado neste pedido
+                if (brindesDisponiveis > 0) {
+                    brindesDisponiveis -= 1;
+                    brindeConsumido = true;
+                }
+
+                // Verifica se atingiu a meta de pontos para ganhar um novo brinde
+                let ganhouBrindeAgora = false;
+                if (pontos >= PONTOS_PARA_BRINDE) {
+                    pontos -= PONTOS_PARA_BRINDE;
+                    brindesDisponiveis += 1;
+                    ganhouBrindeAgora = true;
+                }
+
+                // 🆕 Lê os campos separados do endereço diretamente do formulário para salvar
+                // de forma estruturada (facilita o autofill correto na próxima compra)
+                const enderecoRua = document.getElementById("enderecoRua")?.value.trim() || "";
+                const enderecoNumero = document.getElementById("enderecoNumero")?.value.trim() || "";
+                const enderecoComplemento = document.getElementById("enderecoComplemento")?.value.trim() || "";
+
+                await setDoc(ref, {
+                    nome: nome,
+                    telefone: foneNormalizado,
+                    entrega: entrega,
+                    endereco: endereco || "",
+                    enderecoRua: enderecoRua,
+                    enderecoNumero: enderecoNumero,
+                    enderecoComplemento: enderecoComplemento,
+                    pagamento: pagamento,
+                    pontos: pontos,
+                    brindesDisponiveis: brindesDisponiveis,
+                    totalPedidos: (atual.totalPedidos || 0) + 1,
+                    ultimoPedido: {
+                        itens: itensPedido,
+                        entrega: entrega,
+                        endereco: endereco || "",
+                        pagamento: pagamento,
+                        data: Date.now()
+                    },
+                    atualizadoEm: Date.now()
+                }, { merge: true });
+
+                // 🆕 Lembra o telefone neste aparelho para mostrar o progresso de fidelidade na home
+                localStorage.setItem("ultimoFoneNovaOrigem", foneNormalizado);
+
+                return { pontos, brindesDisponiveis, ganhouBrindeAgora, brindeConsumido };
+
+            } catch (e) {
+                console.error("Erro ao atualizar fidelidade:", e);
+                return null;
+            }
+        }
 
 
         const PRODUCTS = [
@@ -1562,10 +2471,12 @@
                     "./copo506.jpeg",
                     "./copo507.jpeg",
                     "./copo508.jpeg",
-                    "./Copo501.jpeg",
+                    "./copo501.jpeg",
 
                 ],
-                limiteGratis: 3
+                limiteGratis: 3,
+                // 🆕 marque true no produto que mais vende para destacar na home
+                destaque: true
             },
 
 
@@ -1586,15 +2497,32 @@
                     "./Copo Trufado.jpeg"
 
                 ],
-                limiteGratis: 2
+                limiteGratis: 3
 
             },
+
+            {
+                id: 8,
+                cat: "Copos",
+                nome: "Shake Açai Tradicional 500ml",
+                preco: 16.00,
+                desc: "Açai batido com Leite, Leite em pó e leite condensado",
+                imagens: [
+                    "./Shake01.jpeg",
+                    "./Shake02.jpeg",
+                    
+
+                ],
+                customizavel: false,
+
+            },
+
 
 
             {
                 id: 9,
                 cat: "Copos",
-                nome: "Cone Trufado - ESGOTADO",
+                nome: "Cone Trufado",
                 preco: 13.00,
                 desc: "Cone com açai e muitaaaaaaaa Nutella",
                 imagens: [
@@ -1602,7 +2530,9 @@
                     "./cone.jpeg"
                 ],
 
-                customizavel: false
+                customizavel: false,
+                // 🆕 quando faltar o produto, é só marcar true aqui — some do botão e mostra o aviso
+                esgotado: false
             },
 
 
@@ -1661,7 +2591,8 @@
 
         let cart = JSON.parse(localStorage.getItem("cartNovaOrigem")) || [];
         let idPagamentoAtual = null;
-        let MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
+        // 🆕 SEGURANÇA: o token do Mercado Pago NÃO fica mais aqui no navegador.
+        // Ele agora mora só no servidor (Render), que é quem fala com o Mercado Pago.
 
         // =========================
         // 🆕 TEMPO ESTIMADO DE PREPARO/ENTREGA
@@ -1675,6 +2606,15 @@
             let minutos = TEMPO_PREPARO_BASE + itensExtras * TEMPO_POR_ITEM_EXTRA;
             if (tipoEntrega === "entrega") minutos += TEMPO_ENTREGA_EXTRA;
             return minutos;
+        }
+
+        // 🆕 Mostra o tempo médio de preparo/retirada logo na home, antes do checkout
+        function atualizarFaixaTempoHero() {
+            const el = document.getElementById("heroInfoTexto");
+            if (!el) return;
+            const min = TEMPO_PREPARO_BASE;
+            const max = TEMPO_PREPARO_BASE + TEMPO_POR_ITEM_EXTRA * 3;
+            el.innerText = `Tempo médio de preparo: ${min}–${max} min (retirada) • +${TEMPO_ENTREGA_EXTRA} min para entrega`;
         }
 
         function atualizarEstimativaCheckout() {
@@ -1715,12 +2655,105 @@
             return `${base}?pedido=${id}`;
         }
 
+        // 🆕 Mensagens divertidas rotativas — deixam a espera menos ansiosa
+        const MENSAGENS_DIVERTIDAS = {
+            novo: [
+                "Recebemos seu pedido e já anotamos tudinho 📝",
+                "Já avisamos a equipe que você chegou! 👋",
+                "Organizando a fila com carinho 💜"
+            ],
+            preparo: [
+                "Estamos raspando o pote até o fundo por você 😄",
+                "Montando as camadas com capricho 🍨",
+                "Escolhendo as frutinhas mais bonitas 🍓",
+                "Caprichando nos adicionais, sem economizar 🍫",
+                "Quase lá, só ajeitando os últimos detalhes ✨"
+            ],
+            pronto: [
+                "Seu pedido está lindo e prontinho! 😍",
+                "Só esperando você (ou o entregador) aparecer 🚀"
+            ],
+            em_rota: [
+                "Seu entregador está a caminho 🛵💨",
+                "Quase lá! Deixe o guardanapo pronto 😄",
+                "Faltam só alguns minutinhos 🍇"
+            ]
+        };
+
+        let intervaloMensagemDivertida = null;
+
+        function iniciarMensagensDivertidas(status) {
+            clearInterval(intervaloMensagemDivertida);
+            intervaloMensagemDivertida = null;
+
+            const lista = MENSAGENS_DIVERTIDAS[status];
+            const elemento = document.getElementById("mensagemDivertida");
+            if (!lista || !elemento) return;
+
+            let indice = 0;
+            elemento.textContent = lista[indice];
+
+            intervaloMensagemDivertida = setInterval(() => {
+                elemento.style.opacity = 0;
+                setTimeout(() => {
+                    indice = (indice + 1) % lista.length;
+                    elemento.textContent = lista[indice];
+                    elemento.style.opacity = 1;
+                }, 300);
+            }, 4000);
+        }
+
         // =========================
         // 🆕 NOTIFICAÇÃO AUTOMÁTICA DE STATUS (reduz "cadê meu pedido?")
         // =========================
-        function solicitarPermissaoNotificacao() {
-            if ("Notification" in window && Notification.permission === "default") {
-                Notification.requestPermission();
+
+        // 🆕 Chave pública VAPID — usada pelo navegador para confiar nas notificações push.
+        // A chave PRIVADA correspondente fica só no servidor (nunca aqui no front-end).
+        const VAPID_PUBLIC_KEY = "BJsAiWuw3YU9yzJMUTqQGpq7e4YsVOMNEWlu77KkCtEqiVkd2o-w7e5m_EjpZPWfp_wo9qG_OfNrp8rJknakFNU";
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = "=".repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+            const rawData = atob(base64);
+            return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+        }
+
+        // 🆕 Registra o Service Worker e inscreve o cliente pra receber notificações
+        // push mesmo com o site fechado — a assinatura fica salva no próprio pedido.
+        async function inscreverNotificacaoPush(pedidoId) {
+            if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+            if (Notification.permission !== "granted") return;
+
+            try {
+                const registro = await navigator.serviceWorker.register("/sw.js");
+                let assinatura = await registro.pushManager.getSubscription();
+
+                if (!assinatura) {
+                    assinatura = await registro.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    });
+                }
+
+                await updateDoc(doc(db, "pedidos", pedidoId), {
+                    pushSubscription: JSON.parse(JSON.stringify(assinatura))
+                });
+
+            } catch (e) {
+                console.warn("Não foi possível ativar notificação push (ok, site segue funcionando normalmente):", e);
+            }
+        }
+
+        async function solicitarPermissaoNotificacao(pedidoId) {
+            if (!("Notification" in window)) return;
+
+            if (Notification.permission === "default") {
+                const resultado = await Notification.requestPermission();
+                if (resultado !== "granted") return;
+            }
+
+            if (Notification.permission === "granted" && pedidoId) {
+                inscreverNotificacaoPush(pedidoId);
             }
         }
 
@@ -1754,7 +2787,7 @@
             let modalJaAberto = false;
             let ultimoStatusNotificado = null; // 🆕 evita notificar no carregamento inicial
 
-            solicitarPermissaoNotificacao(); // 🆕 pede permissão assim que começa a acompanhar
+            solicitarPermissaoNotificacao(id); // 🆕 pede permissão e já inscreve pra notificação push
 
             unsubscribeTracking = onSnapshot(doc(db, "pedidos", id), (snap) => {
                 if (!snap.exists()) { pararAcompanhamento(); return; }
@@ -1786,6 +2819,8 @@
             localStorage.removeItem("pedidoAtivoId");
             document.getElementById("trackBar").style.display = "none";
             document.getElementById("trackModal").style.display = "none";
+            clearInterval(intervaloMensagemDivertida); // 🆕 evita o timer rodando à toa em segundo plano
+            intervaloMensagemDivertida = null;
         }
 
         function renderizarAcompanhamento(id, pedido) {
@@ -1843,26 +2878,101 @@
                         : `<button class="notif-status off" id="btnAtivarNotif"><i class="fa-solid fa-bell"></i> Ativar aviso automático de status</button>`;
             }
 
+            const jaAvaliado = !!pedido.avaliacao;
+
             document.getElementById("trackContent").innerHTML = `
                 ${notifHtml}
                 ${previsaoTexto}
                 <div class="timeline">${timelineHtml}</div>
+                ${pedido.status !== "concluido" ? `<small class="mensagem-divertida" id="mensagemDivertida"></small>` : ""}
                 ${pedido.status === "concluido" ? `
+                    <div id="avaliacaoArea">
+                        ${jaAvaliado ? `
+                            <div class="notif-status ok">
+                                <i class="fa-solid fa-circle-check"></i> Obrigado por avaliar! Sua nota: ${pedido.avaliacao.nota}/5
+                            </div>
+                        ` : `
+                            <div class="section-title">Como foi seu pedido? ⭐</div>
+                            <div class="stars-row" id="avaliacaoStars" style="font-size:1.6rem; cursor:pointer; justify-content:center; margin-bottom:12px;">
+                                ${[1, 2, 3, 4, 5].map(n => `<i class="fa-regular fa-star" data-nota="${n}"></i>`).join("")}
+                            </div>
+                            <textarea id="avaliacaoComentario" rows="2" placeholder="Quer contar algo? (opcional)"></textarea>
+                            <button class="finish-btn" id="btnEnviarAvaliacao" style="margin-top:10px;" disabled>
+                                <i class="fa-solid fa-paper-plane"></i> Enviar avaliação
+                            </button>
+                        `}
+                    </div>
                     <button class="finish-btn" id="btnEncerrarAcompanhamento">
                         <i class="fa-solid fa-thumbs-up"></i> Ok, obrigado!
                     </button>
                 ` : ""}
             `;
 
+            // 🆕 Mensagens divertidas rotativas (só enquanto o pedido não está concluído)
+            if (pedido.status !== "concluido") {
+                iniciarMensagensDivertidas(pedido.status);
+            } else {
+                clearInterval(intervaloMensagemDivertida);
+                intervaloMensagemDivertida = null;
+            }
+
             const btnEncerrar = document.getElementById("btnEncerrarAcompanhamento");
             if (btnEncerrar) {
                 btnEncerrar.addEventListener("click", pararAcompanhamento);
             }
 
+            // 🆕 Avaliação por estrelas — o cliente escolhe a nota e confirma com o comentário
+            if (!jaAvaliado && pedido.status === "concluido") {
+                let notaEscolhida = 0;
+                const estrelas = document.querySelectorAll("#avaliacaoStars i");
+                const btnEnviarAvaliacao = document.getElementById("btnEnviarAvaliacao");
+
+                function pintarEstrelas(nota) {
+                    estrelas.forEach(estrela => {
+                        const n = Number(estrela.dataset.nota);
+                        estrela.className = n <= nota ? "fa-solid fa-star" : "fa-regular fa-star";
+                    });
+                }
+
+                estrelas.forEach(estrela => {
+                    estrela.addEventListener("mouseenter", () => pintarEstrelas(Number(estrela.dataset.nota)));
+                    estrela.addEventListener("mouseleave", () => pintarEstrelas(notaEscolhida));
+                    estrela.addEventListener("click", () => {
+                        notaEscolhida = Number(estrela.dataset.nota);
+                        pintarEstrelas(notaEscolhida);
+                        if (btnEnviarAvaliacao) btnEnviarAvaliacao.disabled = false;
+                    });
+                });
+
+                if (btnEnviarAvaliacao) {
+                    btnEnviarAvaliacao.addEventListener("click", async () => {
+                        if (!notaEscolhida) return;
+                        btnEnviarAvaliacao.disabled = true;
+                        btnEnviarAvaliacao.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
+                        try {
+                            await updateDoc(doc(db, "pedidos", id), {
+                                avaliacao: {
+                                    nota: notaEscolhida,
+                                    comentario: document.getElementById("avaliacaoComentario")?.value || "",
+                                    data: Date.now()
+                                }
+                            });
+                        } catch (e) {
+                            console.error("Erro ao salvar avaliação:", e);
+                            btnEnviarAvaliacao.disabled = false;
+                            btnEnviarAvaliacao.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar avaliação`;
+                        }
+                    });
+                }
+            }
+
             const btnAtivarNotif = document.getElementById("btnAtivarNotif");
             if (btnAtivarNotif) {
                 btnAtivarNotif.addEventListener("click", async () => {
-                    await Notification.requestPermission();
+                    const resultado = await Notification.requestPermission();
+                    if (resultado === "granted") {
+                        inscreverNotificacaoPush(id); // 🆕 já ativa o push também
+                    }
                     renderizarAcompanhamento(id, pedido);
                 });
             }
@@ -1905,6 +3015,36 @@
 
         }
 
+        // 🆕 Contador regressivo de expiração do PIX, para o cliente não perder o prazo
+        let intervalContadorPix = null;
+
+        function iniciarContadorPix(segundosTotais) {
+            const el = document.getElementById("pixTimer");
+            if (!el) return;
+            if (intervalContadorPix) clearInterval(intervalContadorPix);
+
+            const fim = Date.now() + segundosTotais * 1000;
+
+            function tick() {
+                const restante = Math.max(0, Math.round((fim - Date.now()) / 1000));
+                const min = Math.floor(restante / 60);
+                const seg = String(restante % 60).padStart(2, "0");
+
+                if (restante <= 0) {
+                    el.innerText = "⏰ QR Code expirado — gere um novo PIX ou escolha outra forma de pagamento.";
+                    el.classList.add("expirado");
+                    clearInterval(intervalContadorPix);
+                    return;
+                }
+
+                el.innerText = `⏱️ Este QR Code expira em ${min}:${seg} — pague dentro deste prazo`;
+                el.classList.remove("expirado");
+            }
+
+            tick();
+            intervalContadorPix = setInterval(tick, 1000);
+        }
+
         // =========================
         // STATUS
         // =========================
@@ -1912,7 +3052,7 @@
         // =========================
         // 🆕 HORÁRIO DE FUNCIONAMENTO (mesmo horário todos os dias)
         // =========================
-        const HORARIO_FUNCIONAMENTO = { abertura: 18, fechamento: 23 }; // 15h às 23h59
+        const HORARIO_FUNCIONAMENTO = { abertura: 14, fechamento: 23 }; // 15h às 23h59
         let lojaAbertaAgora = true;
 
         function estaAberto() {
@@ -2003,7 +3143,7 @@
 
             grid.innerHTML = filtered.map(product => `
 
-            <div class="card">
+            <div class="card ${product.esgotado ? "" : ""}">
 
    <div class="card-image">
 
@@ -2011,6 +3151,14 @@
         <div class="photo-badge">
             📷 ${product.imagens.length}
         </div>
+    ` : ""}
+
+    ${!product.esgotado && product.destaque ? `
+        <div class="destaque-badge">🔥 Mais pedido</div>
+    ` : ""}
+
+    ${product.esgotado ? `
+        <div class="esgotado-badge"><span>Esgotado no momento</span></div>
     ` : ""}
 
     <img
@@ -2035,12 +3183,13 @@
                             ${money(product.preco)}
                         </span>
 
-                        <button class="btn addBtn"
-                            data-id="${product.id}">
+                        <button class="btn addBtn ${product.esgotado ? "disabled" : ""}"
+                            data-id="${product.id}"
+                            ${product.esgotado ? "disabled aria-disabled=\"true\"" : ""}>
 
-                            <i class="fa-solid fa-plus"></i>
+                            <i class="fa-solid ${product.esgotado ? "fa-ban" : "fa-plus"}"></i>
 
-                            ${product.limiteGratis > 0 ? "Montar" : "Adicionar"}
+                            ${product.esgotado ? "Esgotado" : (product.limiteGratis > 0 ? "Montar" : "Adicionar")}
 
                         </button>
 
@@ -2148,7 +3297,7 @@
 
         function updateCart() {
 
-            const total = cart.reduce(
+            const subtotal = cart.reduce(
 
                 (acc, item) => acc + item.preco,
 
@@ -2156,14 +3305,26 @@
 
             );
 
+            // 🆕 Aplica o cupom "Sentimos sua falta", se houver, só no total do checkout
+            const desconto = Math.min(subtotal, cupomVoltaValor || 0);
+            const totalComDesconto = Math.max(0, subtotal - desconto);
+
             document.getElementById("cartCount")
                 .innerText = cart.length;
 
             document.getElementById("cartTotal")
-                .innerText = money(total);
+                .innerText = money(subtotal);
 
             document.getElementById("checkoutTotal")
-                .innerText = money(total);
+                .innerText = money(totalComDesconto);
+
+            const cupomBox = document.getElementById("cupomDescontoBox");
+            if (desconto > 0) {
+                document.getElementById("cupomDescontoValor").innerText = `-${money(desconto)}`;
+                cupomBox.classList.remove("hidden");
+            } else {
+                cupomBox.classList.add("hidden");
+            }
 
             cartBar.style.display = cart.length
                 ? "flex"
@@ -2362,6 +3523,123 @@
         }
 
         // =========================
+        // 🆕 COMPROVANTE DO PEDIDO (tela de confirmação, no lugar do alert())
+        // =========================
+        function mostrarComprovante(dados) {
+            const {
+                numero, hora, itens, total, entrega, endereco, pagamento,
+                tempoEstimadoMin, linkAcompanhamento, mensagemFidelidade, linkWhatsapp,
+                subtotal, desconto
+            } = dados;
+
+            const itensHtml = itens.map(item => `
+                <div class="review">
+                    <div class="review-top">
+                        <strong>${item.nome}</strong>
+                    </div>
+                    ${item.gratis?.length ? `<small style="color:#00c853;">Grátis: ${item.gratis.join(", ")}</small><br>` : ""}
+                    ${item.extras?.length ? `<small style="color:#c084fc;">Extras: ${item.extras.join(", ")}</small><br>` : ""}
+                    ${item.obs ? `<small style="color:#fbbf24;">Obs: ${item.obs}</small><br>` : ""}
+                    <div style="margin-top:12px; color:#c084fc; font-weight:800;">${money(item.preco)}</div>
+                </div>
+            `).join("");
+
+            document.getElementById("comprovanteSubtitulo").innerText =
+                `Pedido #${String(numero).slice(-4)} • ${hora}`;
+
+            document.getElementById("comprovanteContent").innerHTML = `
+                <div class="notif-status ok">
+                    <i class="fa-solid fa-circle-check"></i> Seu pedido já está registrado em nosso sistema! ${mensagemFidelidade || ""}
+                </div>
+
+                ${linkWhatsapp ? `
+                <div class="pix-alerta" style="margin-bottom:16px;">
+                    <i class="fa-brands fa-whatsapp" style="color:#25d366;"></i>
+                    <span><strong>Falta 1 passo:</strong> abrimos o WhatsApp com a mensagem pronta —
+                    toque no botão verde <b>enviar (➤)</b> por lá para confirmar direto com a loja.
+                    Se a aba não abriu ou você fechou sem enviar, use o botão abaixo.</span>
+                </div>
+                <button class="finish-btn" id="reenviarWhatsBtn" style="background:linear-gradient(135deg, #25d366, #1ebe5b); margin-bottom:16px;">
+                    <i class="fa-brands fa-whatsapp"></i> Abrir WhatsApp e enviar pedido
+                </button>
+                ` : ""}
+
+                <div class="section-title"><i class="fa-solid fa-bag-shopping"></i> Itens do pedido</div>
+                ${itensHtml}
+
+                ${desconto > 0 ? `
+                <div style="display:flex; justify-content:space-between; color:#9ca3af; font-size:.85rem; padding:0 2px;">
+                    <span>Subtotal</span><span>${money(subtotal)}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; color:#4ade80; font-weight:700; font-size:.85rem; padding:2px 2px 8px 2px;">
+                    <span><i class="fa-solid fa-gift"></i> Cupom "Sentimos sua falta"</span><span>-${money(desconto)}</span>
+                </div>
+                ` : ""}
+
+                <div class="checkout-total">
+                    <span>Total do Pedido</span>
+                    <span>${money(total)}</span>
+                </div>
+
+                <div class="pix-info" style="flex-direction:column; gap:8px; align-items:flex-start;">
+                    <div style="width:100%; display:flex; justify-content:space-between;">
+                        <span>Tipo:</span> <strong>${entrega === "entrega" ? "🛵 Entrega" : "🏠 Retirada"}</strong>
+                    </div>
+                    ${entrega === "entrega" ? `
+                    <div style="width:100%; display:flex; justify-content:space-between; gap:10px;">
+                        <span>Endereço:</span> <strong style="text-align:right;">${endereco}</strong>
+                    </div>` : ""}
+                    <div style="width:100%; display:flex; justify-content:space-between;">
+                        <span>Pagamento:</span> <strong>${pagamento}</strong>
+                    </div>
+                    <div style="width:100%; display:flex; justify-content:space-between;">
+                        <span>Previsão:</span> <strong>≈ ${tempoEstimadoMin} min</strong>
+                    </div>
+                </div>
+
+                <div class="section-title"><i class="fa-solid fa-location-arrow"></i> Acompanhe seu pedido</div>
+                <small style="color:#9ca3af; display:block; margin-bottom:8px;">
+                    Guarde este link para acompanhar seu pedido em tempo real, mesmo se fechar o site.
+                </small>
+                <textarea id="comprovanteLink" rows="2" readonly onclick="this.select()">${linkAcompanhamento}</textarea>
+                <button class="copy-btn" id="copyComprovanteLink">
+                    <i class="fa-solid fa-copy"></i> COPIAR LINK DE ACOMPANHAMENTO
+                </button>
+                <button class="finish-btn" id="abrirAcompanhamentoBtn" style="margin-top:10px;">
+                    <i class="fa-solid fa-truck"></i> Ver status do pedido agora
+                </button>
+                <button class="repetir-btn" id="fecharComprovanteBtn" style="margin-top:10px;">
+                    Ok, obrigado!
+                </button>
+            `;
+
+            document.getElementById("comprovanteModal").style.display = "flex";
+
+            if (linkWhatsapp) {
+                document.getElementById("reenviarWhatsBtn").addEventListener("click", () => {
+                    window.open(linkWhatsapp, "_blank");
+                });
+            }
+
+            document.getElementById("copyComprovanteLink").addEventListener("click", async () => {
+                await navigator.clipboard.writeText(linkAcompanhamento);
+                const btn = document.getElementById("copyComprovanteLink");
+                const textoOriginal = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Link copiado!`;
+                setTimeout(() => { btn.innerHTML = textoOriginal; }, 2000);
+            });
+
+            document.getElementById("abrirAcompanhamentoBtn").addEventListener("click", () => {
+                document.getElementById("comprovanteModal").style.display = "none";
+                document.getElementById("trackModal").style.display = "flex";
+            });
+
+            document.getElementById("fecharComprovanteBtn").addEventListener("click", () => {
+                document.getElementById("comprovanteModal").style.display = "none";
+            });
+        }
+
+        // =========================
         // EVENTOS
         // =========================
 
@@ -2400,21 +3678,86 @@
         document.getElementById("closeCheckout")
             .addEventListener("click", closeCheckout);
 
-        document.getElementById("entrega")
-            .addEventListener("change", (e) => {
+        // 🆕 TIPO DE PEDIDO: botões grandes (retirada / entrega) em vez de menu suspenso
+        function setTipoEntrega(valor) {
+            const entregaInput = document.getElementById("entrega");
+            entregaInput.value = valor;
 
-                document.getElementById("enderecoBox")
-                    .classList.toggle(
-
-                        "hidden",
-
-                        e.target.value !== "entrega"
-
-                    );
-
-                atualizarEstimativaCheckout();
-
+            document.querySelectorAll(".entrega-opcao").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.valor === valor);
             });
+
+            document.getElementById("enderecoBox").classList.toggle("hidden", valor !== "entrega");
+
+            const textoConfirmacao = document.getElementById("entregaConfirmacaoTexto");
+            textoConfirmacao.innerText = valor === "entrega"
+                ? "🛵 Você vai RECEBER seu pedido no endereço abaixo."
+                : "🏠 Você vai RETIRAR o pedido na loja.";
+
+            atualizarEstimativaCheckout();
+        }
+
+        document.querySelectorAll(".entrega-opcao").forEach(btn => {
+            btn.addEventListener("click", () => setTipoEntrega(btn.dataset.valor));
+        });
+
+        // 🆕 Monta o endereço completo (Rua/Distrito, Número, Complemento) a partir dos campos separados
+        function montarEnderecoCompleto() {
+            const rua = document.getElementById("enderecoRua").value.trim();
+            const numero = document.getElementById("enderecoNumero").value.trim();
+            const complemento = document.getElementById("enderecoComplemento").value.trim();
+
+            let endereco = rua;
+            if (numero) endereco += `, ${numero}`;
+            if (complemento) endereco += ` (${complemento})`;
+            return endereco;
+        }
+
+        // 🆕 PROGRAMA DE FIDELIDADE: busca o cliente conforme ele digita o telefone
+        let fidelidadeDebounce;
+        document.getElementById("fone").addEventListener("input", (e) => {
+            clearTimeout(fidelidadeDebounce);
+            const digitos = normalizarFone(e.target.value);
+            if (digitos.length < 10) {
+                document.getElementById("fidelidadeBox").classList.add("hidden");
+                document.getElementById("boasVindasNovo").classList.add("hidden");
+                document.getElementById("camposLiberados").classList.add("hidden");
+                document.getElementById("brindeEscolhaBox")?.classList.add("hidden");
+                clienteFidelidadeAtual = null;
+                return;
+            }
+            fidelidadeDebounce = setTimeout(() => {
+                buscarClienteFidelidade();
+            }, 600);
+        });
+        document.getElementById("fone").addEventListener("blur", buscarClienteFidelidade);
+
+        // 🆕 Mostra a mensagem de boas-vindas ao cliente novo assim que ele digita o nome
+        let boasVindasDebounce;
+        document.getElementById("nome").addEventListener("input", () => {
+            clearTimeout(boasVindasDebounce);
+            boasVindasDebounce = setTimeout(atualizarBoasVindasNovoCliente, 400);
+        });
+
+        // 🆕 Alterna a exibição do select de "adicional premium" conforme o tipo de brinde escolhido
+        document.getElementById("brindeTipo")?.addEventListener("change", (e) => {
+            document.getElementById("brindeAdicionalBox")
+                .classList.toggle("hidden", e.target.value !== "adicional");
+        });
+
+        // 🆕 Repetir último pedido salvo na fidelidade
+        document.getElementById("repetirPedidoBtn").addEventListener("click", () => {
+            if (!clienteFidelidadeAtual || !clienteFidelidadeAtual.ultimoPedido) return;
+
+            const confirmar = confirm("Isso vai substituir os itens atuais do carrinho pelos itens do seu último pedido. Deseja continuar?");
+            if (!confirmar) return;
+
+            cart = JSON.parse(JSON.stringify(clienteFidelidadeAtual.ultimoPedido.itens))
+                .filter(item => !item.brinde);
+            saveCart();
+            updateCart();
+            openCheckout();
+        });
 
         // 🆕 BARRA/MODAL DE ACOMPANHAMENTO
         document.getElementById("trackBar")
@@ -2427,18 +3770,51 @@
                 document.getElementById("trackModal").style.display = "none";
             });
 
+        document.getElementById("closeComprovante")
+            .addEventListener("click", () => {
+                document.getElementById("comprovanteModal").style.display = "none";
+            });
+
+        // 🆕 Permite fechar os modais também pelo teclado (Enter/Espaço), já que os
+        // botões de fechar são ícones com role="button"
+        ["closeTrack", "closeCustom", "closeCheckout", "closeComprovante"].forEach(idBotao => {
+            document.getElementById(idBotao).addEventListener("keydown", (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.target.click();
+                }
+            });
+        });
+
         document.getElementById("pagamento")
             .addEventListener("change", (e) => {
+
+                const ehDinheiro = e.target.value === "Dinheiro";
 
                 document.getElementById("trocoBox")
                     .classList.toggle(
 
                         "hidden",
 
-                        e.target.value !== "Dinheiro"
+                        !ehDinheiro
 
                     );
 
+                // 🆕 Sempre que sair de "Dinheiro" ou trocar de forma de pagamento,
+                // reseta a pergunta do troco para forçar o cliente a responder de novo
+                if (!ehDinheiro) {
+                    document.getElementById("precisaTroco").value = "";
+                    document.getElementById("trocoValorBox").classList.add("hidden");
+                    document.getElementById("troco").value = "";
+                }
+
+            });
+
+        // 🆕 Mostra o campo de valor do troco só quando o cliente responde "Sim"
+        document.getElementById("precisaTroco")
+            .addEventListener("change", (e) => {
+                document.getElementById("trocoValorBox")
+                    .classList.toggle("hidden", e.target.value !== "sim");
             });
 
         document.getElementById("copyPix")
@@ -2576,12 +3952,18 @@ Deseja continuar?`
                         document.getElementById("entrega")
                             .value;
 
-                    const endereco =
-                        document.getElementById("endereco")
+                    const enderecoNumero =
+                        document.getElementById("enderecoNumero")
                             .value.trim();
+
+                    const endereco = montarEnderecoCompleto();
 
                     const pagamento =
                         document.getElementById("pagamento")
+                            .value;
+
+                    const precisaTroco =
+                        document.getElementById("precisaTroco")
                             .value;
 
                     const troco =
@@ -2612,26 +3994,67 @@ Deseja continuar?`
                         if (!continuar) return;
                     }
 
-                    if (
+                    // 🆕 Endereço obrigatório apenas para entrega, com o Número em destaque
+                    if (entrega === "entrega") {
 
-                        entrega === "entrega" &&
-                        !endereco
+                        if (!document.getElementById("enderecoRua").value.trim()) {
+                            alert("Preencha a Rua/Avenida do endereço de entrega.");
+                            document.getElementById("enderecoRua").focus();
+                            return;
+                        }
 
-                    ) {
-
-                        alert("Preencha o endereço");
-
-                        return;
-
+                        if (!enderecoNumero) {
+                            alert("Faltou o NÚMERO da residência. Preencha esse campo para o entregador não ter dificuldade em encontrar o endereço.");
+                            document.getElementById("enderecoNumero").focus();
+                            return;
+                        }
                     }
 
-                    const total = cart.reduce(
+                    // 🆕 Troco: exige resposta explícita quando o pagamento é em Dinheiro
+                    if (pagamento === "Dinheiro") {
+
+                        if (!precisaTroco) {
+                            alert("Responda se precisa de troco antes de finalizar o pedido.");
+                            document.getElementById("precisaTroco").focus();
+                            return;
+                        }
+
+                        if (precisaTroco === "sim") {
+                            if (!troco || Number(troco) <= 0) {
+                                alert("Informe o valor para o troco.");
+                                document.getElementById("troco").focus();
+                                return;
+                            }
+                        }
+                    }
+
+                    // 🆕 Confirmação extra para pedidos de valor alto (evita erro de clique/quantidade)
+                    const LIMITE_CONFIRMACAO_PEDIDO_GRANDE = 150; // ajuste esse valor se quiser outro limite
+                    const subtotalParaConfirmacao = cart.reduce((acc, item) => acc + item.preco, 0);
+                    if (subtotalParaConfirmacao >= LIMITE_CONFIRMACAO_PEDIDO_GRANDE) {
+                        const confirmarPedidoGrande = confirm(
+                            `Seu pedido está em ${money(subtotalParaConfirmacao)}. Confirma que os itens e quantidades estão corretos antes de enviar?`
+                        );
+                        if (!confirmarPedidoGrande) return;
+                    }
+
+                    // 🆕 Aplica o brinde de fidelidade escolhido (se houver), sem cobrar nada por ele,
+                    // e evita duplicar caso o cliente clique em finalizar mais de uma vez
+                    cart = cart.filter(item => !item.brinde);
+                    const itemBrinde = obterItemBrindeEscolhido();
+                    if (itemBrinde) cart.push(itemBrinde);
+
+                    const subtotal = cart.reduce(
 
                         (acc, item) => acc + item.preco,
 
                         0
 
                     );
+
+                    // 🆕 Aplica o cupom "Sentimos sua falta" (se ativo) no total final
+                    const descontoAplicado = Math.min(subtotal, cupomVoltaValor || 0);
+                    const total = Math.max(0, subtotal - descontoAplicado);
 
                     if (pagamento === "Pix") {
                         const totalFormatado = total.toLocaleString("pt-BR", {
@@ -2641,22 +4064,25 @@ Deseja continuar?`
                         });
 
                         // ==============================================
-                        // 🔴 SUA CHAVE DE PRODUÇÃO (que já funcionou)
-                        // ==============================================
-                        const MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
-
+                        // 🆕 SEGURANÇA: o token de produção do Mercado Pago foi removido
+                        // daqui. Ele já não era necessário nesta função (a geração do PIX
+                        // é feita pelo seu servidor no Render), e deixá-lo aqui expunha sua
+                        // chave para qualquer pessoa que abrisse o código-fonte da página.
                         // ==============================================
                         // 🚀 GERA O PIX E SALVA ESPERANDO PAGAMENTO
                         // ==============================================
                         const gerarPix = async () => {
                             try {
                                 // Pegar os dados atuais do pedido
-                                const total = cart.reduce((acc, item) => acc + item.preco, 0);
+                                const subtotalPix = cart.reduce((acc, item) => acc + item.preco, 0);
+                                const descontoPix = Math.min(subtotalPix, cupomVoltaValor || 0);
+                                const total = Math.max(0, subtotalPix - descontoPix);
                                 const nome = document.getElementById("nome").value || "Cliente";
                                 const fone = document.getElementById("fone").value || "";
                                 const entrega = document.getElementById("entrega").value || "";
-                                const endereco = document.getElementById("endereco").value || "";
-                                const troco = document.getElementById("troco").value || null;
+                                const endereco = montarEnderecoCompleto();
+                                const precisaTrocoPix = document.getElementById("precisaTroco").value;
+                                const troco = precisaTrocoPix === "sim" ? document.getElementById("troco").value : null;
                                 const totalFormatado = total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
                                 const email = "vendas@novaorigemacai.com.br"; // seu email fixo
 
@@ -2697,6 +4123,9 @@ Deseja continuar?`
                                     valorTotalEl.innerText = totalFormatado;
                                     nomeRecebedorEl.innerText = "Nova Origem Açaí";
 
+                                    // 🆕 Contador regressivo de expiração do PIX (15 minutos)
+                                    iniciarContadorPix(15 * 60);
+
                                     // ==============================================
                                     // 📝 SALVA NO FIREBASE - STATUS AGUARDANDO PAGAMENTO
                                     // ==============================================
@@ -2711,6 +4140,8 @@ Deseja continuar?`
                                         pagamento: "Pix",
                                         troco: troco || null,
                                         itens: cart,
+                                        subtotal: subtotalPix,
+                                        desconto: descontoPix,
                                         total: total,
                                         status: "aguardando_pagamento", // 🔴 FICA OCULTO ATÉ PAGAR
                                         id_pagamento_mp: idPagamentoMP, // 🆕 GUARDA O ID PARA O WEBHOOK
@@ -2740,23 +4171,17 @@ Deseja continuar?`
 
                     } else {
                         // ==============================================
-                        // ✅ DINHEIRO OU CARTÃO: CAI NA COZINHA E ENVIA WHATSAPP DIRETO
+                        // ✅ DINHEIRO OU CARTÃO: CAI NA COZINHA DIRETO
                         // ==============================================
-
-                        const itensTexto = cart.map(item => `
-• ${item.nome}
-${item.gratis.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
-${item.extras.length ? `Extras: ${item.extras.join(", ")}` : ""}
-${item.obs ? `Obs: ${item.obs}` : ""}
-    `).join("\n");
 
                         // 🆕 Tempo estimado de preparo/entrega
                         const tempoEstimadoMin = calcularTempoEstimadoMin(cart, entrega);
                         const previsaoEntrega = Date.now() + tempoEstimadoMin * 60000;
 
                         // 📝 SALVA NO FIREBASE COM STATUS "NOVO" (JÁ APARECE NA COZINHA)
+                        const numeroPedido = Date.now();
                         const pedidoRef = await addDoc(collection(db, "pedidos"), {
-                            numero: Date.now(),
+                            numero: numeroPedido,
                             nome: nome,
                             fone: fone,
                             entrega: entrega,
@@ -2764,6 +4189,8 @@ ${item.obs ? `Obs: ${item.obs}` : ""}
                             pagamento: pagamento,
                             troco: troco || null,
                             itens: cart,
+                            subtotal: subtotal,
+                            desconto: descontoAplicado,
                             total: total,
                             status: "novo", // ✅ CAI NA COZINHA DIRETO
                             tempoEstimadoMin: tempoEstimadoMin, // 🆕
@@ -2776,40 +4203,45 @@ ${item.obs ? `Obs: ${item.obs}` : ""}
                         // 🆕 Inicia o acompanhamento em tempo real deste pedido
                         iniciarAcompanhamento(pedidoRef.id);
 
+                        // 🆕 Registra o ponto de fidelidade deste pedido (1 ponto por pedido)
+                        const resultadoFidelidade = await atualizarFidelidade(fone, nome, entrega, endereco, pagamento, cart);
+
                         // 🆕 Link direto para o cliente acompanhar o status do pedido
                         const linkAcompanhamento = gerarLinkAcompanhamento(pedidoRef.id);
 
-                        // ✅ GERA MENSAGEM (COM LINK DE ACOMPANHAMENTO) E ABRE WHATSAPP
-                        const mensagem = encodeURIComponent(`
-🛒 NOVO PEDIDO - NOVA ORIGEM
-
-👤 Cliente: ${nome}
-📞 WhatsApp: ${fone}
-📦 Entrega: ${entrega}
-📍 Endereço: ${endereco || "Retirada"}
-💳 Pagamento: ${pagamento}
-
-📋 ITENS:
-${itensTexto}
-
-💰 Total: ${money(total)}
-${troco ? `💵 Troco para: R$ ${troco}` : ""}
-
-⏱️ Previsão: ${tempoEstimadoMin} min
-📲 Acompanhe seu pedido em tempo real:
-${linkAcompanhamento}
-    `);
-
                         // ✅ FINALIZAÇÃO NORMAL
-                        alert(`Pedido enviado com sucesso! Previsão: ${tempoEstimadoMin} min.`);
+                        let mensagemFidelidade = "";
+                        if (resultadoFidelidade?.ganhouBrindeAgora) {
+                            mensagemFidelidade = `🎉 Parabéns! Você completou ${PONTOS_PARA_BRINDE} pontos e ganhou ${BRINDE_DESCRICAO}! Ele será aplicado no seu próximo pedido.`;
+                        } else if (resultadoFidelidade) {
+                            mensagemFidelidade = `⭐ Você tem ${resultadoFidelidade.pontos}/${PONTOS_PARA_BRINDE} pontos de fidelidade.`;
+                        }
+
+                        const itensParaComprovante = [...cart];
                         cart = [];
                         saveCart();
                         updateCart();
                         closeCheckout();
-                        window.open(
-                            `https://wa.me/${WHATSAPP}?text=${mensagem}`,
-                            "_blank"
-                        );
+
+                        // 🆕 Dispara a notificação push pra cozinha
+                        notificarCozinha({ numero: numeroPedido, nome, total, entrega });
+
+                        mostrarComprovante({
+                            numero: numeroPedido,
+                            hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                            itens: itensParaComprovante,
+                            total: total,
+                            subtotal: subtotal,
+                            desconto: descontoAplicado,
+                            entrega: entrega,
+                            endereco: endereco,
+                            pagamento: pagamento,
+                            tempoEstimadoMin: tempoEstimadoMin,
+                            linkAcompanhamento: linkAcompanhamento,
+                            mensagemFidelidade: mensagemFidelidade
+                        });
+
+                        cupomVoltaValor = 0; // 🆕 cupom já foi usado neste pedido
                     }
 
                 } catch (error) {
@@ -2820,10 +4252,71 @@ ${linkAcompanhamento}
         // =========================
 
 
+        // 🆕 Link do botão flutuante de WhatsApp (dúvidas antes de pedir)
+        const whatsFloatEl = document.getElementById("whatsFloat");
+        if (whatsFloatEl) {
+            whatsFloatEl.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Oi! Tenho uma dúvida antes de fazer meu pedido 🍇")}`;
+        }
+
+        // 🆕 Se o cliente já pediu antes neste aparelho, mostra o progresso de fidelidade na home
+        async function atualizarFidelidadeMiniHome() {
+            if (!FIDELIDADE_ATIVA) return; // 🔒 programa de fidelidade desativado
+            const box = document.getElementById("fidelidadeMiniHome");
+            const foneSalvo = localStorage.getItem("ultimoFoneNovaOrigem");
+            if (!box || !foneSalvo) return;
+
+            try {
+                const ref = doc(db, "clientes", foneSalvo);
+                const snap = await getDoc(ref);
+                if (!snap.exists()) return;
+
+                const dados = snap.data();
+                const pontos = dados.pontos || 0;
+                const brindesDisponiveis = dados.brindesDisponiveis || 0;
+                const primeiroNome = (dados.nome || "").split(" ")[0] || "";
+                const pct = Math.min(100, Math.round((pontos / PONTOS_PARA_BRINDE) * 100));
+
+                document.getElementById("fidelidadeMiniBarraFill").style.width = pct + "%";
+                document.getElementById("fidelidadeMiniTexto").innerText = brindesDisponiveis > 0
+                    ? `🎁 ${primeiroNome ? primeiroNome + ", você" : "Você"} tem ${brindesDisponiveis} brinde(s) para resgatar no próximo pedido!`
+                    : `⭐ ${primeiroNome ? primeiroNome + ", faltam" : "Faltam"} ${Math.max(0, PONTOS_PARA_BRINDE - pontos)} pedido(s) para o seu brinde.`;
+
+                // 🆕 Repetir último pedido direto pela home, sem precisar montar o carrinho antes
+                const btnRepetirHome = document.getElementById("repetirPedidoHomeBtn");
+                if (btnRepetirHome) {
+                    if (dados.ultimoPedido?.itens?.length) {
+                        btnRepetirHome.classList.remove("hidden");
+                        btnRepetirHome.onclick = () => {
+                            cart = JSON.parse(JSON.stringify(dados.ultimoPedido.itens))
+                                .filter(item => !item.brinde);
+                            saveCart();
+                            updateCart();
+                            openCheckout();
+
+                            // Pré-preenche nome e telefone e já busca os dados de fidelidade,
+                            // sem o cliente precisar redigitar nada
+                            document.getElementById("nome").value = dados.nome || "";
+                            document.getElementById("fone").value = foneSalvo;
+                            buscarClienteFidelidade();
+                        };
+                    } else {
+                        btnRepetirHome.classList.add("hidden");
+                    }
+                }
+
+                box.classList.remove("hidden");
+            } catch (e) {
+                // sem conexão ou cliente não encontrado: apenas não mostra o widget
+            }
+        }
+
         updateStatus();
 
         // 🆕 Reavalia o horário de funcionamento a cada minuto (sem precisar recarregar a página)
         setInterval(updateStatus, 60000);
+
+        atualizarFaixaTempoHero();
+        atualizarFidelidadeMiniHome();
 
         updateCart();
 
@@ -2922,9 +4415,11 @@ ${linkAcompanhamento}
             btn.disabled = true;
 
             try {
-                const res = await fetch(`https://api.mercadopago.com/v1/payments/${idPagamentoAtual}`, {
-                    headers: { Authorization: `Bearer ${MP_TOKEN}` }
-                });
+                // 🆕 SEGURANÇA: a verificação agora passa pelo SEU servidor no Render
+                // (o mesmo que já gera o PIX), e não mais direto pela API do Mercado Pago
+                // com o token exposto no navegador. Veja instruções no arquivo
+                // verificar-pagamento-render.md sobre a rota que falta criar no servidor.
+                const res = await fetch(`https://origemacai.onrender.com/verificar-pagamento/${idPagamentoAtual}`);
                 const dados = await res.json();
 
                 if (dados.status === "approved") {
@@ -2952,40 +4447,44 @@ ${linkAcompanhamento}
                     // 🆕 Inicia o acompanhamento em tempo real
                     if (pedidoIdConfirmado) iniciarAcompanhamento(pedidoIdConfirmado);
 
-                    // ✅ ABRE WHATSAPP
-                    const itensTexto = pedido.itens.map(item => `
-• ${item.nome}
-${item.gratis?.length ? `Grátis: ${item.gratis.join(", ")}` : ""}
-${item.extras?.length ? `Extras: ${item.extras.join(", ")}` : ""}
-${item.obs ? `Obs: ${item.obs}` : ""}
-            `).join("\n");
+                    // 🆕 Dispara a notificação push pra cozinha
+                    notificarCozinha({ numero: pedido.numero, nome: pedido.nome, total: pedido.total, entrega: pedido.entrega });
 
-                    const msg = encodeURIComponent(`
-✅ PAGAMENTO CONFIRMADO!
+                    // 🆕 Registra o ponto de fidelidade deste pedido (1 ponto por pedido)
+                    const resultadoFidelidadePix = await atualizarFidelidade(
+                        pedido.fone, pedido.nome, pedido.entrega, pedido.endereco, "Pix", pedido.itens
+                    );
 
-🛒 NOVO PEDIDO - NOVA ORIGEM
+                    let mensagemFidelidadePix = "";
+                    if (resultadoFidelidadePix?.ganhouBrindeAgora) {
+                        mensagemFidelidadePix = `🎉 Parabéns! Você completou ${PONTOS_PARA_BRINDE} pontos e ganhou ${BRINDE_DESCRICAO}! Ele será aplicado no seu próximo pedido.`;
+                    } else if (resultadoFidelidadePix) {
+                        mensagemFidelidadePix = `⭐ Você tem ${resultadoFidelidadePix.pontos}/${PONTOS_PARA_BRINDE} pontos de fidelidade.`;
+                    }
 
-👤 Cliente: ${pedido.nome}
-📞 WhatsApp: ${pedido.fone}
-📦 Entrega: ${pedido.entrega}
-📍 Endereço: ${pedido.endereco || "Retirada"}
-
-📋 ITENS:
-${itensTexto}
-
-💰 Total: R$ ${pedido.total.toFixed(2)}
-💳 Pagamento: PIX ✅
-
-Já estamos preparando seu Açaí 🧡
-
-📲 Acompanhe seu pedido em tempo real:
-${pedidoIdConfirmado ? gerarLinkAcompanhamento(pedidoIdConfirmado) : ""}
-            `);
+                    const linkAcompanhamentoPix = pedidoIdConfirmado ? gerarLinkAcompanhamento(pedidoIdConfirmado) : "";
+                    const itensParaComprovantePix = pedido.itens;
+                    const tempoEstimadoParaComprovante = pedido.tempoEstimadoMin || calcularTempoEstimadoMin(pedido.itens, pedido.entrega);
 
                     cart = []; saveCart(); updateCart();
                     closeCheckout();
-                    window.open(`https://wa.me/55${pedido.fone.replace(/\D/g, '')}?text=${msg}`, '_blank');
-                    alert("✅ Pagamento confirmado! Pedido enviado para a cozinha.");
+
+                    mostrarComprovante({
+                        numero: pedido.numero,
+                        hora: pedido.hora || new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+                        itens: itensParaComprovantePix,
+                        total: pedido.total,
+                        subtotal: pedido.subtotal || pedido.total,
+                        desconto: pedido.desconto || 0,
+                        entrega: pedido.entrega,
+                        endereco: pedido.endereco,
+                        pagamento: "Pix",
+                        tempoEstimadoMin: tempoEstimadoParaComprovante,
+                        linkAcompanhamento: linkAcompanhamentoPix,
+                        mensagemFidelidade: mensagemFidelidadePix
+                    });
+
+                    cupomVoltaValor = 0; // 🆕 cupom já foi usado neste pedido
 
                 } else if (dados.status === "pending") {
                     alert("⏳ Pagamento ainda não caiu. Aguarde 1min e tente novamente.");
