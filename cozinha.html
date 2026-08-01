@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cozinha | Nova Origem Açaí</title>
+    <link rel="manifest" href="./manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cozinha Nova Origem">
+    <link rel="apple-touch-icon" href="./logonovonova.png.jpeg">
     <!-- Preconnect: acelera o carregamento das fontes e ícones -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,6 +113,27 @@
 
         #ativarSom:hover {
             background: rgba(124, 58, 237, 0.3);
+        }
+
+        #ativarPush {
+            background: rgba(2, 132, 199, 0.2);
+            color: #38bdf8;
+            border: 1px solid rgba(2, 132, 199, 0.3);
+            padding: 10px 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #ativarPush:hover {
+            background: rgba(2, 132, 199, 0.3);
+        }
+
+        #ativarPush.push-ativo {
+            background: rgba(0, 200, 83, 0.2);
+            color: #00ff84;
+            border-color: rgba(0, 200, 83, 0.4);
         }
 
         .filtros {
@@ -521,6 +547,7 @@
                 <i class="fa-solid fa-circle-pulse"></i> Sistema Online
             </div>
             <button id="ativarSom">🔔 Ativar Som</button>
+            <button id="ativarPush">📲 Ativar Notificações</button>
         </div>
     </header>
 
