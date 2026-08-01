@@ -2113,18 +2113,10 @@
         const WHATSAPP = "5534997741051";
         const PIX_NOME = "Jean Carlos Carreiro Reis";
         const PIX_KEY = "34997741051";
-        const SERVER_URL = "https://origemacai.onrender.com";
 
-        // 🆕 Avisa a cozinha via notificação push (mesmo com o painel fechado/tela bloqueada).
-        // "Fire and forget": se falhar, não trava o pedido — o pedido já está salvo no Firestore
-        // e vai aparecer no painel normalmente quando alguém abrir.
-        function notificarCozinha({ numero, nome, total, entrega }) {
-            fetch(`${SERVER_URL}/notificar-cozinha`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ numero, nome, total, entrega })
-            }).catch((e) => console.warn("Não foi possível notificar a cozinha:", e));
-        }
+        // ⚠️ Token do Mercado Pago exposto aqui de propósito (fallback que funciona
+        // sem depender do servidor no Render). Veja aviso de segurança na conversa.
+        const MP_TOKEN = "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
 
         // =========================
         // 🆕 PROGRAMA DE FIDELIDADE
@@ -2497,26 +2489,9 @@
                     "./Copo Trufado.jpeg"
 
                 ],
-                limiteGratis: 3
+                limiteGratis: 2
 
             },
-
-            {
-                id: 8,
-                cat: "Copos",
-                nome: "Shake Açai Tradicional 500ml",
-                preco: 16.00,
-                desc: "Açai batido com Leite, Leite em pó e leite condensado",
-                imagens: [
-                    "./Shake01.jpeg",
-                    "./Shake02.jpeg",
-                    
-
-                ],
-                customizavel: false,
-
-            },
-
 
 
             {
@@ -4223,9 +4198,6 @@ Deseja continuar?`
                         updateCart();
                         closeCheckout();
 
-                        // 🆕 Dispara a notificação push pra cozinha
-                        notificarCozinha({ numero: numeroPedido, nome, total, entrega });
-
                         mostrarComprovante({
                             numero: numeroPedido,
                             hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
@@ -4406,21 +4378,49 @@ Deseja continuar?`
             document.getElementById('valTotal').innerText = money(total);
             document.getElementById('resumoValor').style.display = "block";
         }
+        // ✅ Busca o status do pagamento direto na API do Mercado Pago.
+        // (Chamada direta do navegador — ver aviso de segurança sobre o token exposto.)
+        // Mantém nova tentativa automática em caso de instabilidade de rede.
+        async function buscarStatusPagamento(id, tentativa = 1) {
+            const MAX_TENTATIVAS = 3;
+            let res;
+            try {
+                res = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+                    headers: { Authorization: `Bearer ${MP_TOKEN}` }
+                });
+            } catch (e) {
+                // Falha de rede/conexão
+                if (tentativa < MAX_TENTATIVAS) {
+                    await new Promise(r => setTimeout(r, 4000));
+                    return buscarStatusPagamento(id, tentativa + 1);
+                }
+                throw new Error("Sem conexão com o servidor de pagamentos.");
+            }
+
+            const tipo = res.headers.get("content-type") || "";
+            if (!res.ok || !tipo.includes("application/json")) {
+                // Resposta inesperada (ex.: instabilidade momentânea). Tenta de novo antes de desistir.
+                if (tentativa < MAX_TENTATIVAS) {
+                    await new Promise(r => setTimeout(r, 4000));
+                    return buscarStatusPagamento(id, tentativa + 1);
+                }
+                throw new Error(`O servidor não respondeu corretamente (status ${res.status}).`);
+            }
+
+            return res.json();
+        }
+
         // ✅ FUNÇÃO DE VERIFICAÇÃO E LIBERAÇÃO
         async function verificarEEnviarPedido() {
             if (!idPagamentoAtual) return alert("Erro: pagamento não encontrado!");
 
             const btn = document.getElementById("pixConfirmBtn");
+            const textoOriginalBtn = `<i class="fa-solid fa-check-double"></i> JÁ EFETUEI O PAGAMENTO`;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verificando...`;
             btn.disabled = true;
 
             try {
-                // 🆕 SEGURANÇA: a verificação agora passa pelo SEU servidor no Render
-                // (o mesmo que já gera o PIX), e não mais direto pela API do Mercado Pago
-                // com o token exposto no navegador. Veja instruções no arquivo
-                // verificar-pagamento-render.md sobre a rota que falta criar no servidor.
-                const res = await fetch(`https://origemacai.onrender.com/verificar-pagamento/${idPagamentoAtual}`);
-                const dados = await res.json();
+                const dados = await buscarStatusPagamento(idPagamentoAtual);
 
                 if (dados.status === "approved") {
                     // ✅ ATUALIZA NO FIREBASE
@@ -4446,9 +4446,6 @@ Deseja continuar?`
 
                     // 🆕 Inicia o acompanhamento em tempo real
                     if (pedidoIdConfirmado) iniciarAcompanhamento(pedidoIdConfirmado);
-
-                    // 🆕 Dispara a notificação push pra cozinha
-                    notificarCozinha({ numero: pedido.numero, nome: pedido.nome, total: pedido.total, entrega: pedido.entrega });
 
                     // 🆕 Registra o ponto de fidelidade deste pedido (1 ponto por pedido)
                     const resultadoFidelidadePix = await atualizarFidelidade(
@@ -4492,9 +4489,10 @@ Deseja continuar?`
                     alert("❌ Pagamento não aprovado.");
                 }
             } catch (e) {
-                alert("❌ Erro: " + e.message);
+                console.error("Erro ao verificar pagamento:", e);
+                alert("⚠️ Não conseguimos confirmar seu pagamento agora — pode ser instabilidade momentânea no servidor.\n\nSeu PIX, se já foi pago, não se perde. Aguarde uns 20 segundos e toque em \"Já efetuei o pagamento\" de novo. Se continuar dando erro, chame a loja pelo WhatsApp que confirmamos manualmente.");
             } finally {
-                btn.innerHTML = `<i class="fa-solid fa-check-double"></i> JÁ EFETUEI O PAGAMENTO`;
+                btn.innerHTML = textoOriginalBtn;
                 btn.disabled = false;
             }
         }
