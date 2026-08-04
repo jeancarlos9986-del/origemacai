@@ -9,6 +9,27 @@
 
     <link rel="icon" type="image/png" href="./logonovonova.jpeg" />
 
+    <!-- 🆕 PWA: instalável na tela inicial -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#7c3aed" />
+    <link rel="apple-touch-icon" href="./logonovonova.jpeg" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Nova Origem" />
+
+    <!-- 🆕 Preview bonito ao compartilhar o link (WhatsApp, Instagram, etc.) -->
+    <!-- ⚠️ Troque "https://SEU-DOMINIO-AQUI" pelo domínio real onde o site está publicado -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Nova Origem Açaí | Cardápio Digital" />
+    <meta property="og:description"
+        content="Monte seu açaí do seu jeito e peça em poucos toques. Entrega e retirada, pagamento por Pix, cartão ou dinheiro." />
+    <meta property="og:image" content="https://SEU-DOMINIO-AQUI/logonovonova.jpeg" />
+    <meta property="og:url" content="https://SEU-DOMINIO-AQUI/site.html" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Nova Origem Açaí | Cardápio Digital" />
+    <meta name="twitter:description" content="Monte seu açaí do seu jeito e peça em poucos toques." />
+    <meta name="twitter:image" content="https://SEU-DOMINIO-AQUI/logonovonova.jpeg" />
+
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
@@ -158,6 +179,61 @@
             transform: scale(1.08);
         }
 
+        /* 🆕 Banner de instalação do app (PWA) */
+        .install-banner {
+            max-width: 1100px;
+            margin: 12px auto 0;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(124, 58, 237, .18), rgba(56, 189, 248, .12));
+            border: 1px solid rgba(124, 58, 237, .35);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: .85rem;
+        }
+
+        .install-banner-texto {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e5e7eb;
+            font-weight: 700;
+        }
+
+        .install-banner-acoes {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #installBannerBtn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 10px;
+            background: var(--primary);
+            color: #fff;
+            font-weight: 800;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        #installBannerBtn:hover {
+            background: var(--primary2);
+        }
+
+        #installBannerFechar {
+            cursor: pointer;
+            opacity: .7;
+            transition: .2s;
+        }
+
+        #installBannerFechar:hover {
+            opacity: 1;
+        }
+
         /* 🆕 Faixa de tempo médio no hero */
         .hero-info-strip {
             display: inline-flex;
@@ -175,6 +251,27 @@
 
         .hero-info-strip i {
             color: #38bdf8;
+        }
+
+        /* 🆕 Linha com os selos de tempo de preparo + entrega */
+        .hero-info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .hero-info-row .hero-info-strip {
+            margin-top: 0;
+        }
+
+        .hero-info-entrega {
+            background: rgba(0, 200, 83, .12);
+            border-color: rgba(0, 200, 83, .35);
+        }
+
+        .hero-info-entrega i {
+            color: #4ade80;
         }
 
         /* 🆕 Mini widget de fidelidade na home */
@@ -1354,16 +1451,59 @@
             font-size: 0.95rem;
         }
 
-        .trash {
-            color: var(--red);
-            cursor: pointer;
-            transition: .2s;
-            opacity: 0.8;
+        /* 🆕 Ações do item no carrinho (editar / duplicar / excluir) — com rótulo visível,
+           porque "title" (tooltip) não aparece no toque do celular. */
+        .review-acoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 0 10px;
         }
 
-        .trash:hover {
-            transform: scale(1.15);
-            opacity: 1;
+        .acao-item-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .05);
+            color: #e5e7eb;
+            font-size: .78rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .acao-item-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .acao-item-btn.duplicar {
+            color: #38bdf8;
+            border-color: rgba(56, 189, 248, .4);
+        }
+
+        .acao-item-btn.duplicar:hover {
+            background: rgba(56, 189, 248, .14);
+        }
+
+        .acao-item-btn.editar {
+            color: var(--yellow);
+            border-color: rgba(245, 158, 11, .4);
+        }
+
+        .acao-item-btn.editar:hover {
+            background: rgba(245, 158, 11, .14);
+        }
+
+        .acao-item-btn.trash {
+            color: var(--red);
+            border-color: rgba(255, 23, 68, .35);
+        }
+
+        .acao-item-btn.trash:hover {
+            background: rgba(255, 23, 68, .14);
         }
 
         .checkout-total {
@@ -1638,17 +1778,45 @@
         </div>
     </header>
 
+    <!-- 🆕 BANNER DE INSTALAÇÃO DO APP (PWA) -->
+    <div id="installBanner" class="install-banner hidden">
+        <div class="install-banner-texto">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span id="installBannerTexto">Instale nosso app pra pedir mais rápido da próxima vez</span>
+        </div>
+        <div class="install-banner-acoes">
+            <button type="button" id="installBannerBtn">Instalar</button>
+            <i class="fa-solid fa-xmark" id="installBannerFechar" role="button" tabindex="0"
+                aria-label="Fechar aviso de instalação"></i>
+        </div>
+    </div>
+
     <!-- HERO -->
     <section class="hero">
         <div class="hero-content">
             <small>✨ QUALIDADE • SABOR • EXPERIÊNCIA</small>
             <h1>Monte seu Açaí Perfeito</h1>
             <p>Escolha seus complementos favoritos, personalize do seu jeito e receba uma experiência absurda 😍</p>
-            <div class="hero-info-strip" id="heroInfoStrip">
-                <i class="fa-solid fa-clock"></i>
-                <span id="heroInfoTexto">Tempo médio de preparo: consultando...</span>
+            <div class="hero-info-row">
+                <div class="hero-info-strip" id="heroInfoStrip">
+                    <i class="fa-solid fa-clock"></i>
+                    <span id="heroInfoTexto">Tempo médio de preparo: consultando...</span>
+                </div>
+                <div class="hero-info-strip hero-info-entrega">
+                    <i class="fa-solid fa-motorcycle"></i>
+                    <span>Fazemos entrega e também temos retirada na loja</span>
+                </div>
             </div>
         </div>
+    </section>
+
+    <!-- 🆕 PEÇA DE NOVO (independente da fidelidade — baseado no que foi salvo neste navegador) -->
+    <section class="fidelidade-mini hidden" id="pedirDeNovoHome"
+        style="border-color: rgba(56,189,248,.35); background: linear-gradient(135deg, rgba(56,189,248,.14), rgba(0,0,0,.1));">
+        <div class="fidelidade-mini-texto" id="pedirDeNovoTexto">Pedir de novo</div>
+        <button type="button" id="pedirDeNovoBtn" class="repetir-btn">
+            <i class="fa-solid fa-rotate-right"></i> Pedir de novo
+        </button>
     </section>
 
     <!-- 🆕 MINI WIDGET DE FIDELIDADE (aparece na home para quem já é cliente) -->
@@ -2082,6 +2250,9 @@
             getDoc,       // 🆕 SISTEMA DE FIDELIDADE
             setDoc        // 🆕 SISTEMA DE FIDELIDADE
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // 🆕 NOTIFICAÇÕES PUSH (mesmo com o site fechado)
+        import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
         // =========================
         // FIREBASE
         // =========================
@@ -2105,6 +2276,41 @@
         const app = initializeApp(firebaseConfig);
 
         const db = getFirestore(app);
+
+        // 🆕 NOTIFICAÇÕES PUSH: pede a chave VAPID em Configurações do projeto (ícone de
+        // engrenagem) > Cloud Messaging > "Certificados push da Web" no Console do Firebase,
+        // e cole aqui. Sem isso, o botão de ativar notificação some sozinho (sem quebrar o site).
+        const FCM_VAPID_KEY = "COLOQUE_AQUI_SUA_CHAVE_VAPID_DO_FIREBASE";
+
+        async function ativarNotificacoesPush(pedidoId) {
+            try {
+                if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
+                if (!FCM_VAPID_KEY || FCM_VAPID_KEY.includes("COLOQUE_AQUI")) {
+                    console.warn("Notificações push: configure FCM_VAPID_KEY no site.html primeiro.");
+                    return null;
+                }
+                const suportado = await isSupported().catch(() => false);
+                if (!suportado) return null;
+
+                const permissao = await Notification.requestPermission();
+                if (permissao !== "granted") return null;
+
+                const registration = await navigator.serviceWorker.ready;
+                const messaging = getMessaging(app);
+                const token = await getToken(messaging, {
+                    vapidKey: FCM_VAPID_KEY,
+                    serviceWorkerRegistration: registration
+                });
+
+                if (token && pedidoId) {
+                    await updateDoc(doc(db, "pedidos", pedidoId), { fcmToken: token });
+                }
+                return token || null;
+            } catch (e) {
+                console.error("Não foi possível ativar notificações push:", e);
+                return null;
+            }
+        }
 
         // =========================
         // CONFIG
@@ -2474,21 +2680,7 @@
 
 
 
-{
-                id: 8,
-                cat: "Copos",
-                nome: "Shake Açai Tradicional 500ml",
-                preco: 16.00,
-                desc: "Açai batido com Leite, Leite em pó e leite condensado",
-                imagens: [
-                    "./Shake01.jpeg",
-                    "./Shake02.jpeg",
-                    
 
-                ],
-                customizavel: false,
-
-            },
 
 
             {
@@ -2578,10 +2770,44 @@
 
         let currentProduct = null;
 
+        // 🆕 Controla se o modal de personalização está editando um item já no carrinho
+        // (em vez de adicionar um novo). null = modo "adicionar novo".
+        let editandoItemCarrinhoIndex = null;
+
         let cart = JSON.parse(localStorage.getItem("cartNovaOrigem")) || [];
         let idPagamentoAtual = null;
         // 🆕 SEGURANÇA: o token do Mercado Pago NÃO fica mais aqui no navegador.
         // Ele agora mora só no servidor (Render), que é quem fala com o Mercado Pago.
+
+        // =========================
+        // 🆕 AVISO DE ALTA DEMANDA
+        // =========================
+        // Ajuste esse número pro que fizer sentido pro seu volume de produção normal.
+        const LIMITE_ALTA_DEMANDA = 2;
+        const STATUS_EM_ANDAMENTO = ["novo", "preparo", "pronto", "em_rota"];
+
+        async function contarPedidosEmAndamento() {
+            try {
+                const snap = await getDocs(
+                    query(collection(db, "pedidos"), where("status", "in", STATUS_EM_ANDAMENTO))
+                );
+                return snap.size;
+            } catch (e) {
+                console.error("Não foi possível checar a demanda atual:", e);
+                return 0; // em caso de erro, não bloqueia o cliente
+            }
+        }
+
+        // Retorna true se o cliente pode seguir (não é alta demanda, ou ele confirmou mesmo assim)
+        async function confirmarSeAltaDemanda() {
+            const qtd = await contarPedidosEmAndamento();
+            if (qtd < LIMITE_ALTA_DEMANDA) return true;
+
+            return confirm(
+                `Prezado cliente/amigo, estamos com uma demanda maior no momento (vários pedidos em produção). ` +
+                `Por causa disso, o tempo de espera pode estar um pouco mais alto que o normal. Deseja continuar com o seu pedido?`
+            );
+        }
 
         // =========================
         // 🆕 TEMPO ESTIMADO DE PREPARO/ENTREGA
@@ -3004,6 +3230,117 @@
 
         }
 
+        // 🆕 PEÇA DE NOVO: guarda os últimos pedidos neste navegador (sem depender
+        // do programa de fidelidade), pra reordenar em 1 toque.
+        const CHAVE_HISTORICO_PEDIDOS = "historicoPedidosNovaOrigem";
+        const MAX_PEDIDOS_HISTORICO = 3;
+
+        function salvarPedidoNoHistorico(itens, entrega, endereco, pagamento) {
+            if (!itens || !itens.length) return;
+            try {
+                let historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_PEDIDOS)) || [];
+                historico.unshift({
+                    itens: JSON.parse(JSON.stringify(itens)).filter(i => !i.brinde),
+                    entrega, endereco, pagamento,
+                    data: Date.now()
+                });
+                historico = historico.slice(0, MAX_PEDIDOS_HISTORICO);
+                localStorage.setItem(CHAVE_HISTORICO_PEDIDOS, JSON.stringify(historico));
+            } catch (e) { console.error("Erro ao salvar histórico de pedidos", e); }
+        }
+
+        function obterUltimoPedidoHistorico() {
+            try {
+                const historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_PEDIDOS)) || [];
+                return historico[0] || null;
+            } catch { return null; }
+        }
+
+        // 🆕 Carrega um pedido salvo (do histórico) direto no carrinho atual
+        function pedirDeNovo(indexHistorico = 0) {
+            const historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_PEDIDOS)) || [];
+            const pedidoAntigo = historico[indexHistorico];
+            if (!pedidoAntigo) return;
+
+            const confirmar = cart.length
+                ? confirm("Isso vai substituir os itens atuais do carrinho pelos itens desse pedido. Deseja continuar?")
+                : true;
+            if (!confirmar) return;
+
+            cart = JSON.parse(JSON.stringify(pedidoAntigo.itens));
+            saveCart();
+            updateCart();
+            openCheckout();
+        }
+        window.pedirDeNovo = pedirDeNovo;
+
+        function mostrarPedirDeNovoHome() {
+            const secao = document.getElementById("pedirDeNovoHome");
+            const pedido = obterUltimoPedidoHistorico();
+            if (!pedido || !pedido.itens?.length) { secao.classList.add("hidden"); return; }
+
+            const nomes = pedido.itens.map(i => i.nome).join(", ");
+            document.getElementById("pedirDeNovoTexto").innerHTML =
+                `<i class="fa-solid fa-rotate-right" style="color:#38bdf8;"></i> Pedir de novo: <strong>${nomes}</strong>`;
+            secao.classList.remove("hidden");
+        }
+
+        document.getElementById("pedirDeNovoBtn")?.addEventListener("click", () => pedirDeNovo(0));
+
+        // 🆕 SITE INSTALÁVEL (PWA)
+        const CHAVE_INSTALL_DISPENSADO = "installBannerDispensadoNovaOrigem";
+        let deferredInstallPrompt = null;
+
+        function estaEmModoStandalone() {
+            return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+        }
+        function ehIOS() {
+            return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+        }
+
+        function iniciarPWA() {
+            // Registra o service worker (necessário para instalar como app e para notificações push)
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("./sw.js")
+                        .catch(e => console.error("Falha ao registrar service worker:", e));
+                });
+            }
+
+            if (estaEmModoStandalone() || localStorage.getItem(CHAVE_INSTALL_DISPENSADO)) return;
+
+            // Android/Chrome: o navegador avisa quando o site pode ser instalado
+            window.addEventListener("beforeinstallprompt", (e) => {
+                e.preventDefault();
+                deferredInstallPrompt = e;
+                document.getElementById("installBanner").classList.remove("hidden");
+            });
+
+            // iOS Safari não dispara o evento acima — mostra a instrução manual
+            if (ehIOS()) {
+                document.getElementById("installBannerTexto").innerText =
+                    "Instale nosso app: toque em Compartilhar e depois em \"Adicionar à Tela de Início\"";
+                document.getElementById("installBannerBtn").classList.add("hidden");
+                document.getElementById("installBanner").classList.remove("hidden");
+            }
+        }
+
+        document.getElementById("installBannerBtn")?.addEventListener("click", async () => {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            document.getElementById("installBanner").classList.add("hidden");
+        });
+
+        document.getElementById("installBannerFechar")?.addEventListener("click", () => {
+            document.getElementById("installBanner").classList.add("hidden");
+            localStorage.setItem(CHAVE_INSTALL_DISPENSADO, "1");
+        });
+        document.getElementById("installBannerFechar")?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.target.click(); }
+        });
+
         // 🆕 Contador regressivo de expiração do PIX, para o cliente não perder o prazo
         let intervalContadorPix = null;
 
@@ -3041,7 +3378,7 @@
         // =========================
         // 🆕 HORÁRIO DE FUNCIONAMENTO (mesmo horário todos os dias)
         // =========================
-        const HORARIO_FUNCIONAMENTO = { abertura: 14, fechamento: 22 }; // 15h às 23h59
+        const HORARIO_FUNCIONAMENTO = { abertura: 14, fechamento: 23 }; // 15h às 23h59
         let lojaAbertaAgora = true;
 
         function estaAberto() {
@@ -3242,7 +3579,10 @@
 
                 // 👇 2. AGORA SIM: adicionamos os eventos DEPOIS que os elementos existem
                 document.querySelectorAll('.gratisCheck').forEach(chk => {
-                    chk.addEventListener('change', atualizarContadorGratis);
+                    chk.addEventListener('change', () => {
+                        atualizarContadorGratis();
+                        atualizarValorModal();
+                    });
                 });
 
                 // 👇 3. Atualiza o contador logo ao abrir
@@ -3270,7 +3610,14 @@
 </div>
 `).join("");
 
+            // 🆕 Sem isso, marcar um adicional pago nunca atualizava o valor na tela
+            // (só aparecia certo depois de adicionar ao carrinho).
+            document.querySelectorAll('.extraCheck').forEach(chk => {
+                chk.addEventListener('change', atualizarValorModal);
+            });
+
             document.getElementById("customModal").style.display = "flex";
+            atualizarValorModal();
         }
 
         function closeCustomize() {
@@ -3278,6 +3625,42 @@
             document.getElementById("customModal")
                 .style.display = "none";
 
+            editandoItemCarrinhoIndex = null;
+            document.getElementById("addCartBtn").innerHTML = `<i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho`;
+
+        }
+
+        // 🆕 Reabre a montagem de um item que já está no carrinho, com as escolhas
+        // salvas pré-marcadas, para o cliente ajustar sem remontar do zero.
+        function abrirEdicaoItemCarrinho(index) {
+            const item = cart[index];
+            if (!item) return;
+
+            const product = PRODUCTS.find(p => p.nome === item.nome);
+            if (!product) {
+                alert("Esse item não está mais disponível no cardápio pra editar. Exclua e adicione um parecido.");
+                return;
+            }
+
+            closeCheckout();
+            openCustomize(product.id);
+            editandoItemCarrinhoIndex = index;
+
+            document.getElementById("obs").value = item.obs || "";
+
+            (item.gratis || []).forEach(nome => {
+                const chk = [...document.querySelectorAll(".gratisCheck")].find(c => c.value === nome);
+                if (chk) chk.checked = true;
+            });
+            (item.extras || []).forEach(nome => {
+                const nomeBase = nome.replace(" (extra)", "");
+                const chk = [...document.querySelectorAll(".extraCheck")].find(c => c.value === nomeBase);
+                if (chk) chk.checked = true;
+            });
+
+            atualizarContadorGratis();
+            atualizarValorModal();
+            document.getElementById("addCartBtn").innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações`;
         }
 
         // =========================
@@ -3436,9 +3819,18 @@
 
                         <strong>${item.nome}</strong>
 
-                        <i class="fa-solid fa-trash trash"
-                            data-index="${index}"></i>
+                    </div>
 
+                    <div class="review-acoes">
+                        <button type="button" class="acao-item-btn duplicar" data-index="${index}">
+                            <i class="fa-solid fa-copy"></i> Pedir mais um igual
+                        </button>
+                        <button type="button" class="acao-item-btn editar" data-index="${index}">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button type="button" class="acao-item-btn trash" data-index="${index}">
+                            <i class="fa-solid fa-trash"></i> Remover
+                        </button>
                     </div>
 
                     ${item.gratis.length ? `
@@ -3495,6 +3887,24 @@
 
             });
 
+            // 🆕 Duplica o item (mesmos extras/grátis/obs) direto no carrinho, sem remontar
+            document.querySelectorAll(".duplicar").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const index = Number(btn.dataset.index);
+                    const copia = JSON.parse(JSON.stringify(cart[index]));
+                    cart.splice(index + 1, 0, copia);
+                    updateCart();
+                    openCheckout();
+                });
+            });
+
+            // 🆕 Reabre a montagem do item já no carrinho, com as escolhas salvas
+            document.querySelectorAll(".editar").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    abrirEdicaoItemCarrinho(Number(btn.dataset.index));
+                });
+            });
+
             renderSugestoes();
             atualizarEstimativaCheckout();
             atualizarAvisoLojaFechada();
@@ -3518,7 +3928,7 @@
             const {
                 numero, hora, itens, total, entrega, endereco, pagamento,
                 tempoEstimadoMin, linkAcompanhamento, mensagemFidelidade, linkWhatsapp,
-                subtotal, desconto
+                subtotal, desconto, pedidoId
             } = dados;
 
             const itensHtml = itens.map(item => `
@@ -3597,12 +4007,27 @@
                 <button class="finish-btn" id="abrirAcompanhamentoBtn" style="margin-top:10px;">
                     <i class="fa-solid fa-truck"></i> Ver status do pedido agora
                 </button>
+                <button class="repetir-btn" id="ativarNotifBtn" style="margin-top:10px; border-color: rgba(56,189,248,.4);">
+                    <i class="fa-solid fa-bell"></i> Avisar quando o status mudar
+                </button>
                 <button class="repetir-btn" id="fecharComprovanteBtn" style="margin-top:10px;">
                     Ok, obrigado!
                 </button>
             `;
 
             document.getElementById("comprovanteModal").style.display = "flex";
+
+            document.getElementById("ativarNotifBtn").addEventListener("click", async () => {
+                const btnNotif = document.getElementById("ativarNotifBtn");
+                btnNotif.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Ativando...`;
+                const token = await ativarNotificacoesPush(pedidoId);
+                if (token) {
+                    btnNotif.innerHTML = `<i class="fa-solid fa-circle-check"></i> Notificações ativadas!`;
+                    btnNotif.disabled = true;
+                } else {
+                    btnNotif.innerHTML = `<i class="fa-solid fa-bell"></i> Não foi possível ativar (permita notificações no navegador)`;
+                }
+            });
 
             if (linkWhatsapp) {
                 document.getElementById("reenviarWhatsBtn").addEventListener("click", () => {
@@ -3890,7 +4315,7 @@ Deseja continuar?`
                     extras.push(`${item} (extra)`);
                 });
 
-                cart.push({
+                const novoItem = {
 
                     nome: currentProduct.nome,
 
@@ -3903,7 +4328,14 @@ Deseja continuar?`
                     obs: document.getElementById("obs")
                         .value.trim()
 
-                });
+                };
+
+                const estavaEditando = editandoItemCarrinhoIndex !== null;
+                if (estavaEditando) {
+                    cart[editandoItemCarrinhoIndex] = novoItem;
+                } else {
+                    cart.push(novoItem);
+                }
 
                 updateCart();
 
@@ -3918,6 +4350,8 @@ Deseja continuar?`
                     origin: { y: 0.8 }
 
                 });
+
+                if (estavaEditando) openCheckout();
 
             });
         // =========================
@@ -4027,6 +4461,11 @@ Deseja continuar?`
                         if (!confirmarPedidoGrande) return;
                     }
 
+                    // 🆕 Aviso de alta demanda: avisa o cliente ANTES de confirmar, se a cozinha
+                    // estiver com muitos pedidos em produção ao mesmo tempo.
+                    const podeContinuar = await confirmarSeAltaDemanda();
+                    if (!podeContinuar) return;
+
                     // 🆕 Aplica o brinde de fidelidade escolhido (se houver), sem cobrar nada por ele,
                     // e evita duplicar caso o cliente clique em finalizar mais de uma vez
                     cart = cart.filter(item => !item.brinde);
@@ -4111,6 +4550,11 @@ Deseja continuar?`
                                     qr.innerHTML = `<img src="data:image/png;base64,${imagemPix}" width="220" height="220" style="background:white; border-radius:12px; padding:8px;">`;
                                     valorTotalEl.innerText = totalFormatado;
                                     nomeRecebedorEl.innerText = "Nova Origem Açaí";
+
+                                    // 🆕 Leva o cliente direto pro QR Code, sem precisar rolar a tela pra achar
+                                    requestAnimationFrame(() => {
+                                        pixArea.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    });
 
                                     // 🆕 Contador regressivo de expiração do PIX (15 minutos)
                                     iniciarContadorPix(15 * 60);
@@ -4207,6 +4651,7 @@ Deseja continuar?`
                         }
 
                         const itensParaComprovante = [...cart];
+                        salvarPedidoNoHistorico(itensParaComprovante, entrega, endereco, pagamento);
                         cart = [];
                         saveCart();
                         updateCart();
@@ -4224,7 +4669,8 @@ Deseja continuar?`
                             pagamento: pagamento,
                             tempoEstimadoMin: tempoEstimadoMin,
                             linkAcompanhamento: linkAcompanhamento,
-                            mensagemFidelidade: mensagemFidelidade
+                            mensagemFidelidade: mensagemFidelidade,
+                            pedidoId: pedidoRef.id
                         });
 
                         cupomVoltaValor = 0; // 🆕 cupom já foi usado neste pedido
@@ -4303,6 +4749,8 @@ Deseja continuar?`
 
         atualizarFaixaTempoHero();
         atualizarFidelidadeMiniHome();
+        mostrarPedirDeNovoHome();
+        iniciarPWA();
 
         updateCart();
 
@@ -4477,6 +4925,7 @@ Deseja continuar?`
                     const itensParaComprovantePix = pedido.itens;
                     const tempoEstimadoParaComprovante = pedido.tempoEstimadoMin || calcularTempoEstimadoMin(pedido.itens, pedido.entrega);
 
+                    salvarPedidoNoHistorico(itensParaComprovantePix, pedido.entrega, pedido.endereco, "Pix");
                     cart = []; saveCart(); updateCart();
                     closeCheckout();
 
@@ -4492,7 +4941,8 @@ Deseja continuar?`
                         pagamento: "Pix",
                         tempoEstimadoMin: tempoEstimadoParaComprovante,
                         linkAcompanhamento: linkAcompanhamentoPix,
-                        mensagemFidelidade: mensagemFidelidadePix
+                        mensagemFidelidade: mensagemFidelidadePix,
+                        pedidoId: pedidoIdConfirmado
                     });
 
                     cupomVoltaValor = 0; // 🆕 cupom já foi usado neste pedido
