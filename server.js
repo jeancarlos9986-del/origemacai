@@ -5,31 +5,29 @@ const fetch = require('node-fetch');
 
 const app = express();
 
-// ==================================================
-// 🔴 CORS AJUSTADO PARA O SITE NOVO
-// ==================================================
 app.use((req, res, next) => {
-    // Libera o endereço NOVO do Vercel e o antigo se precisar
     const origensPermitidas = [
         'https://origemacai.vercel.app',
         'https://jeancarlos9986-del.github.io'
     ];
     const origem = req.headers.origin;
-    
-    if (origensPermitidas.includes(origem)) {
+
+    // Libera se estiver na lista — sem falhas
+    if (origem && origensPermitidas.includes(origem)) {
         res.header('Access-Control-Allow-Origin', origem);
     }
 
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin');
+    res.header('Access-Control-Max-Age', '86400');
 
+    // ⚠️ No Safari precisa retornar 200, não 204
     if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
+        return res.sendStatus(200);
     }
 
     next();
 });
-
 // ==================================================
 // 🧪 ROTA DE TESTE CORS
 // ==================================================
