@@ -6,24 +6,22 @@ const fetch = require('node-fetch');
 const app = express();
 
 // ==================================================
-// 🔴 CORS
+// 🔴 CORS AJUSTADO PARA O SITE NOVO
 // ==================================================
 app.use((req, res, next) => {
-
-    res.header(
-        'Access-Control-Allow-Origin',
+    // Libera o endereço NOVO do Vercel e o antigo se precisar
+    const origensPermitidas = [
+        'https://origemacai.vercel.app',
         'https://jeancarlos9986-del.github.io'
-    );
+    ];
+    const origem = req.headers.origin;
+    
+    if (origensPermitidas.includes(origem)) {
+        res.header('Access-Control-Allow-Origin', origem);
+    }
 
-    res.header(
-        'Access-Control-Allow-Methods',
-        'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-    );
-
-    res.header(
-        'Access-Control-Allow-Headers',
-        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
-    );
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
 
     if (req.method === 'OPTIONS') {
         return res.sendStatus(204);
@@ -147,6 +145,7 @@ app.post('/gerar-pix', async (req, res) => {
 // 🚨 ROTA DO WEBHOOK
 app.post('/webhook', async (req, res) => {
     try {
+        res.sendStatus(200);
 
         const { action, data } = req.body;
 
