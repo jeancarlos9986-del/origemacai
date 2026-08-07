@@ -305,7 +305,10 @@ async function reconciliarPagamentosPendentes() {
         for (const docSnap of snap.docs) {
             const pedido = docSnap.data();
 
-            if (!pedido.id_pagamento_mp) continue;
+            if (!pedido.id_pagamento_mp) {
+                console.log(`⚠️ (reconciliação) Pedido ${docSnap.id} está "aguardando_pagamento" mas SEM id_pagamento_mp salvo — não dá pra checar esse aqui.`);
+                continue;
+            }
 
             // 🆕 Não fica checando pra sempre pedidos muito antigos (provavelmente
             // abandonados/expirados) — evita gastar chamadas de API à toa.
@@ -318,6 +321,13 @@ async function reconciliarPagamentosPendentes() {
                 );
 
                 const dadosPagamento = await resposta.json();
+
+                // 🆕 Log de TODA checagem, não só quando aprova — pra sabermos o
+                // que o Mercado Pago está realmente respondendo (pending, rejected,
+                // erro de autenticação, etc), e não ficarmos no escuro.
+                console.log(
+                    `🔎 (reconciliação) Pedido ${docSnap.id} | pagamento ${pedido.id_pagamento_mp} | status MP: ${dadosPagamento.status || 'ERRO: ' + JSON.stringify(dadosPagamento)}`
+                );
 
                 if (dadosPagamento.status === 'approved') {
                     await docSnap.ref.update({
