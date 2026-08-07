@@ -38,7 +38,7 @@ app.use((req, res, next) => {
     );
 
     if (req.method === 'OPTIONS') {
-        return res.sendStatus(204);
+        return res.sendStatus(200);
     }
 
     next();
@@ -160,6 +160,27 @@ app.post('/gerar-pix', async (req, res) => {
         });
     }
 });
+app.get('/verificar-pagamento/:id', async (req, res) => {
+    try {
+        const paymentId = req.params.id;
+
+        const resposta = await fetch(
+            `https://api.mercadopago.com/v1/payments/${paymentId}`,
+            {
+                headers: { Authorization: `Bearer ${MP_TOKEN}` }
+            }
+        );
+
+        const dados = await resposta.json();
+        res.json({
+            status: dados.status,
+            pago: dados.status === 'approved'
+        });
+    } catch (erro) {
+        res.status(500).json({ erro: erro.message });
+    }
+});
+
 
 // ⏳ Espera alguns milissegundos (usado no retry abaixo)
 function esperar(ms) {
