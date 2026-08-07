@@ -1,832 +1,404 @@
 import { db } from "./firebase.js";
 import {
-    collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, orderBy, runTransaction
+    collection, addDoc, getDocs, updateDoc, doc, setDoc, increment, onSnapshot, query, where, runTransaction, orderBy, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --------------------------
-// REGRAS DE CONSUMO (MANTIDAS EXATAMENTE COMO ESTAVA)
-// --------------------------
+// ==============================================
+// FUNÇÕES AUXILIARES
+// ==============================================
+function n(v, p = 0) {
+    return isNaN(Number(v)) ? p : Number(v);
+}
+function t(v, p = "") {
+    return typeof v === "string" && v.trim() ? v.trim() : p;
+}
+function norm(nome) {
+    return t(nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function esc(texto) {
+    const d = document.createElement("div");
+    d.textContent = t(texto, "");
+    return d.innerHTML;
+}
+function pegarCampo(item, nomes) {
+    for (const nome of nomes) {
+        if (item[nome] !== undefined) return item[nome];
+    }
+    return 0;
+}
+
+// ==============================================
+// DADOS E REGRAS
+// ==============================================
+// ==============================================
+// DADOS E REGRAS — CORRIGIDO COM NUTELLA E TODOS OS ADICIONAIS
+// ==============================================
 const CONSUMO = {
-    "400ml": { acai: 0.28 },
+    "400ml": { acai: 0.28 }, 
     "500ml": { acai: 0.32 },
-    "Pequeno": { acai: 0.28 },
-    "Médio": { acai: 0.32 },
-    "Super": { acai: 0.32 },
-    "Nutella": { quantidade: 0.03 },
-    "Morango": { quantidade: 0.03 },
-    "Granola": { quantidade: 0.02 },
-    "Leite em pó": { quantidade: 0.02 },
-    "Leite condensado": { quantidade: 0.02 },
-    "Paçoca": { quantidade: 0.02 },
-    "Disquete": { quantidade: 0.01 },
-    "Kit Kat": { quantidade: 0.01 },
-    "Ouro Branco": { quantidade: 0.01 },
-    "Sonho de Valsa": { quantidade: 0.01 },
-    "Chocoball": { quantidade: 0.01 },
-    "Amendoim": { quantidade: 0.02 },
-    "Banana": { quantidade: 0.03 },
-    "Ovomaltine": { quantidade: 0.02 }
+    "Nutella": { qtd: 0.03 },
+    "Morango": { qtd: 0.03 },
+    "Granola": { qtd: 0.02 },
+    "Leite em pó": { qtd: 0.02 },
+    "Leite condensado": { qtd: 0.02 },
+    "Paçoca": { qtd: 0.02 },
+    "Banana": { qtd: 0.03 },
+    "Disquete": { qtd: 0.01 },
+    "Kit Kat": { qtd: 0.01 },
+    "Ouro Branco": { qtd: 0.01 },
+    "Sonho de Valsa": { qtd: 0.01 },
+    "Chocoball": { qtd: 0.01 },
+    "Amendoim": { qtd: 0.02 },
+    "Shake Açai Tradicional 500ml": { acai: 0.30, "Leite": 0.10, "Leite em pó": 0.025 },
+    "Ovomaltine": { qtd: 0.02 }
 };
 
-// --------------------------
-// FUNÇÕES DE SEGURANÇA (MANTIDAS)
-// --------------------------
-function garantirNumero(valor, padrao = 0) {
-    const convertido = Number(valor);
-    return isNaN(convertido) ? padrao : convertido;
-}
+// ==============================================
+// BAIXA DE ESTOQUE POR PEDIDO (ATÔMICA, SEM TRANSAÇÃO ANINHADA)
+// ==============================================
 
-function garantirTexto(valor, padrao = "Não informado") {
-    return typeof valor === "string" && valor.trim() !== "" ? valor.trim() : padrao;
-}
-
-function normalizarNome(nome) {
-    return garantirTexto(nome).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
-// Evita XSS: qualquer texto vindo do Firestore (nome de insumo, observação,
-// descrição de gasto etc.) passa por aqui antes de entrar num innerHTML.
-// Sem isso, um nome/observação contendo "<" ou caracteres de HTML poderia
-// quebrar o layout ou, no pior caso, executar script na tela de quem olhar.
-function escapeHTML(texto) {
-    const div = document.createElement("div");
-    div.textContent = garantirTexto(texto, "");
-    return div.innerHTML;
-}
-
-// --------------------------
-// FUNÇÃO DE ATUALIZAÇÃO DE ESTOQUE (MANTIDA)
-// --------------------------
-// Recebe o item JÁ localizado ({id, nome}) — quem chama é responsável por
-// buscar a coleção "estoque" UMA vez por pedido (ver darBaixaPorPedido),
-// em vez de rebuscar tudo a cada item baixado.
-// Usa transação para ler+atualizar a quantidade de forma atômica, evitando
-// que dois pedidos concorrentes derrubem o estoque para negativo.
-async function atualizarQuantidadeItem(itemInfo, qtdSaida, observacao) {
-    if (!itemInfo) {
-        console.warn(`⚠️ ITEM NÃO CADASTRADO NO ESTOQUE — CADASTRE AGORA!`);
-        return;
-    }
-
-    const itemRef = doc(db, "estoque", itemInfo.id);
-    const movRef = doc(collection(db, "movimentacoes"));
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            const itemSnap = await transaction.get(itemRef);
-            if (!itemSnap.exists()) {
-                throw new Error(`Item "${itemInfo.nome}" não existe mais no estoque`);
-            }
-
-            const qtdAtual = garantirNumero(itemSnap.data().quantidade);
-            const novaQtd = qtdAtual - qtdSaida;
-
-            if (novaQtd < 0) {
-                throw new Error(`Estoque insuficiente para "${itemInfo.nome}": tem ${qtdAtual}, precisa ${qtdSaida}`);
-            }
-
-            transaction.update(itemRef, {
-                quantidade: novaQtd,
-                atualizadoEm: new Date()
-            });
-
-            transaction.set(movRef, {
-                itemId: itemInfo.id,
-                nomeItem: itemInfo.nome,
-                tipo: "saida",
-                quantidade: qtdSaida,
-                observacao: observacao,
-                data: new Date()
-            });
-        });
-
-        console.log(`✅ BAIXA REALIZADA: ${itemInfo.nome} -${qtdSaida}`);
-    } catch (e) {
-        console.warn(`⚠️ Falha na baixa de "${itemInfo.nome}": ${e.message}`);
-    }
-}
-
-// --------------------------
-// FUNÇÃO DE BAIXA (MANTIDA COM CORREÇÃO DO GRATIS)
-// --------------------------
-async function darBaixaPorPedido(pedido, idPedido) {
-    const itens = pedido.itens || [];
-    if (itens.length === 0) {
-        console.warn(`⚠️ Pedido ${idPedido} sem itens — sem baixa`);
-        return;
-    }
-
-    console.log("🚨 PEDIDO BRUTO RECEBIDO:", JSON.stringify(pedido, null, 2));
-
-    // Busca o estoque UMA vez para o pedido inteiro (antes: era buscada a
-    // coleção inteira para CADA item de baixa, gerando dezenas de leituras
-    // desnecessárias por pedido).
-    const snapEstoque = await getDocs(collection(db, "estoque"));
-    const mapaEstoque = new Map();
-    snapEstoque.forEach(d => {
-        const dados = d.data();
-        mapaEstoque.set(normalizarNome(dados.nome || ""), { id: d.id, nome: dados.nome });
-    });
-
-    let baixas = [];
-
-    for (const item of itens) {
-        console.log("🚨 ITEM BRUTO RECEBIDO:", JSON.stringify(item, null, 2));
-
-        const nomeCopo = normalizarNome(item.nome || "");
-        let tipoCopo = "500ml";
-        if (nomeCopo.includes("400ml") || nomeCopo.includes("pequeno")) tipoCopo = "400ml";
-
-        baixas.push({ nome: "Açaí", qtd: CONSUMO[tipoCopo].acai });
-        baixas.push({ nome: tipoCopo === "400ml" ? "Copo 400ml" : "Copo 500ml", qtd: 1 });
-        baixas.push({ nome: "Tampa", qtd: 1 });
-        baixas.push({ nome: "Colher", qtd: 1 });
-        baixas.push({ nome: "Guardanapo", qtd: 1 });
-
-        let adicionais = [];
-        if (Array.isArray(item.gratis)) adicionais.push(...item.gratis);
-        if (Array.isArray(item.pagos)) adicionais.push(...item.pagos);
-        if (Array.isArray(item.extras)) adicionais.push(...item.extras);
-        if (Array.isArray(item.extras?.gratis)) adicionais.push(...item.extras.gratis);
-        if (Array.isArray(item.extras?.pagos)) adicionais.push(...item.extras.pagos);
-        if (Array.isArray(item.adicionais)) adicionais.push(...item.adicionais);
-
-        adicionais = adicionais.map(ad => {
-            if (typeof ad === "object" && ad !== null) return ad.nome || ad.titulo || "";
-            return String(ad || "");
-        }).filter(ad => ad.trim() !== "");
-
-        adicionais = [...new Set(adicionais)];
-        console.log("🍓 ADICIONAIS ENCONTRADOS:", adicionais);
-
-        adicionais.forEach(nomeAdicional => {
-            const nomeNorm = normalizarNome(nomeAdicional);
-            let encontrado = null;
-            for (const chave of Object.keys(CONSUMO)) {
-                const chaveNorm = normalizarNome(chave);
-                if (nomeNorm.includes(chaveNorm) || chaveNorm.includes(nomeNorm)) {
-                    encontrado = chave;
-                    break;
-                }
-            }
-            if (encontrado) {
-                baixas.push({ nome: encontrado, qtd: CONSUMO[encontrado].quantidade });
-                console.log(`✅ ADICIONAL BAIXADO: ${encontrado}`);
-            }
-        });
-    }
-
-    const qtdCopos = itens.length;
-    baixas.push({ nome: qtdCopos === 1 ? "Sacola 1 copo" : "Sacola 2+ copos", qtd: 1 });
-    baixas.push({ nome: qtdCopos === 1 ? "Porta-copo 1 copo" : "Porta-copo 2+ copos", qtd: 1 });
-
-    console.log("📋 LISTA FINAL PARA BAIXAR:", baixas);
-
-    for (const baixa of baixas) {
-        const itemInfo = mapaEstoque.get(normalizarNome(baixa.nome));
-        if (!itemInfo) {
-            console.warn(`⚠️ ITEM NÃO CADASTRADO NO ESTOQUE: "${baixa.nome}" — CADASTRE AGORA!`);
-            continue;
-        }
-        await atualizarQuantidadeItem(itemInfo, baixa.qtd, `Baixa automática - Pedido #${pedido.numero || idPedido.slice(-4)}`);
-    }
-}
-
-// --------------------------
-// MONITORAMENTO (MANTIDO SEM DUPLICATAS)
-// --------------------------
-async function monitorarPedidosConcluidos() {
-    console.log("🔍 MONITORANDO PEDIDOS...");
-    const pedidosRef = collection(db, "pedidos");
-    const q = query(pedidosRef, where("status", "in", ["concluido", "Concluído", "finalizado", "entregue", "pronto"]));
-
-    onSnapshot(q, async (snap) => {
-        snap.docChanges().forEach(async (change) => {
-            if (change.type !== "added" && change.type !== "modified") return;
-            const idPedido = change.doc.id;
-
-            try {
-                // Antes: "ler flag -> escrever flag -> dar baixa" em passos
-                // separados. Se dois eventos do snapshot chegassem quase
-                // juntos para o MESMO pedido, os dois liam a flag como
-                // "não baixado" antes de qualquer um terminar de escrever,
-                // e o estoque era baixado EM DOBRO para o mesmo pedido.
-                // Agora o check-and-set roda dentro de uma transação: o
-                // Firestore garante que só um dos dois "vence" a corrida.
-                let podeBaixar = false;
-                let pedidoAtual = null;
-
-                await runTransaction(db, async (transaction) => {
-                    const pedidoRef = doc(db, "pedidos", idPedido);
-                    const pedidoSnap = await transaction.get(pedidoRef);
-                    if (!pedidoSnap.exists()) return;
-
-                    pedidoAtual = pedidoSnap.data();
-                    if (pedidoAtual.estoqueBaixado === true) {
-                        console.log(`✅ Pedido ${idPedido} já foi baixado — pulando!`);
-                        return;
-                    }
-
-                    transaction.update(pedidoRef, { estoqueBaixado: true });
-                    podeBaixar = true;
-                });
-
-                if (!podeBaixar) return;
-
-                await darBaixaPorPedido(pedidoAtual, idPedido);
-                console.log(`🎉 PEDIDO ${idPedido} FINALIZADO COM SUCESSO!`);
-            } catch (erro) {
-                console.error(`❌ ERRO NO PEDIDO ${idPedido}:`, erro);
-                await updateDoc(doc(db, "pedidos", idPedido), { estoqueBaixado: false });
-            }
+// Calcula tudo que um pedido consome, já agregado por item (uma entrada por insumo).
+function calcularNecessidades(itens) {
+    const nec = new Map(); // chave normalizada -> { nome, qtd }
+    const add = (nome, qtd) => {
+        if (!qtd || qtd <= 0) return;
+        const chave = norm(nome);
+        const atual = nec.get(chave);
+        nec.set(chave, { nome, qtd: (atual?.qtd || 0) + qtd });
+    };
+    itens.forEach(item => {
+        const copo = norm(item.nome).includes("400") ? "400ml" : "500ml";
+        add("Açaí", CONSUMO[copo].acai);
+        add(`Copo ${copo}`, 1);
+        add("Tampa", 1);
+        add("Colher", 1);
+        add("Guardanapo", 1);
+        let ads = [];
+        ["gratis", "pagos", "adicionais"].forEach(c => { if (Array.isArray(item[c])) ads.push(...item[c]); });
+        ads = [...new Set(ads.map(a => typeof a === "object" ? a.nome || "" : String(a || "")).filter(Boolean))];
+        ads.forEach(ad => {
+            const achou = Object.keys(CONSUMO).find(ch => norm(ch) === norm(ad));
+            if (achou && CONSUMO[achou].qtd) add(achou, CONSUMO[achou].qtd);
         });
     });
+    if (itens.length === 1) { add("Sacola 1 copo", 1); add("Porta-copo 1 copo", 1); }
+    else if (itens.length > 1) { add("Sacola 2+ copos", 1); add("Porta-copo 2+ copos", 1); }
+    return nec;
 }
 
-// --------------------------
-// NOVA FUNÇÃO: CÁLCULOS FINANCEIROS E ALERTAS
-// --------------------------
-function calcularIndicadoresItem(item) {
-    const qtd = garantirNumero(item.quantidade);
-    const custo = garantirNumero(item.custoUnitario);
-    const precoVenda = garantirNumero(item.precoVenda || 0);
-    const minimo = garantirNumero(item.nivelMinimo || 0);
-    const ideal = garantirNumero(item.nivelIdeal || minimo * 2);
-
-    const valorInvestido = qtd * custo;
-    const retornoEsperado = qtd * precoVenda;
-    const lucroEstimado = retornoEsperado - valorInvestido;
-    const margem = valorInvestido > 0 ? ((lucroEstimado / valorInvestido) * 100).toFixed(1) : 0;
-
-    let status = "✅ Normal";
-    let cor = "green";
-    if (qtd <= minimo && qtd > 0) { status = "⚠️ Baixo"; cor = "orange"; }
-    if (qtd <= 0 || qtd <= minimo / 2) { status = "🚨 Crítico"; cor = "red"; }
-
-    return { valorInvestido, retornoEsperado, lucroEstimado, margem, status, cor, minimo, ideal };
-}
-
-// --------------------------
-// NOVA FUNÇÃO: MÉDIA REAL DE VENDAS (substitui os números fixos 25/45)
-// --------------------------
-// Antes a previsão usava sempre "25 copos/dia" (semana normal) ou
-// "45 copos/dia" (fim de semana), fixos no código, sem nenhuma relação
-// com o quanto a loja realmente vende. Agora calculamos a média real
-// dos últimos 30 dias de pedidos concluídos, separando dias de semana
-// normal de fim de semana (sex/sáb/dom). Se ainda não houver histórico
-// suficiente (loja nova, por exemplo), caímos de volta nos valores fixos
-// como estimativa inicial — e isso fica explícito na tela.
-async function calcularMediaVendasReal() {
-    const hoje = new Date();
-    const trintaDiasAtras = new Date(hoje);
-    trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
-
-    try {
-        const pedidosRef = collection(db, "pedidos");
-        const q = query(
-            pedidosRef,
-            where("status", "in", ["concluido", "Concluído", "finalizado", "entregue", "pronto"]),
-            where("criadoEm", ">=", trintaDiasAtras.getTime())
-        );
-        const snap = await getDocs(q);
-
-        // Agrupa a quantidade de copos vendidos por dia do calendário
-        const coposPorDia = {}; // ex: "2026-07-10" -> 18
-        snap.forEach(d => {
-            const pedido = d.data();
-            const qtdCopos = (pedido.itens || []).length;
-            if (qtdCopos === 0 || !pedido.criadoEm) return;
-            const chave = new Date(pedido.criadoEm).toISOString().slice(0, 10);
-            coposPorDia[chave] = (coposPorDia[chave] || 0) + qtdCopos;
-        });
-
-        const diasComVendas = Object.keys(coposPorDia);
-
-        // Exige um mínimo de dias com venda pra confiar na média real —
-        // com poucos dias, um único dia atípico distorceria tudo.
-        if (diasComVendas.length < 5) {
-            return { temDadosSuficientes: false, diasAnalisados: diasComVendas.length };
-        }
-
-        const valoresNormal = [];
-        const valoresFimDeSemana = [];
-
-        diasComVendas.forEach(chave => {
-            const diaSemana = new Date(`${chave}T12:00:00`).getDay(); // meio-dia evita erro de fuso
-            const ehFimDeSemana = diaSemana === 0 || diaSemana === 5 || diaSemana === 6;
-            (ehFimDeSemana ? valoresFimDeSemana : valoresNormal).push(coposPorDia[chave]);
-        });
-
-        const media = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-        const mediaGeral = media(Object.values(coposPorDia));
-
-        return {
-            temDadosSuficientes: true,
-            mediaGeral,
-            mediaSemanaNormal: media(valoresNormal),
-            mediaFimDeSemana: media(valoresFimDeSemana),
-            diasAnalisados: diasComVendas.length
-        };
-    } catch (e) {
-        console.error("Erro ao calcular média real de vendas:", e);
-        return { temDadosSuficientes: false, diasAnalisados: 0 };
-    }
-}
-
-// --------------------------
-// NOVA FUNÇÃO: PREVISÃO DE CONSUMO E SUGESTÃO DE COMPRA
-// --------------------------
-async function gerarPrevisaoEstoque() {
-    const previsaoDiv = document.getElementById("previsao-estoque");
-    if (!previsaoDiv) return;
-
-    previsaoDiv.innerHTML = "<p>Calculando previsão de consumo...</p>";
-    const hoje = new Date();
-    const diaSemana = hoje.getDay(); // 0=Dom, 6=Sáb
-
-    // Define período de movimento alto
-    const movimentoAlto = diaSemana === 5 || diaSemana === 6 || diaSemana === 0;
-    const periodo = movimentoAlto ? "fim de semana" : "semana normal";
-
-    // Tenta usar a média REAL calculada a partir do histórico de vendas.
-    // Só usa os valores fixos (25/45) como estimativa de fallback quando
-    // ainda não há histórico suficiente.
-    const historico = await calcularMediaVendasReal();
-    let mediaCopos;
-    let fonteMedia;
-
-    if (historico.temDadosSuficientes) {
-        const mediaEspecifica = movimentoAlto ? historico.mediaFimDeSemana : historico.mediaSemanaNormal;
-        mediaCopos = Math.round(mediaEspecifica ?? historico.mediaGeral);
-        fonteMedia = `baseado nos últimos ${historico.diasAnalisados} dias com venda`;
-    } else {
-        mediaCopos = movimentoAlto ? 45 : 25;
-        fonteMedia = `estimativa inicial — ainda faltam dados (${historico.diasAnalisados}/5 dias com venda registrados)`;
-    }
-
-    let html = `<div style="padding:15px; background:#1f2937; border-radius:8px; margin:15px 0;">
-    <h4>📊 Previsão para ${periodo}</h4>
-    <p>Média estimada: <strong>${mediaCopos} copos/dia</strong> <span style="color:var(--muted); font-size:0.8rem;">(${fonteMedia})</span></p><ul>`;
-
-    // Pega estoque atual
+async function construirMapaEstoque() {
     const snap = await getDocs(collection(db, "estoque"));
+    const mapa = new Map();
+    snap.forEach(d => mapa.set(norm(d.data().nome), { ref: doc(db, "estoque", d.id), nome: d.data().nome }));
+    return mapa;
+}
+
+// Uma única transação: lê o pedido, lê cada insumo necessário, escreve tudo de uma vez.
+// Nunca lança erro por falta de estoque — deixa o saldo ir a zero e registra o alerta,
+// pra nunca travar o fechamento do pedido.
+async function processarPedidoSeguro(pedidoId, mapaEstoque) {
+    let faltas = [];
+    let consumos = [];
+
+    await runTransaction(db, async tx => {
+        faltas = []; consumos = [];
+        const pedidoRef = doc(db, "pedidos", pedidoId);
+        const pedidoSnap = await tx.get(pedidoRef);
+        if (!pedidoSnap.exists()) return;
+        const pedido = pedidoSnap.data();
+        if (pedido.estoqueBaixado) return;
+
+        const necessidades = [...calcularNecessidades(pedido.itens || []).entries()]
+            .map(([chave, v]) => ({ chave, ...v, info: mapaEstoque.get(chave) }));
+
+        // 1) TODAS as leituras primeiro (regra do Firestore: leitura antes de escrita)
+        const leituras = [];
+        for (const nec of necessidades) {
+            leituras.push({ ...nec, snap: nec.info ? await tx.get(nec.info.ref) : null });
+        }
+
+        // 2) Agora as escritas
+        for (const L of leituras) {
+            if (!L.info || !L.snap || !L.snap.exists()) { faltas.push(L.nome); continue; }
+            const atual = Number(pegarCampo(L.snap.data(), ["quantidade", "qtd", "quant"]));
+            const nova = Number((atual - L.qtd).toFixed(4));
+            tx.update(L.info.ref, { quantidade: Math.max(0, nova), atualizadoEm: new Date() });
+            consumos.push({ nome: L.info.nome, qtd: L.qtd });
+            if (nova < 0) faltas.push(L.info.nome);
+        }
+
+        tx.update(pedidoRef, faltas.length ? { estoqueBaixado: true, estoqueAlertaFalta: faltas } : { estoqueBaixado: true });
+    });
+
+    // Registro de movimentações fora da transação (é só log, não precisa ser atômico com a baixa).
+    for (const c of consumos) {
+        await addDoc(collection(db, "movimentacoes"), {
+            nomeItem: c.nome, tipo: "saida", quantidade: c.qtd, observacao: `Pedido #${pedidoId.slice(-4)}`, data: new Date()
+        }).catch(e => console.error("Falha ao registrar movimentação", e));
+    }
+    if (faltas.length) console.warn(`⚠️ Estoque negativo ao processar pedido #${pedidoId.slice(-4)}: ${faltas.join(", ")}`);
+}
+
+// Marca pedidos que JÁ existiam antes de abrirmos esta tela como processados,
+// sem descontar nada — evita dar baixa retroativa em todo o histórico de vendas.
+async function marcarHistoricoSemBaixa(ids) {
+    for (let i = 0; i < ids.length; i += 400) {
+        const lote = ids.slice(i, i + 400);
+        const batch = writeBatch(db);
+        lote.forEach(id => batch.update(doc(db, "pedidos", id), { estoqueBaixado: true, estoqueIgnoradoHistorico: true }));
+        await batch.commit().catch(e => console.error("Falha ao marcar histórico", e));
+    }
+}
+
+let carregouPrimeiraVez = false;
+function monitorar() {
+    onSnapshot(query(collection(db, "pedidos"), where("status", "in", ["concluido", "finalizado", "pronto"])), async snap => {
+        const ehCargaInicial = !carregouPrimeiraVez;
+        carregouPrimeiraVez = true;
+
+        const pendentes = snap.docChanges()
+            .filter(c => (c.type === "added" || c.type === "modified") && !c.doc.data().estoqueBaixado)
+            .map(c => c.doc.id);
+        if (!pendentes.length) return;
+
+        if (ehCargaInicial) {
+            // Pedidos que já existiam quando a tela abriu: não descontam estoque retroativamente.
+            await marcarHistoricoSemBaixa(pendentes);
+            return;
+        }
+
+        const mapaEstoque = await construirMapaEstoque();
+        for (const id of pendentes) {
+            try { await processarPedidoSeguro(id, mapaEstoque); }
+            catch (e) { console.error(`Erro ao processar baixa do pedido #${id.slice(-4)}`, e); }
+        }
+    });
+}
+
+async function mediaVendas() {
+    const dt = new Date(Date.now() - 2592000000);
+    const s = await getDocs(query(collection(db, "pedidos"), where("status", "in", ["concluido", "pronto"]), where("criadoEm", ">=", dt.getTime())));
+    const dias = {};
+    s.forEach(d => {
+        const ch = new Date(d.data().criadoEm).toISOString().slice(0, 10);
+        dias[ch] = (dias[ch] || 0) + (d.data().itens || []).length;
+    });
+    const vals = Object.values(dias).filter(v => v > 0);
+    return vals.length < 5 ? 25 : Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+}
+
+async function atualizarTudo() {
+    const s = await getDocs(collection(db, "estoque"));
     const itens = [];
-    snap.forEach(d => itens.push({ id: d.id, ...d.data() }));
+    s.forEach(d => itens.push({ id: d.id, ...d.data() }));
 
-    // Calcula necessidade por item
-    for (const item of itens) {
-        const nomeNorm = normalizarNome(item.nome);
-        let consumoPorCopo = 0;
-
-        // Verifica se tem regra de consumo
-        for (const [chave, val] of Object.entries(CONSUMO)) {
-            if (normalizarNome(chave) === nomeNorm) {
-                consumoPorCopo = val.quantidade || 0;
-                break;
-            }
-        }
-        if (nomeNorm === "acai") consumoPorCopo = 0.30; // Média entre 400/500ml
-
-        if (consumoPorCopo > 0) {
-            const necessidade = consumoPorCopo * mediaCopos;
-            const tem = garantirNumero(item.quantidade);
-            const falta = Math.max(0, necessidade - tem);
-            if (falta > 0) {
-                html += `<li style="color:red;">🚨 <strong>${escapeHTML(item.nome)}</strong>: Precisa de ${necessidade.toFixed(2)}, tem ${tem.toFixed(2)}. Compre mais ${falta.toFixed(2)}!</li>`;
-            } else {
-                html += `<li style="color:green;">✅ <strong>${escapeHTML(item.nome)}</strong>: Suficiente (tem ${tem.toFixed(2)}, precisa de ${necessidade.toFixed(2)})</li>`;
-            }
-        }
-    }
-    html += `</ul></div>`;
-    previsaoDiv.innerHTML = html;
-}
-
-// --------------------------
-// NOVA FUNÇÃO: ALERTAS DE ESTOQUE CRÍTICO (banner na tela + notificação)
-// --------------------------
-// Antes, um item "crítico" só ficava vermelho na tabela — se ninguém
-// abrisse a tela de estoque naquele dia, ninguém percebia. Agora:
-// 1) mostra um banner bem visível no topo da página com os itens
-//    críticos/baixos, e
-// 2) dispara uma notificação do navegador (se o usuário permitir) quando
-//    um item passa a ficar crítico, sem repetir a mesma notificação a
-//    cada vez que a página recarrega no mesmo dia.
-
-function obterChaveNotificacaoHoje() {
-    return `estoque_notificados_${new Date().toISOString().slice(0, 10)}`;
-}
-
-function itensJaNotificadosHoje() {
-    try {
-        const salvo = localStorage.getItem(obterChaveNotificacaoHoje());
-        return salvo ? new Set(JSON.parse(salvo)) : new Set();
-    } catch (e) {
-        return new Set(); // localStorage indisponível — segue sem deduplicar entre recarregamentos
-    }
-}
-
-function marcarComoNotificado(idsNotificados) {
-    try {
-        localStorage.setItem(obterChaveNotificacaoHoje(), JSON.stringify([...idsNotificados]));
-    } catch (e) { /* segue sem persistir */ }
-}
-
-function dispararNotificacaoNavegador(titulo, corpo) {
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-    try {
-        new Notification(titulo, { body: corpo, tag: "estoque-critico" });
-    } catch (e) {
-        console.warn("Não foi possível disparar notificação:", e);
-    }
-}
-
-function renderizarPromptNotificacao() {
-    if (typeof Notification === "undefined" || Notification.permission !== "default") return "";
-    return `
-        <div class="card" style="border-color: var(--primary); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
-            <span><i class="fas fa-bell"></i> Ative as notificações do navegador para ser avisado assim que um item ficar crítico — mesmo com a aba fechada.</span>
-            <button type="button" id="btn-ativar-notificacao" style="flex:none;">Ativar notificações</button>
-        </div>`;
-}
-
-function verificarAlertasEstoque(itens) {
-    const alertaDiv = document.getElementById("alertas-estoque");
-    if (!alertaDiv) return;
-
-    const promptHtml = renderizarPromptNotificacao();
-
-    const itensComProblema = itens
-        .map(item => ({ item, ind: calcularIndicadoresItem(item) }))
-        .filter(({ ind }) => ind.status !== "✅ Normal");
-
-    let alertasHtml = "";
-    if (itensComProblema.length > 0) {
-        const criticos = itensComProblema.filter(({ ind }) => ind.status === "🚨 Crítico");
-        const baixos = itensComProblema.filter(({ ind }) => ind.status === "⚠️ Baixo");
-
-        const listaHtml = (lista) => lista.map(({ item, ind }) =>
-            `<li><strong>${escapeHTML(item.nome)}</strong> — tem ${garantirNumero(item.quantidade).toFixed(2)} ${escapeHTML(item.unidade)} (mínimo: ${ind.minimo.toFixed(2)})</li>`
-        ).join("");
-
-        alertasHtml = `
-        <div class="card" style="border-color: var(--red); background: rgba(255,23,68,0.06); margin-bottom: 20px;">
-            <h3 style="color: var(--red);"><i class="fas fa-triangle-exclamation"></i> Alertas de Estoque</h3>
-            ${criticos.length > 0 ? `
-                <p style="color: var(--red); font-weight:700; margin-bottom:5px;">🚨 Crítico — repor com urgência:</p>
-                <ul style="margin:0 0 12px 20px;">${listaHtml(criticos)}</ul>` : ""}
-            ${baixos.length > 0 ? `
-                <p style="color: var(--yellow); font-weight:700; margin-bottom:5px;">⚠️ Baixo — fique de olho:</p>
-                <ul style="margin:0 0 0 20px;">${listaHtml(baixos)}</ul>` : ""}
-        </div>`;
-    }
-
-    alertaDiv.innerHTML = promptHtml + alertasHtml;
-
-    document.getElementById("btn-ativar-notificacao")?.addEventListener("click", () => {
-        Notification.requestPermission().then(() => carregarEstoque());
-    });
-
-    // Notifica só os itens críticos que ainda não foram notificados HOJE
-    // (evita disparar notificação repetida toda vez que a tela recarrega)
-    const criticosAgora = itensComProblema.filter(({ ind }) => ind.status === "🚨 Crítico");
-    if (criticosAgora.length === 0) return;
-
-    const jaNotificados = itensJaNotificadosHoje();
-    const novos = criticosAgora.filter(({ item }) => item.id && !jaNotificados.has(item.id));
-
-    if (novos.length > 0) {
-        const nomes = novos.map(({ item }) => item.nome).join(", ");
-        dispararNotificacaoNavegador("🚨 Estoque crítico", `Repor com urgência: ${nomes}`);
-        novos.forEach(({ item }) => jaNotificados.add(item.id));
-        marcarComoNotificado(jaNotificados);
-    }
-}
-
-// --------------------------
-// FUNÇÕES DE CARREGAMENTO ATUALIZADAS
-// --------------------------
-async function salvarItem() {
-    const nome = garantirTexto(document.getElementById("nome-item").value);
-    const unidade = garantirTexto(document.getElementById("unidade-item").value);
-    const qtd = garantirNumero(document.getElementById("qtd-item").value);
-    const custo = garantirNumero(document.getElementById("custo-item").value);
-    const precoVenda = garantirNumero(document.getElementById("preco-venda-item")?.value || 0);
-    const minimo = garantirNumero(document.getElementById("nivel-minimo")?.value || 0);
-    const ideal = garantirNumero(document.getElementById("nivel-ideal")?.value || 0);
-
-    if (!nome || qtd <= 0 || custo < 0) { alert("Preencha todos os campos!"); return; }
-    try {
-        // Evita cadastrar dois itens com o mesmo nome (ex: "Açaí" duas vezes).
-        // Isso é importante porque a baixa automática de estoque localiza o
-        // item PELO NOME — se existirem dois, um deles fica "invisível" para
-        // as baixas de pedidos e nunca é descontado corretamente.
-        const nomeNormalizadoNovo = normalizarNome(nome);
-        const snapExistente = await getDocs(collection(db, "estoque"));
-        const jaExiste = snapExistente.docs.some(d => normalizarNome(d.data().nome || "") === nomeNormalizadoNovo);
-
-        if (jaExiste) {
-            alert(`⚠️ Já existe um item chamado "${nome}" no estoque. Use a "Movimentação de Estoque" (Entrada/Ajuste) para atualizar a quantidade dele, em vez de cadastrar de novo.`);
-            return;
-        }
-
-        await addDoc(collection(db, "estoque"), {
-            nome, unidade, quantidade: qtd, custoUnitario: custo, precoVenda,
-            nivelMinimo: minimo, nivelIdeal: ideal, atualizadoEm: new Date()
-        });
-        alert("✅ Item cadastrado!");
-        limparFormularioItem(); carregarEstoque(); preencherSelectItens(); gerarPrevisaoEstoque();
-    } catch (e) { alert("Erro: " + e.message); }
-}
-
-async function registrarMovimentacao() {
-    const itemId = garantirTexto(document.getElementById("select-item").value);
-    const tipo = garantirTexto(document.getElementById("tipo-mov").value);
-    const qtd = garantirNumero(document.getElementById("qtd-mov").value);
-    const obs = garantirTexto(document.getElementById("obs-mov").value);
-    if (!itemId || qtd <= 0) { alert("Selecione item e quantidade!"); return; }
-    try {
-        const itemRef = doc(db, "estoque", itemId);
-        const movRef = doc(collection(db, "movimentacoes"));
-        let nomeItem = "";
-
-        await runTransaction(db, async (transaction) => {
-            const itemSnap = await transaction.get(itemRef);
-            if (!itemSnap.exists()) throw new Error("Item não encontrado!");
-
-            const itemData = itemSnap.data();
-            nomeItem = itemData.nome;
-            const qtdAtual = garantirNumero(itemData.quantidade);
-            const novaQtd = tipo === "entrada" ? qtdAtual + qtd : qtdAtual - qtd;
-
-            if (novaQtd < 0) throw new Error("Estoque insuficiente!");
-
-            transaction.update(itemRef, { quantidade: novaQtd, atualizadoEm: new Date() });
-            transaction.set(movRef, { itemId, nomeItem, tipo, quantidade: qtd, observacao: obs, data: new Date() });
-        });
-
-        alert("✅ Movimentação registrada!");
-        limparFormularioMov(); carregarEstoque(); carregarMovimentacoes(); gerarPrevisaoEstoque();
-    } catch (e) {
-        alert(e.message === "Estoque insuficiente!" || e.message === "Item não encontrado!" ? "❌ " + e.message : "Erro: " + e.message);
-    }
-}
-
-async function carregarEstoque() {
-    const corpo = document.querySelector("#tabela-estoque tbody");
-    const totalDiv = document.getElementById("total-estoque");
-    if (!corpo) return;
-    corpo.innerHTML = "<tr><td colspan='10' style='text-align:center'>Carregando...</td></tr>";
-    try {
-        const snap = await getDocs(collection(db, "estoque"));
-        corpo.innerHTML = "";
-        let totalInvestidoGeral = 0;
-        let totalLucroGeral = 0;
-        const itens = []; // usado para alimentar os insights com dados REAIS, não o DOM
-
-        if (snap.empty) {
-            corpo.innerHTML = "<tr><td colspan='10' style='text-align:center'>Nenhum item cadastrado.</td></tr>";
-            atualizarInsightsEstoque([]);
-            verificarAlertasEstoque([]);
-            return;
-        }
-        snap.forEach(doc => {
-            const item = doc.data();
-            const id = doc.id;
-            const qtd = garantirNumero(item.quantidade);
-            const custo = garantirNumero(item.custoUnitario);
-            const ind = calcularIndicadoresItem(item);
-
-            itens.push({ id, ...item }); // id incluído p/ deduplicar notificações
-            totalInvestidoGeral += ind.valorInvestido;
-            totalLucroGeral += ind.lucroEstimado;
-
-            corpo.innerHTML += `<tr>
-                <td>${escapeHTML(item.nome)}</td>
-                <td>${escapeHTML(item.unidade)}</td>
-                <td>${qtd.toFixed(2)}</td>
-                <td style="color:${ind.cor}">${ind.status}</td>
-                <td>R$ ${custo.toFixed(2)}</td>
-                <td>R$ ${garantirNumero(item.precoVenda || 0).toFixed(2)}</td>
-                <td>R$ ${ind.valorInvestido.toFixed(2)}</td>
-                <td>R$ ${ind.lucroEstimado.toFixed(2)}</td>
-                <td>${ind.margem}%</td>
-                <td><button onclick="editarItem('${id}')">Editar</button></td>
-            </tr>`;
-        });
-
-        if (totalDiv) {
-            totalDiv.innerHTML = `
-            <div style="display:flex; gap:20px; padding:15px; background:#1f2937; border-radius:8px; margin-bottom:15px;">
-                <div><strong>Total Investido:</strong> R$ ${totalInvestidoGeral.toFixed(2)}</div>
-                <div><strong>Lucro Estimado Total:</strong> R$ ${totalLucroGeral.toFixed(2)}</div>
-            </div>`;
-        }
-
-        atualizarInsightsEstoque(itens);
-        verificarAlertasEstoque(itens);
-    } catch (e) { corpo.innerHTML = `<tr><td colspan='10' style='color:red'>Erro: ${e.message}</td></tr>`; }
-}
-
-async function carregarMovimentacoes() {
-    const corpo = document.querySelector("#tabela-mov tbody");
-    if (!corpo) return;
-    const q = query(collection(db, "movimentacoes"), orderBy("data", "desc"));
-    onSnapshot(q, (snap) => {
-        corpo.innerHTML = "";
-        if (snap.empty) { corpo.innerHTML = "<tr><td colspan='5' style='text-align:center'>Nenhuma movimentação.</td></tr>"; return; }
-        snap.forEach(doc => {
-            const mov = doc.data();
-            const data = mov.data ? new Date(mov.data.toDate()).toLocaleString('pt-BR') : "-";
-            const tipoTexto = { entrada: "✅ Entrada", saida: "❌ Saída", ajuste: "🔧 Ajuste" }[garantirTexto(mov.tipo)] || mov.tipo;
-            corpo.innerHTML += `<tr><td>${data}</td><td>${escapeHTML(mov.nomeItem)}</td><td>${tipoTexto}</td><td>${garantirNumero(mov.quantidade).toFixed(2)}</td><td>${escapeHTML(mov.observacao)}</td></tr>`;
-        });
-    });
-}
-
-async function preencherSelectItens() {
-    const select = document.getElementById("select-item");
-    if (!select) return;
-    select.innerHTML = "<option value=''>Selecione...</option>";
-    const snap = await getDocs(collection(db, "estoque"));
-    snap.forEach(doc => {
-        const item = doc.data();
-        select.innerHTML += `<option value="${doc.id}">${escapeHTML(item.nome)}</option>`;
-    });
-}
-
-function limparFormularioItem() {
-    ["nome-item", "unidade-item", "qtd-item", "custo-item", "preco-venda-item", "nivel-minimo", "nivel-ideal"].forEach(id => {
-        const campo = document.getElementById(id);
-        if (campo) campo.value = "";
-    });
-}
-
-function limparFormularioMov() {
-    ["select-item", "tipo-mov", "qtd-mov", "obs-mov"].forEach(id => document.getElementById(id).value = "");
-}
-
-function editarItem(id) { alert("Use a movimentação para ajustar quantidades!"); }
-window.editarItem = editarItem;
-// Recebe os itens JÁ carregados do Firestore (vindos de carregarEstoque),
-// em vez de "adivinhar" os valores lendo o texto da tabela na tela.
-// Antes: se o nome do item no cadastro não fosse EXATAMENTE "Açaí",
-// "Copo 400ml" etc., a função caía silenciosamente em valores fixos
-// (10, 4, 5, 4) e mostrava números errados sem nenhum aviso.
-function atualizarInsightsEstoque(itens) {
-    // Preço de venda e margem média por copo — ainda não vêm do cadastro de
-    // estoque (que guarda insumos, não os produtos finais). Se um dia você
-    // cadastrar os produtos (copo 400/500ml) com preço de venda próprio,
-    // dá pra puxar esses dois valores de lá em vez de fixos aqui.
-    const PRECO_400 = 18.90;
-    const PRECO_500 = 22.90;
-    const LUCRO_MEDIO = 0.48;
-
-    // Usa os MESMOS valores de consumo já definidos no topo do arquivo
-    // (antes havia dois números diferentes de consumo de açaí no mesmo
-    // arquivo: 0.28/0.32 aqui em cima e 0.30/0.35 só dentro desta função).
-    const CONSUMO_400 = CONSUMO["400ml"].acai;
-    const CONSUMO_500 = CONSUMO["500ml"].acai;
-
-    const buscarQtd = (nomeAlvo) => {
-        const alvoNorm = normalizarNome(nomeAlvo);
-        const item = itens.find(it => {
-            const nomeNorm = normalizarNome(it.nome || "");
-            return nomeNorm === alvoNorm || nomeNorm.includes(alvoNorm) || alvoNorm.includes(nomeNorm);
-        });
-        return item ? garantirNumero(item.quantidade) : 0;
+    const b = nome => {
+        const i = itens.find(x => norm(x.nome) === norm(nome));
+        return i ? pegarCampo(i, ["quantidade", "qtd", "quant"]) : 0;
     };
 
-    const acai = buscarQtd("Açaí");
-    const copos400 = buscarQtd("Copo 400ml");
-    const copos500 = buscarQtd("Copo 500ml");
-    const tampas = buscarQtd("Tampa");
+    const acai = b("Açaí"), c400 = b("Copo 400ml"), c500 = b("Copo 500ml"), tampa = b("Tampa");
+    const med = await mediaVendas();
+    const capAcai = Math.floor(acai / 0.30), capCopos = c400 + c500, capTampas = tampa;
+    const total = Math.min(capAcai, capCopos, capTampas);
+    const lim = capAcai <= capCopos && capAcai <= capTampas ? "Açaí" : capCopos <= capTampas ? "Copos" : "Tampas";
+    const m400 = total > 0 ? Math.min(c400, Math.floor(acai / 0.28), total) : 0;
+    const m500 = total > 0 ? Math.min(c500, total - m400) : 0;
 
-    // CAPACIDADE DE CADA RECURSO, DE FORMA INDEPENDENTE
-    const capacidadeAcai = Math.floor(acai / ((CONSUMO_400 + CONSUMO_500) / 2)); // estimativa com consumo médio
-    const capacidadeCopos = copos400 + copos500;
-    const capacidadeTampas = tampas;
+    document.getElementById("max400").textContent = total > 0 ? m400 : "⚠️ Sem Açaí";
+    document.getElementById("max500").textContent = total > 0 ? m500 : "⚠️ Sem Açaí";
+    document.getElementById("dias").textContent = total > 0 ? `${Math.floor(total / med)} dias` : "Repor estoque";
+    document.getElementById("fatmax").textContent = total > 0 ? `R$ ${(m400 * 18.90 + m500 * 22.90).toFixed(2)}` : "R$ 0.00";
+    document.getElementById("lucromax").textContent = total > 0 ? `R$ ${((m400 * 18.90 + m500 * 22.90) * 0.48).toFixed(2)}` : "R$ 0.00";
+    document.getElementById("limitante").textContent = lim;
 
-    // O TOTAL DE COPOS POSSÍVEIS É LIMITADO PELO MENOR DOS TRÊS RECURSOS
-    const totalPossivel = Math.min(capacidadeAcai, capacidadeCopos, capacidadeTampas);
-
-    // DISTRIBUI O TOTAL ENTRE 400ML E 500ML RESPEITANDO O ESTOQUE DE CADA COPO
-    let max400 = Math.min(copos400, Math.floor(acai / CONSUMO_400), totalPossivel);
-    let max500 = Math.min(copos500, totalPossivel - max400);
-    // nunca deixa nenhum dos dois ficar negativo
-    max400 = Math.max(0, max400);
-    max500 = Math.max(0, max500);
-
-    // ITEM LIMITANTE = o recurso com a MENOR capacidade (causa real do gargalo)
-    const capacidades = { "Açaí": capacidadeAcai, "Copos": capacidadeCopos, "Tampas": capacidadeTampas };
-    const limitante = Object.keys(capacidades).reduce((a, b) => capacidades[a] <= capacidades[b] ? a : b);
-
-    // VALORES FINAIS
-    const faturamento = (max400 * PRECO_400) + (max500 * PRECO_500);
-    const lucro = faturamento * LUCRO_MEDIO;
-    const dias = Math.floor(totalPossivel / 25);
-
-    // ATUALIZA NA TELA
-    const el = (id) => document.getElementById(id);
-    if (el("max-copos-400")) el("max-copos-400").textContent = max400;
-    if (el("max-copos-500")) el("max-copos-500").textContent = max500;
-    if (el("dias-disponiveis")) el("dias-disponiveis").textContent = `${dias} dias`;
-    if (el("faturamento-max")) el("faturamento-max").textContent = `R$ ${faturamento.toFixed(2)}`;
-    if (el("lucro-real")) el("lucro-real").textContent = `R$ ${lucro.toFixed(2)}`;
-    if (el("item-limitante")) el("item-limitante").textContent = limitante;
+    resumo(itens);
+    alertas(itens);
+    listaCompra(itens);
+    tabela(itens);
 }
-// --------------------------
-// GERA LISTA DE COMPRA AUTOMÁTICA
-// --------------------------
-function gerarListaCompra() {
-    const corpoLista = document.getElementById("lista-compra-corpo");
-    if (!corpoLista) return;
-    corpoLista.innerHTML = "";
-    let totalGeral = 0;
-    const itensUnicos = new Map(); // Evita repetição
 
-    // Regras de estoque ideal para 1 semana
-    const regras = {
-        "Açaí": { min: 5, ideal: 10, custo: 16.60 },
-        "Copo 400ml": { min: 10, ideal: 30, custo: 0.58 },
-        "Copo 500ml": { min: 10, ideal: 30, custo: 0.63 },
-        "Tampa": { min: 10, ideal: 30, custo: 0.53 },
-        "Colher": { min: 15, ideal: 50, custo: 0.30 },
-        "Porta-copo 1 copo": { min: 10, ideal: 25, custo: 0.50 },
-        "Porta-copo 2+ copos": { min: 5, ideal: 15, custo: 1.00 },
-        "Guardanapo": { min: 50, ideal: 150, custo: 0.10 },
-        "Sacola 1 copo": { min: 15, ideal: 30, custo: 0.50 },
-        "Sacola 2+ copos": { min: 15, ideal: 30, custo: 0.73 },
-        "Nutella": { min: 0.5, ideal: 1.5, custo: 76.91 }
-    };
+function resumo(itens) {
+    const total = itens.reduce((a, i) => a + (pegarCampo(i, ["quantidade", "qtd", "quant"]) * pegarCampo(i, ["custoUnitario", "custo", "valor"])), 0);
+    document.getElementById("total-estoque").innerHTML = `<div class="resumo-item"><strong>Total Investido</strong>R$ ${total.toFixed(2)}</div>`;
+}
 
-    // LÊ CADA LINHA DA TABELA UMA VEZ SÓ
-    document.querySelectorAll("table tr").forEach(linha => {
-        const celulas = linha.querySelectorAll("td");
-        if (celulas.length < 5) return;
-
-        const nome = celulas[0].textContent.trim();
-        if (!regras[nome] || itensUnicos.has(nome)) return;
-
-        const qtdAtual = Number(celulas[2].textContent.replace(",", ".").trim() || 0);
-        const { min, ideal, custo } = regras[nome];
-
-        if (qtdAtual < ideal) {
-            const falta = Math.round((ideal - qtdAtual) * 100) / 100;
-            const valor = Math.round(falta * custo * 100) / 100;
-            totalGeral += valor;
-
-            let prioridade = "🟢 Baixa";
-            if (qtdAtual <= min) prioridade = "🔴 URGENTE";
-            else if (qtdAtual <= min * 1.5) prioridade = "🟡 Média";
-
-            itensUnicos.set(nome, { prioridade, nome, falta, custo, valor });
-        }
+function alertas(itens) {
+    const div = document.getElementById("alertas-estoque");
+    const cri = itens.filter(i => pegarCampo(i, ["quantidade", "qtd", "quant"]) <= pegarCampo(i, ["nivelMinimo", "minimo", "estoqueMinimo"]) / 2);
+    const bai = itens.filter(i => {
+        const q = pegarCampo(i, ["quantidade", "qtd", "quant"]);
+        const m = pegarCampo(i, ["nivelMinimo", "minimo", "estoqueMinimo"]);
+        return q > m / 2 && q <= m;
     });
-
-    // Converte para lista e ordena
-    const listaFinal = Array.from(itensUnicos.values());
-    const ordem = { "🔴 URGENTE": 1, "🟡 Média": 2, "🟢 Baixa": 3 };
-    listaFinal.sort((a, b) => ordem[a.prioridade] - ordem[b.prioridade]);
-
-    // Monta a tela
-    if (listaFinal.length === 0) {
-        corpoLista.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">✅ Nenhum item precisa ser comprado no momento!</td></tr>`;
-    } else {
-        listaFinal.forEach(item => {
-            corpoLista.innerHTML += `
-                <tr>
-                    <td>${item.prioridade}</td>
-                    <td><strong>${item.nome}</strong></td>
-                    <td>${item.falta}</td>
-                    <td>R$ ${item.custo.toFixed(2)}</td>
-                    <td>R$ ${item.valor.toFixed(2)}</td>
-                </tr>
-            `;
-        });
-        corpoLista.innerHTML += `
-            <tr style="font-weight:bold; background:#1f2937;">
-                <td colspan="4" style="text-align:right;">TOTAL GERAL:</td>
-                <td style="color:var(--primary);">R$ ${totalGeral.toFixed(2)}</td>
-            </tr>
-        `;
+    div.innerHTML = "";
+    if (cri.length || bai.length) {
+        div.innerHTML = `<div class="card alerta"><h3><i class="fas fa-exclamation-triangle"></i> Atenção!</h3>${cri.length ? `<p style="color:var(--red);font-weight:bold;">URGENTE: ${cri.map(i => i.nome).join(", ")}</p>` : ""}${bai.length ? `<p style="color:var(--yellow);">Fique de olho: ${bai.map(i => i.nome).join(", ")}</p>` : ""}</div>`;
     }
 }
 
-// Atualiza automaticamente
-window.addEventListener("load", () => setTimeout(gerarListaCompra, 800));
-document.addEventListener("click", e => {
-    if (e.target.textContent.trim() === "Salvar Item") setTimeout(gerarListaCompra, 600);
+function listaCompra(itens) {
+    const corpo = document.getElementById("lista-compra");
+    const reg = {
+        "Açaí": { min: 5, ideal: 12, cu: 16.60 },
+        "Copo 400ml": { min: 15, ideal: 40, cu: 0.58 },
+        "Copo 500ml": { min: 15, ideal: 40, cu: 0.63 },
+        "Tampa": { min: 20, ideal: 50, cu: 0.53 },
+        "Colher": { min: 20, ideal: 50, cu: 0.30 },
+        "Guardanapo": { min: 30, ideal: 80, cu: 0.10 },
+        "Nutella": { min: 0.5, ideal: 1.5, cu: 76.91 },
+        "Porta-copo 1 copo": { min: 10, ideal: 30, cu: 0.50 },
+        "Porta-copo 2+ copos": { min: 10, ideal: 30, cu: 1.00 },
+        "Sacola 1 copo": { min: 15, ideal: 40, cu: 0.50 },
+        "Sacola 2+ copos": { min: 10, ideal: 25, cu: 0.73 },
+        "Amendoim": { min: 0.5, ideal: 1, cu: 0.24 },
+        "Disquete": { min: 0.2, ideal: 0.5, cu: 0.03 },
+        "Morango": { min: 0.5, ideal: 1.5, cu: 18.00 },
+        "Granola": { min: 0.5, ideal: 1.5, cu: 12.00 },
+        "Leite em pó": { min: 0.3, ideal: 1, cu: 25.00 },
+        "Leite condensado": { min: 0.5, ideal: 1.5, cu: 8.00 },
+        "Paçoca": { min: 0.3, ideal: 1, cu: 15.00 },
+        "Banana": { min: 0.5, ideal: 2, cu: 4.00 }
+    };
+
+    const comp = [];
+    for (const [nomeReg, dadosReg] of Object.entries(reg)) {
+        const itemEncontrado = itens.find(x => norm(x.nome) === norm(nomeReg));
+        if (!itemEncontrado) continue;
+        const qtdAtual = pegarCampo(itemEncontrado, ["quantidade", "qtd", "quant"]);
+        if (qtdAtual < dadosReg.ideal) {
+            const falta = Number((dadosReg.ideal - qtdAtual).toFixed(2));
+            const prioridade = qtdAtual <= dadosReg.min ? "🔴 URGENTE" : qtdAtual <= dadosReg.min * 1.5 ? "🟡 Média" : "🟢 Baixa";
+            comp.push({
+                p: prioridade,
+                n: nomeReg,
+                q: falta,
+                cu: dadosReg.cu,
+                t: Number((falta * dadosReg.cu).toFixed(2))
+            });
+        }
+    }
+    comp.sort((a, b) => a.p.localeCompare(b.p));
+    corpo.innerHTML = comp.length
+        ? comp.map(x => `<tr><td>${x.p}</td><td>${x.n}</td><td>${x.q}</td><td>R$ ${x.cu.toFixed(2)}</td><td>R$ ${x.t.toFixed(2)}</td></tr>`).join("")
+        : `<tr><td colspan="5">✅ Tudo em dia!</td></tr>`;
+}
+
+window.copiarLista = () => {
+    const txt = Array.from(document.querySelectorAll("#lista-compra tr")).map(r => r.textContent.trim()).join("\n");
+    navigator.clipboard.writeText(txt).then(() => alert("✅ Lista copiada!"));
+};
+
+function tabela(itens) {
+    document.getElementById("tab-estoque").innerHTML = itens.map(i => {
+        const q = pegarCampo(i, ["quantidade", "qtd", "quant"]);
+        const m = pegarCampo(i, ["nivelMinimo", "minimo", "estoqueMinimo"]);
+        const cu = pegarCampo(i, ["custoUnitario", "custo", "valor"]);
+        const st = q <= m / 2 ? "🚨 Crítico" : q <= m ? "⚠️ Baixo" : "✅ Normal";
+        const cor = q <= m / 2 ? "var(--red)" : q <= m ? "var(--yellow)" : "var(--green)";
+        return `<tr><td>${esc(i.nome)}</td><td>${q.toFixed(2)}</td><td style="color:${cor}">${st}</td><td>R$ ${cu.toFixed(2)}</td><td>R$ ${(q * cu).toFixed(2)}</td></tr>`;
+    }).join("");
+}
+
+// ==============================================
+// AÇÕES E INICIALIZAÇÃO
+// ==============================================
+document.getElementById("btn-salvar").addEventListener("click", async () => {
+    const dados = {
+        nome: t(document.getElementById("nome-item").value),
+        unidade: t(document.getElementById("unidade-item").value),
+        quantidade: n(document.getElementById("qtd-item").value),
+        custoUnitario: n(document.getElementById("custo-item").value),
+        nivelMinimo: n(document.getElementById("min-item").value, 0),
+        nivelIdeal: n(document.getElementById("ideal-item").value, 0),
+        atualizadoEm: new Date()
+    };
+    const lancarGasto = document.getElementById("lancar-gasto-item").checked;
+    if (!dados.nome || dados.quantidade <= 0) return alert("Preencha tudo!");
+    try {
+        const s = await getDocs(collection(db, "estoque"));
+        if (s.docs.some(x => norm(x.data().nome) === norm(dados.nome))) return alert("Item já existe! Use Movimentação.");
+        await addDoc(collection(db, "estoque"), dados);
+
+        if (lancarGasto) {
+            const valorCompra = Number((dados.quantidade * dados.custoUnitario).toFixed(2));
+            if (valorCompra > 0) {
+                await addDoc(collection(db, "gastos"), {
+                    descricao: `Compra: ${dados.nome}`, valor: valorCompra, tipo: "insumo", natureza: "empresa", data: new Date()
+                });
+                await setDoc(doc(db, "configuracoes", "caixa_empresa"), {
+                    saldo: increment(-valorCompra), ultimaAtualizacao: new Date()
+                }, { merge: true });
+            }
+        }
+
+        alert(lancarGasto ? "✅ Cadastrado e lançado como gasto no financeiro!" : "✅ Cadastrado (sem lançar gasto — só a contagem do estoque).");
+        atualizarTudo();
+        carregarSel();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Não foi possível cadastrar o item.");
+    }
 });
-// --------------------------
-// INICIALIZAÇÃO
-// --------------------------
+
+// Movimentação manual: também atômica (baixa/compra, log e gasto/caixa na MESMA transação),
+// e nunca deixa passar de zero — só avisa o usuário em vez de travar com erro no console.
+document.getElementById("btn-mov").addEventListener("click", async () => {
+    const id = t(document.getElementById("sel-item").value);
+    const tipo = t(document.getElementById("tipo-mov").value);
+    const qtd = n(document.getElementById("qtd-mov").value);
+    const obs = t(document.getElementById("obs-mov").value);
+    if (!id || qtd <= 0) return alert("Preencha tudo!");
+    try {
+        await runTransaction(db, async tx => {
+            const ref = doc(db, "estoque", id);
+            const s = await tx.get(ref);
+            if (!s.exists()) throw new Error("Item não existe mais. Atualize a página.");
+            const dadosItem = s.data();
+            const qatual = Number(pegarCampo(dadosItem, ["quantidade", "qtd", "quant"]));
+            const custo = Number(pegarCampo(dadosItem, ["custoUnitario", "custo", "valor"]));
+            const nova = tipo === "entrada" ? qatual + qtd : qatual - qtd;
+            if (nova < 0) throw new Error(`Estoque insuficiente de "${dadosItem.nome}" (disponível: ${qatual}).`);
+
+            tx.update(ref, { quantidade: nova, atualizadoEm: new Date() });
+            tx.set(doc(collection(db, "movimentacoes")), {
+                itemId: id, nomeItem: dadosItem.nome, tipo, quantidade: qtd, observacao: obs, data: new Date()
+            });
+
+            if (tipo === "entrada") {
+                const valorCompra = Number((qtd * custo).toFixed(2));
+                tx.set(doc(collection(db, "gastos")), {
+                    descricao: `Compra: ${dadosItem.nome}`, valor: valorCompra, tipo: "insumo", natureza: "empresa", data: new Date()
+                });
+                tx.set(doc(db, "configuracoes", "caixa_empresa"), {
+                    saldo: increment(-valorCompra), ultimaAtualizacao: new Date()
+                }, { merge: true });
+            }
+        });
+        document.getElementById("qtd-mov").value = "";
+        document.getElementById("obs-mov").value = "";
+        alert("✅ Registrado!");
+        atualizarTudo();
+    } catch (e) {
+        console.error(e);
+        alert(`❌ ${e.message || "Não foi possível registrar a movimentação."}`);
+    }
+});
+
+async function carregarSel() {
+    const s = await getDocs(collection(db, "estoque"));
+    document.getElementById("sel-item").innerHTML = `<option value="">Selecione...</option>` + s.docs.map(d => `<option value="${d.id}">${esc(d.data().nome)}</option>`).join("");
+}
+
+onSnapshot(query(collection(db, "movimentacoes"), orderBy("data", "desc")), s => {
+    document.getElementById("tab-mov").innerHTML = s.docs.map(d => {
+        const m = d.data();
+        return `<tr><td>${m.data ? new Date(m.data.toDate()).toLocaleString("pt-BR") : ""}</td><td>${esc(m.nomeItem)}</td><td>${m.tipo}</td><td>${n(m.quantidade).toFixed(2)}</td></tr>`;
+    }).join("") || `<tr><td colspan="4">—</td></tr>`;
+});
+
 document.addEventListener("DOMContentLoaded", () => {
-    carregarEstoque();
-    carregarMovimentacoes();
-    preencherSelectItens();
-    gerarPrevisaoEstoque();
-    document.getElementById("btn-salvar-item")?.addEventListener("click", salvarItem);
-    document.getElementById("btn-movimentar")?.addEventListener("click", registrarMovimentacao);
-    monitorarPedidosConcluidos();
+    carregarSel();
+    atualizarTudo();
+    monitorar();
 });
