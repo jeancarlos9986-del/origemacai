@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-
     <style>
         * {
             margin: 0;
@@ -150,6 +149,11 @@
         .btn-sucesso {
             background: var(--green);
             color: white;
+        }
+
+        .btn-aviso {
+            background: var(--yellow);
+            color: #1f1300;
         }
 
         .btn-perigo {
@@ -351,6 +355,42 @@
             text-align: center;
         }
 
+        .tag-empresa,
+        .tag-pessoal,
+        .tag-troco {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            vertical-align: middle;
+        }
+
+        .tag-empresa {
+            background: rgba(124, 58, 237, .18);
+            color: #c4b5fd;
+        }
+
+        .tag-pessoal {
+            background: rgba(236, 72, 153, .18);
+            color: #f9a8d4;
+        }
+
+        .tag-troco {
+            background: rgba(245, 158, 11, .18);
+            color: var(--yellow);
+        }
+
+        .linha-pessoal {
+            background: rgba(236, 72, 153, .05);
+        }
+
+        .linha-troco {
+            background: rgba(245, 158, 11, .05);
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -390,7 +430,8 @@
         }
 
         .lista-contas,
-        .lista-fechamento {
+        .lista-fechamento,
+        .lista-estoque {
             max-height: 180px;
             overflow-y: auto;
             margin-top: 10px;
@@ -414,6 +455,21 @@
             color: var(--red);
             font-weight: 700;
         }
+
+        .aviso-caixa-fisico {
+            background: rgba(245, 158, 11, .08);
+            border: 1px solid var(--yellow);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .aviso-caixa-fisico p {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
     </style>
 </head>
 
@@ -421,9 +477,7 @@
     <div class="container">
         <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
         <div class="header"><i class="fas fa-coins"></i> GESTÃO FINANCEIRA COMPLETA</div>
-
         <div class="alertas" id="caixaAlertas"></div>
-
         <div class="topo-acoes">
             <div class="filtros">
                 <i class="fas fa-filter"></i>
@@ -432,18 +486,26 @@
                     <option value="mes" selected>Este Mês</option>
                     <option value="todos">Todo o Período</option>
                 </select>
+                <select id="filtro-natureza">
+                    <option value="todos">Empresa + Pessoal</option>
+                    <option value="empresa">Só Empresa</option>
+                    <option value="pessoal">Só Pessoal</option>
+                </select>
             </div>
             <button class="btn btn-primario" id="btnReceitaExtra"><i class="fas fa-plus-circle"></i> Receita
                 Extra</button>
+            <button class="btn btn-aviso" id="btnTrocoPix"><i class="fas fa-hand-holding-usd"></i> Troco via
+                Pix</button>
+            <button class="btn btn-aviso" id="btnEstoque"><i class="fas fa-boxes"></i> Estoque</button>
             <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar Dia</button>
             <button class="btn btn-primario" id="btnContas"><i class="fas fa-file-invoice-dollar"></i> Contas</button>
             <button class="btn btn-primario" id="btnMeta"><i class="fas fa-bullseye"></i> Meta</button>
+            <button class="btn btn-primario" id="btnAjustarCaixa"><i class="fas fa-sliders-h"></i> Ajustar
+                Caixa</button>
             <button class="btn btn-primario" id="btnExportar"><i class="fas fa-download"></i> Exportar</button>
         </div>
-
         <div class="cards-resumo" id="cards-principais"></div>
         <div id="resumo-extra"></div>
-
         <div class="grid-3">
             <div class="card">
                 <h3><i class="fas fa-chart-pie"></i> Divisão do Lucro</h3>
@@ -461,7 +523,7 @@
                 <div class="grafico-container"><canvas id="graficoDivisao"></canvas></div>
             </div>
             <div class="card">
-                <h3><i class="fas fa-tags"></i> Gastos por Categoria</h3>
+                <h3><i class="fas fa-tags"></i> Gastos por Categoria (Empresa)</h3>
                 <div class="categorias-gastos" id="categoriasGastos"></div>
                 <div class="grafico-container"><canvas id="graficoVendas"></canvas></div>
             </div>
@@ -474,26 +536,36 @@
                     </div>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted);">
-                    <span>Alcançado</span><span id="valorMeta">R$ 0,00 / R$ 0,00</span>
-                </div>
+                    <span>Alcançado</span><span id="valorMeta">R$ 0,00 / R$ 0,00</span></div>
             </div>
         </div>
-
         <div class="card">
             <h3><i class="fas fa-receipt"></i> Registrar Gasto</h3>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;"><i class="fas fa-info-circle"></i>
+                Compra de insumo/estoque? Cadastre na tela de Estoque — lá já desconta automaticamente. Use aqui só para
+                gastos fora do estoque.</p>
             <div class="form-lancamento">
                 <input type="text" id="descricao" placeholder="Ex: Energia, aluguel..." required>
                 <input type="number" id="valor-gasto" placeholder="Valor R$" min="0.01" step="0.01" required>
+                <select id="natureza-gasto">
+                    <option value="empresa">Empresa</option>
+                    <option value="pessoal">Pessoal</option>
+                </select>
                 <select id="tipo-gasto">
                     <option value="insumo">Insumos / Estoque</option>
                     <option value="fixo">Custo Fixo</option>
                     <option value="taxa">Taxas / Pagamentos</option>
                     <option value="outros">Outros</option>
                 </select>
+                <select id="forma-pagamento">
+                    <option value="dinheiro">Dinheiro em Papel</option>
+                    <option value="pix">Pix da Empresa</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="pessoal">Dinheiro Pessoal</option>
+                </select>
                 <button class="btn btn-primario" id="btnLancar"><i class="fas fa-plus"></i> Adicionar</button>
             </div>
         </div>
-
         <div class="card">
             <h3><i class="fas fa-list-alt"></i> Extrato Completo</h3>
             <table>
@@ -515,7 +587,6 @@
             </table>
         </div>
     </div>
-
     <!-- MODAIS -->
     <div class="modal" id="modalEditar">
         <div class="modal-conteudo">
@@ -524,6 +595,10 @@
             <input type="text" id="editar-desc" placeholder="Descrição" style="width:100%; margin-bottom:10px;">
             <input type="number" id="editar-valor" placeholder="Valor" step="0.01"
                 style="width:100%; margin-bottom:10px;">
+            <select id="editar-natureza" style="width:100%; margin-bottom:10px;">
+                <option value="empresa">Empresa</option>
+                <option value="pessoal">Pessoal</option>
+            </select>
             <select id="editar-tipo" style="width:100%; margin-bottom:10px;">
                 <option value="insumo">Insumos</option>
                 <option value="fixo">Fixo</option>
@@ -534,7 +609,6 @@
                     class="btn btn-primario" id="btnSalvarEdicao">Salvar</button></div>
         </div>
     </div>
-
     <div class="modal" id="modalReceita">
         <div class="modal-conteudo">
             <h4><i class="fas fa-plus-circle"></i> Receita Extra</h4>
@@ -546,20 +620,49 @@
                     class="btn btn-sucesso" id="btnSalvarRec">Registrar</button></div>
         </div>
     </div>
-
+    <div class="modal" id="modalTroco">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-hand-holding-usd"></i> Troco Devolvido via Pix</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Use quando cliente paga em dinheiro e
+                você devolve o troco por Pix — não altera lucro, só ajuda a conferir o caixa.</p>
+            <input type="text" id="descTroco" placeholder="Ex: Venda R$18,90 (nota de R$100), troco R$81,10"
+                style="width:100%; margin-bottom:10px;">
+            <input type="number" id="valorTroco" placeholder="Valor do troco R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarTroco">Cancelar</button><button
+                    class="btn btn-aviso" id="btnSalvarTroco">Registrar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalEstoque">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-boxes"></i> Estoque Parado</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Dados vêm direto da tela de Estoque.
+            </p>
+            <div class="lista-estoque" id="listaEstoque"></div>
+            <div style="display:flex; justify-content:space-between; margin-top:10px; font-weight:700;"><span>Total
+                    parado:</span><span id="totalEstoqueModal" style="color:var(--yellow)">R$ 0,00</span></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarEstoque">Fechar</button><button
+                    class="btn btn-primario" id="btnGerenciarEstoque"><i class="fas fa-external-link-alt"></i> Gerenciar
+                    Estoque</button></div>
+        </div>
+    </div>
     <div class="modal" id="modalFechar">
         <div class="modal-conteudo">
             <h4><i class="fas fa-cash-register"></i> Fechar Caixa do Dia</h4>
             <p style="margin-bottom:10px; font-size:0.9rem;">Saldo calculado: <strong id="saldoCalc">R$ 0,00</strong>
             </p>
-            <input type="number" id="saldoReal" placeholder="Valor que realmente tem no caixa" step="0.01"
+            <div class="aviso-caixa-fisico">
+                <p><span>Dinheiro em vendas</span><strong id="dinheiroVendasFechar">R$ 0,00</strong></p>
+                <p><span>(+) Troco devolvido via Pix</span><strong id="trocoPixFechar">R$ 0,00</strong></p>
+                <p><span>= Dinheiro esperado</span><strong id="dinheiroEsperadoFechar">R$ 0,00</strong></p>
+            </div>
+            <input type="number" id="saldoReal" placeholder="Valor real em espécie R$" step="0.01"
                 style="width:100%; margin-bottom:10px;">
             <div class="lista-fechamento" id="listaFechamento"></div>
             <div class="botoes-modal"><button class="btn" id="btnCancelarFechar">Cancelar</button><button
-                    class="btn btn-sucesso" id="btnConfirmarFechar">Confirmar Fechamento</button></div>
+                    class="btn btn-sucesso" id="btnConfirmarFechar">Confirmar</button></div>
         </div>
     </div>
-
     <div class="modal" id="modalContas">
         <div class="modal-conteudo">
             <h4><i class="fas fa-file-invoice-dollar"></i> Contas a Pagar</h4>
@@ -573,7 +676,21 @@
             <div class="botoes-modal"><button class="btn" id="btnCancelarContas">Fechar</button></div>
         </div>
     </div>
-
+    <div class="modal" id="modalAjustarCaixa">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-sliders-h"></i> Ajustar Saldo do Caixa</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Informe o valor real que tem HOJE,
+                separado por tipo:</p>
+            <input type="number" id="saldo-dinheiro" placeholder="Dinheiro em Papel R$" step="0.01"
+                style="width:100%; margin-bottom:8px;">
+            <input type="number" id="saldo-pix" placeholder="Saldo Pix Empresa R$" step="0.01"
+                style="width:100%; margin-bottom:8px;">
+            <input type="number" id="saldo-cartao" placeholder="Valor a Receber Cartão R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarAjusteCaixa">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarAjusteCaixa">Salvar</button></div>
+        </div>
+    </div>
     <div class="modal" id="modalMeta">
         <div class="modal-conteudo">
             <h4><i class="fas fa-bullseye"></i> Definir Meta</h4>
@@ -587,7 +704,6 @@
                     class="btn btn-primario" id="btnSalvarMeta">Salvar</button></div>
         </div>
     </div>
-
     <script type="module" src="./financeiro.js"></script>
 </body>
 
