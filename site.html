@@ -1773,13 +1773,40 @@
                 <div>
                     <div id="status" class="status"></div>
                     <small id="openInfo" style="color:#9ca3af; font-size:0.75rem;"></small>
+                    <small id="horarioFuncionamento" style="display:block; color:#9ca3af; font-size:0.72rem; margin-top:2px;"></small>
                 </div>
             </div>
         </div>
     </header>
 
-    
-    
+    <!-- 🆕 MENSAGEM DE BOAS-VINDAS -->
+    <div id="boasVindasBanner" class="hidden" style="margin:12px 16px 0; padding:14px 16px; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-hand-sparkles" style="font-size:1.3rem;"></i>
+            <div>
+                <strong style="display:block; font-size:0.95rem;">Bem-vindo(a) à Nova Origem Açaí! 🍇</strong>
+                <small style="opacity:.9;">Monte seu açaí do seu jeito. Entrega rápida e pagamento por Pix, cartão ou dinheiro.</small>
+            </div>
+        </div>
+        <button onclick="fecharBoasVindas()" style="background:rgba(255,255,255,.2); border:none; color:#fff; width:28px; height:28px; border-radius:50%; flex-shrink:0; cursor:pointer;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- 🆕 BANNER DE PROMOÇÃO (controlado pelo admin.html, sem precisar mexer no código) -->
+    <div id="promoBanner" class="hidden" style="margin:10px 16px 0; padding:12px 16px; background:linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; border-radius:14px; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-fire" style="font-size:1.2rem;"></i>
+        <span style="font-size:.88rem; font-weight:600;"></span>
+    </div>
+
+    <!-- 🆕 AVISO DE LOJA FECHADA MANUALMENTE (controlado pelo admin.html) -->
+    <div id="lojaFechadaManualBanner" class="hidden" style="margin:10px 16px 0; padding:12px 16px; background:#1f2937; border:1px solid #ef4444; color:#fca5a5; border-radius:14px; display:flex; align-items:center; gap:10px;">
+        <i class="fa-solid fa-store-slash" style="font-size:1.2rem;"></i>
+        <span style="font-size:.88rem; font-weight:600;"></span>
+    </div>
+
+
+
 
     <!-- HERO -->
     <section class="hero">
@@ -1820,8 +1847,8 @@
         </button>
     </section>
 
-    <!-- 🔒 Programa de fidelidade desativado por enquanto. Para reativar, remova o style="display:none" abaixo. -->
-    <section class="fidelidade-destaque" style="display:none;">
+    <!-- ✅ Programa de fidelidade reativado. Para desativar de novo, adicione style="display:none;" aqui e mude FIDELIDADE_ATIVA para false no script. -->
+    <section class="fidelidade-destaque">
         <div class="fidelidade-destaque-inner">
             <div class="fidelidade-destaque-icone">
                 <i class="fa-solid fa-star"></i>
@@ -2139,10 +2166,21 @@
                     <i class="fa-solid fa-clock"></i> <span id="estimateTimeTexto"></span>
                 </div>
 
-                <!-- 🆕 Linha do desconto do cupom "Sentimos sua falta", quando aplicável -->
+                <!-- 🆕 Campo para o cliente digitar um cupom (ex: os gerados no painel de reativação) -->
+                <div style="display:flex; gap:8px; margin:6px 2px 10px 2px;">
+                    <input type="text" id="cupomInput" placeholder="Tem um cupom? Digite aqui"
+                        style="flex:1; text-transform:uppercase; padding:10px 12px; border-radius:10px; border:1px solid #333; background:#1a1a1a; color:#fff; font-size:.85rem;">
+                    <button type="button" id="cupomAplicarBtn"
+                        style="padding:0 16px; border-radius:10px; border:none; background:#7c3aed; color:#fff; font-weight:700; font-size:.8rem; cursor:pointer; white-space:nowrap;">
+                        Aplicar
+                    </button>
+                </div>
+                <small id="cupomMensagem" style="display:block; margin:-4px 2px 8px 2px; font-size:.78rem;"></small>
+
+                <!-- 🆕 Linha do desconto de cupom aplicado (manual ou "Sentimos sua falta"), quando aplicável -->
                 <div id="cupomDescontoBox" class="hidden"
                     style="display:flex; justify-content:space-between; align-items:center; color:#4ade80; font-weight:700; font-size:.9rem; margin:4px 2px 10px 2px;">
-                    <span><i class="fa-solid fa-gift"></i> Cupom "Sentimos sua falta"</span>
+                    <span id="cupomDescontoLabel"><i class="fa-solid fa-gift"></i> Cupom "Sentimos sua falta"</span>
                     <span id="cupomDescontoValor">-R$ 0,00</span>
                 </div>
 
@@ -2319,7 +2357,7 @@
         // =========================
         // 🔒 Desativado por enquanto (o código fica pronto, sem precisar reconstruir depois).
         // Para reativar: troque para true.
-        const FIDELIDADE_ATIVA = false;
+        const FIDELIDADE_ATIVA = true;
         const PONTOS_PARA_BRINDE = 10;
         const BRINDE_DESCRICAO = "um Cone Trufado grátis ou um Adicional Premium grátis";
         // 🆕 Adicionais considerados "premium" para o brinde (deve bater com nomes em EXTRAS)
@@ -2332,6 +2370,84 @@
         const WINBACK_DIAS_MINIMO = 20; // dias sem pedir para considerar "sumiu"
         const WINBACK_DESCONTO = 5;     // valor do cupom aplicado automaticamente (R$)
         let cupomVoltaValor = 0;        // preenchido dinamicamente ao reconhecer o cliente
+
+        // 🆕 CUPOM MANUAL: código que o cliente digita (ex: os gerados no painel de reativação em clientes.html)
+        let cupomManualCodigo = null;   // código do cupom validado e aplicado agora
+        let cupomManualPercentual = 0;  // % de desconto do cupom aplicado
+
+        async function aplicarCupomManual() {
+            const input = document.getElementById("cupomInput");
+            const msg = document.getElementById("cupomMensagem");
+            const codigo = (input.value || "").trim().toUpperCase();
+
+            if (!codigo) {
+                msg.style.color = "#f87171";
+                msg.innerText = "Digite um código de cupom.";
+                return;
+            }
+
+            try {
+                const cupomSnap = await getDoc(doc(db, "cupons", codigo));
+
+                if (!cupomSnap.exists()) {
+                    msg.style.color = "#f87171";
+                    msg.innerText = "Cupom não encontrado.";
+                    return;
+                }
+
+                const cupom = cupomSnap.data();
+
+                if (cupom.usado) {
+                    msg.style.color = "#f87171";
+                    msg.innerText = "Esse cupom já foi utilizado.";
+                    return;
+                }
+
+                if (cupom.validoAte && Date.now() > cupom.validoAte) {
+                    msg.style.color = "#f87171";
+                    msg.innerText = "Esse cupom expirou.";
+                    return;
+                }
+
+                // 🆕 Aplica o cupom: usa a mesma variável do desconto "Sentimos sua falta"
+                // (cupomVoltaValor) pra reaproveitar toda a lógica de total já existente.
+                // Um cupom manual substitui qualquer desconto automático que estivesse ativo.
+                const subtotalAtual = cart.reduce((acc, item) => acc + item.preco, 0);
+                cupomManualCodigo = codigo;
+                cupomManualPercentual = cupom.percentual || 0;
+                cupomVoltaValor = subtotalAtual * (cupomManualPercentual / 100);
+
+                msg.style.color = "#4ade80";
+                msg.innerText = `✅ Cupom aplicado: ${cupomManualPercentual}% de desconto!`;
+                document.getElementById("cupomDescontoLabel").innerHTML =
+                    `<i class="fa-solid fa-gift"></i> Cupom ${codigo}`;
+                input.disabled = true;
+                document.getElementById("cupomAplicarBtn").disabled = true;
+
+                updateCart();
+            } catch (e) {
+                console.error("Erro ao validar cupom:", e);
+                msg.style.color = "#f87171";
+                msg.innerText = "Não foi possível validar o cupom agora. Tente de novo.";
+            }
+        }
+
+        // 🆕 Marca o cupom manual como usado no Firestore, pra não poder ser usado de novo
+        // (chamado logo depois que o pedido é confirmado, quando havia um cupom aplicado)
+        async function marcarCupomManualComoUsado() {
+            if (!cupomManualCodigo) return;
+            try {
+                await updateDoc(doc(db, "cupons", cupomManualCodigo), {
+                    usado: true,
+                    usadoEm: Date.now()
+                });
+            } catch (e) {
+                console.error("Erro ao marcar cupom como usado:", e);
+            } finally {
+                cupomManualCodigo = null;
+                cupomManualPercentual = 0;
+            }
+        }
 
         // Normaliza o telefone para usar como chave única do cliente (só dígitos, sem DDI)
         // Normaliza o telefone para usar como chave única do cliente, corrigindo os erros
@@ -3385,10 +3501,16 @@
         // =========================
         // 🆕 HORÁRIO DE FUNCIONAMENTO (mesmo horário todos os dias)
         // =========================
-        const HORARIO_FUNCIONAMENTO = { abertura: 15, fechamento: 22 }; // 15h às 23h59
+        const HORARIO_FUNCIONAMENTO = { abertura: 14, fechamento: 22 }; // 15h às 23h59
         let lojaAbertaAgora = true;
 
+        // 🆕 Config remota da loja (fechamento manual + promoção), editável pelo admin.html
+        // sem precisar mexer em código. Ver configuracoes/loja no Firestore.
+        let configLoja = {};
+        let promoAplicada = null; // guarda o que foi alterado no PRODUCTS, pra poder desfazer se a promo for desativada
+
         function estaAberto() {
+            if (configLoja.fechadaManual) return false; // 🆕 override manual do admin.html
             const hour = new Date().getHours();
             return hour >= HORARIO_FUNCIONAMENTO.abertura && hour <= HORARIO_FUNCIONAMENTO.fechamento;
         }
@@ -3423,15 +3545,38 @@
 
             }
 
+            // 🆕 Horário de funcionamento sempre visível, independente de estar aberto ou fechado agora
+            const horarioEl = document.getElementById("horarioFuncionamento");
+            if (horarioEl) {
+                const abre = String(HORARIO_FUNCIONAMENTO.abertura).padStart(2, "0");
+                const fecha = String(HORARIO_FUNCIONAMENTO.fechamento).padStart(2, "0");
+                horarioEl.innerText = `Funcionamento: ${abre}h às ${fecha}h, todos os dias`;
+            }
+
             atualizarAvisoLojaFechada();
 
         }
 
         function atualizarAvisoLojaFechada() {
             const aviso = document.getElementById("avisoLojaFechada");
+
+            // 🆕 Banner de loja fechada manualmente (mensagem customizável pelo admin.html)
+            const bannerManual = document.getElementById("lojaFechadaManualBanner");
+            if (bannerManual) {
+                if (configLoja.fechadaManual) {
+                    bannerManual.classList.remove("hidden");
+                    bannerManual.querySelector("span").innerText =
+                        configLoja.motivoFechamento || "Estamos temporariamente fechados. Voltamos em breve!";
+                } else {
+                    bannerManual.classList.add("hidden");
+                }
+            }
+
             if (!aviso) return;
             if (lojaAbertaAgora) {
                 aviso.style.display = "none";
+            } else if (configLoja.fechadaManual) {
+                aviso.style.display = "none"; // já mostrado no banner acima, evita duplicar aviso
             } else {
                 aviso.style.display = "flex";
                 aviso.querySelector("span").innerText =
@@ -4571,7 +4716,7 @@ Deseja continuar?`
                                     // ==============================================
                                     const tempoEstimadoMinPix = calcularTempoEstimadoMin(cart, entrega);
 
-                                    await addDoc(collection(db, "pedidos"), {
+                                    const pixOrderRef = await addDoc(collection(db, "pedidos"), {
                                         numero: Date.now(),
                                         nome: nome,
                                         fone: fone,
@@ -4591,6 +4736,13 @@ Deseja continuar?`
                                         criadoEm: Date.now(),
                                         hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
                                     });
+
+                                    // 🆕 CORREÇÃO DO BUG "PEDIDO NÃO ATUALIZA": liga o acompanhamento em
+                                    // tempo real assim que o PIX é gerado, e não só quando o cliente clica
+                                    // em "Já efetuei o pagamento". iniciarAcompanhamento() já sabe ignorar
+                                    // o status "aguardando_pagamento" e só aparece quando o webhook (ou o
+                                    // clique manual) mudar o status pra "novo" — com o modal abrindo sozinho.
+                                    iniciarAcompanhamento(pixOrderRef.id, true);
 
                                     alert("✅ PIX gerado! Efetue o pagamento para concluir.");
                                     return; // 👈 PARADA AQUI: NÃO ENVIA WHATSAPP AINDA
@@ -4680,6 +4832,7 @@ Deseja continuar?`
                             pedidoId: pedidoRef.id
                         });
 
+                        await marcarCupomManualComoUsado(); // 🆕 se havia cupom manual, marca como usado
                         cupomVoltaValor = 0; // 🆕 cupom já foi usado neste pedido
                     }
 
@@ -4749,10 +4902,77 @@ Deseja continuar?`
             }
         }
 
+        document.getElementById("cupomAplicarBtn").addEventListener("click", aplicarCupomManual);
+
+        // 🆕 Aplica (ou desfaz) a promoção configurada no admin.html sobre o cardápio.
+        // Suporta dois tipos: desconto no preço de um produto específico, ou aumento
+        // da quantidade de adicionais grátis. Pode ser limitada a dias da semana
+        // (0=domingo ... 6=sábado); se "diasSemana" vier vazio, vale todo dia.
+        function aplicarConfigLoja() {
+            // desfaz qualquer alteração da promoção anterior antes de aplicar a atual
+            if (promoAplicada) {
+                const produtoAntigo = PRODUCTS.find(p => p.nome === promoAplicada.produtoNome);
+                if (produtoAntigo) produtoAntigo[promoAplicada.campo] = promoAplicada.valorOriginal;
+                promoAplicada = null;
+            }
+
+            const banner = document.getElementById("promoBanner");
+            const promo = configLoja.promocao;
+            const hoje = new Date().getDay();
+            const diasOk = !promo || !promo.diasSemana || promo.diasSemana.length === 0 || promo.diasSemana.includes(hoje);
+
+            if (promo && promo.ativa && diasOk) {
+                const produto = PRODUCTS.find(p => p.nome === promo.produtoNome);
+                if (produto) {
+                    if (promo.tipo === "preco" && typeof promo.precoPromocional === "number") {
+                        promoAplicada = { produtoNome: produto.nome, campo: "preco", valorOriginal: produto.preco };
+                        produto.preco = promo.precoPromocional;
+                    } else if (promo.tipo === "limiteGratis" && typeof promo.limiteGratisPromocional === "number") {
+                        promoAplicada = { produtoNome: produto.nome, campo: "limiteGratis", valorOriginal: produto.limiteGratis };
+                        produto.limiteGratis = promo.limiteGratisPromocional;
+                    }
+                }
+                if (banner && promo.etiqueta) {
+                    banner.classList.remove("hidden");
+                    banner.querySelector("span").innerText = promo.etiqueta;
+                } else if (banner) {
+                    banner.classList.add("hidden");
+                }
+            } else if (banner) {
+                banner.classList.add("hidden");
+            }
+
+            // Re-renderiza o cardápio pra refletir preço/limite atualizados
+            if (typeof grid !== "undefined" && grid) {
+                renderProducts(document.getElementById("search")?.value || "");
+            }
+        }
+
+        // 🆕 Escuta em tempo real o documento configuracoes/loja (editado pelo admin.html):
+        // assim que o admin fechar a loja ou ligar/desligar uma promoção, o site reflete
+        // na hora, sem precisar o cliente atualizar a página.
+        onSnapshot(doc(db, "configuracoes", "loja"), (snap) => {
+            configLoja = snap.exists() ? snap.data() : {};
+            updateStatus();
+            aplicarConfigLoja();
+        }, () => {
+            // sem conexão: mantém o comportamento padrão (horário fixo, sem promoção)
+        });
+
         updateStatus();
 
         // 🆕 Reavalia o horário de funcionamento a cada minuto (sem precisar recarregar a página)
         setInterval(updateStatus, 60000);
+
+        // 🆕 Mensagem de boas-vindas: aparece uma vez por sessão do navegador
+        function fecharBoasVindas() {
+            document.getElementById("boasVindasBanner").classList.add("hidden");
+            sessionStorage.setItem("boasVindasFechada", "1");
+        }
+        window.fecharBoasVindas = fecharBoasVindas;
+        if (!sessionStorage.getItem("boasVindasFechada")) {
+            document.getElementById("boasVindasBanner").classList.remove("hidden");
+        }
 
         atualizarFaixaTempoHero();
         atualizarFidelidadeMiniHome();
@@ -4854,9 +5074,7 @@ Deseja continuar?`
             const MAX_TENTATIVAS = 3;
             let res;
             try {
-                res = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
-                    headers: { Authorization: `Bearer ${MP_TOKEN}` }
-                });
+
             } catch (e) {
                 // Falha de rede/conexão
                 if (tentativa < MAX_TENTATIVAS) {
@@ -4952,6 +5170,7 @@ Deseja continuar?`
                         pedidoId: pedidoIdConfirmado
                     });
 
+                    await marcarCupomManualComoUsado(); // 🆕 se havia cupom manual, marca como usado
                     cupomVoltaValor = 0; // 🆕 cupom já foi usado neste pedido
 
                 } else if (dados.status === "pending") {
