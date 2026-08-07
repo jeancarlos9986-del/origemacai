@@ -574,10 +574,12 @@
             return fim.toLocaleDateString('pt-BR');
         }
 
-        function getModelosMensagem(nome, cupom, descontoTexto, dias, dataValidez) {
-            const nomeCurto = nome.trim().split(" ")[0];
-            return {
-                padrao: `Olá ${nomeCurto}! 😊
+       function getModelosMensagem(nome, cupom, descontoTexto, dias, dataValidez) {
+    const nomeCurto = nome.trim().split(" ")[0];
+    const linkSite = "https://jeancarlos9986-del.github.io/origemacai/"; // 🔗 Seu link
+    
+    return {
+        padrao: `Olá ${nomeCurto}! 😊
 
 Sentimos muito a sua falta por aqui! Já faz ${dias} dias que não vimos você por perto.
 
@@ -586,9 +588,11 @@ Pensando em você, liberamos um cupom exclusivo de ${descontoTexto} de desconto 
 🎁 Cupom: ${cupom}
 ✅ Válido até ${dataValidez}
 
+👉 Peça agora: ${linkSite}
+
 Aguardamos você! 🍦💜`,
 
-                especial: `Oi ${nomeCurto}! Tudo bem? 🤗
+        especial: `Oi ${nomeCurto}! Tudo bem? 🤗
 
 Você é um cliente muito especial para nós e sentimos muita saudade! Já faz ${dias} dias que não aparece.
 
@@ -597,32 +601,37 @@ Para matar a saudade, preparamos um desconto especial de ${descontoTexto} só pa
 🎁 Use: ${cupom}
 📅 Válido até ${dataValidez}
 
+👉 Peça agora: ${linkSite}
+
 Vem que tem sabor favorito esperando! 🍧`,
 
-                urgente: `Olá ${nomeCurto}! 📢
+        urgente: `Olá ${nomeCurto}! 📢
 
 Passando para avisar que preparamos uma condição especial para você voltar!
 
 Faz ${dias} dias que não pediu, então liberamos ${descontoTexto} de desconto:
 🎁 ${cupom}
 
-Válido só até ${dataValidez}! Aguardamos seu pedido! 😋`
-            };
-        }
+Válido só até ${dataValidez}!
 
-        function copiarTexto(texto, botao) {
-            navigator.clipboard.writeText(texto).then(() => {
-                botao.classList.add("copiado");
-                botao.textContent = "✅ Copiado!";
-                document.getElementById("avisoCopiado").style.display = "block";
-                setTimeout(() => {
-                    document.getElementById("avisoCopiado").style.display = "none";
-                    botao.classList.remove("copiado");
-                    botao.textContent = botao.dataset.tipo === "cupom" ? "🏷️ Copiar Cupom" : "📋 Copiar Mensagem";
-                }, 2500);
-            });
-        }
+👉 Peça agora: ${linkSite}
 
+Aguardamos seu pedido! 😋`
+    };
+}
+
+function copiarTexto(texto, botao) {
+    navigator.clipboard.writeText(texto).then(() => {
+        botao.classList.add("copiado");
+        botao.textContent = "✅ Copiado!";
+        document.getElementById("avisoCopiado").style.display = "block";
+        setTimeout(() => {
+            document.getElementById("avisoCopiado").style.display = "none";
+            botao.classList.remove("copiado");
+            botao.textContent = botao.dataset.tipo === "cupom" ? "🏷️ Copiar Cupom" : "📋 Copiar Mensagem";
+        }, 2500);
+    });
+}
         window.salvarAnotacao = function (chave, el) {
             anotacoes[chave] = el.value;
             localStorage.setItem("anotacoesClientes", JSON.stringify(anotacoes));
