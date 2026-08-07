@@ -8,12 +8,24 @@ const app = express();
 // ==================================================
 // 🔴 CORS
 // ==================================================
+// 🆕 Além do site em produção, libera os endereços locais mais comuns do
+// Live Server / VS Code, só pra dar pra testar antes de subir o site.html
+// de verdade. Quando o site já estiver publicado, pode remover as origens
+// "127.0.0.1" e "localhost" daqui se quiser deixar mais restrito.
+const ORIGENS_PERMITIDAS = [
+    'https://jeancarlos9986-del.github.io',
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
+    'http://127.0.0.1:5501',
+    'http://localhost:5501'
+];
+
 app.use((req, res, next) => {
 
-    res.header(
-        'Access-Control-Allow-Origin',
-        'https://jeancarlos9986-del.github.io'
-    );
+    const origem = req.headers.origin;
+    if (ORIGENS_PERMITIDAS.includes(origem)) {
+        res.header('Access-Control-Allow-Origin', origem);
+    }
 
     res.header(
         'Access-Control-Allow-Methods',
@@ -88,6 +100,11 @@ app.post('/gerar-pix', async (req, res) => {
                         email,
                         first_name: nome.substring(0, 15)
                     },
+                    // 🆕 Garante que ESTE pagamento específico sempre avise nosso /webhook,
+                    // independente de como está configurado o webhook geral da conta no
+                    // painel do Mercado Pago (que pode estar avisando só a criação, não a
+                    // aprovação — foi o que aconteceu no teste: só chegou "payment.created").
+                    notification_url: "https://origemacai.onrender.com/webhook",
                     date_of_expiration:
                         new Date(
                             Date.now() + 30 * 60000
@@ -264,6 +281,61 @@ app.post('/webhook', async (req, res) => {
 });
 
 app.use(express.static('public'));
+
+// ==================================================
+// 🆕 REDE DE SEGURANÇA: reconciliação automática
+// ==================================================
+// Não depende do webhook chegar. A cada 1 minuto, verifica direto na API do
+// Mercado Pago todos os pedidos parados em "aguardando_pagamento" e confirma
+// os que já foram aprovados. Isso cobre o caso do teste de hoje: o Mercado
+// Pago avisou só a CRIAÇÃO do pagamento (payment.created) e nunca avisou a
+// APROVAÇÃO — então o webhook nunca teve chance de agir.
+const DUAS_HORAS_MS = 2 * 60 * 60 * 1000;
+
+async function reconciliarPagamentosPendentes() {
+    try {
+        const agora = Date.now();
+
+        const snap = await db.collection("pedidos")
+            .where("status", "==", "aguardando_pagamento")
+            .get();
+
+        if (snap.empty) return;
+
+        for (const docSnap of snap.docs) {
+            const pedido = docSnap.data();
+
+            if (!pedido.id_pagamento_mp) continue;
+
+            // 🆕 Não fica checando pra sempre pedidos muito antigos (provavelmente
+            // abandonados/expirados) — evita gastar chamadas de API à toa.
+            if (pedido.criadoEm && (agora - pedido.criadoEm) > DUAS_HORAS_MS) continue;
+
+            try {
+                const resposta = await fetch(
+                    `https://api.mercadopago.com/v1/payments/${pedido.id_pagamento_mp}`,
+                    { headers: { Authorization: `Bearer ${MP_TOKEN}` } }
+                );
+
+                const dadosPagamento = await resposta.json();
+
+                if (dadosPagamento.status === 'approved') {
+                    await docSnap.ref.update({
+                        status: "novo",
+                        data_pagamento: new Date()
+                    });
+                    console.log(`✅ (checagem automática) Pedido ${docSnap.id} confirmado — o webhook não tinha avisado sozinho.`);
+                }
+            } catch (erroIndividual) {
+                console.error(`❌ Erro ao checar pagamento ${pedido.id_pagamento_mp} na reconciliação:`, erroIndividual.message);
+            }
+        }
+    } catch (erro) {
+        console.error("❌ Erro na reconciliação periódica de pagamentos:", erro);
+    }
+}
+
+setInterval(reconciliarPagamentosPendentes, 60 * 1000);
 
 const PORT = process.env.PORT || 3000;
 
