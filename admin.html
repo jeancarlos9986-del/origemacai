@@ -1,129 +1,310 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controlo Geral - F&B Burguer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <button id="btn-sair" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Sair do Sistema</button>
-    <style>
-        :root {
-            --primary: #ff9800;
-            --bg: #121212;
-            --card: #1e1e1e;
-            --text: #ffffff;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-
-        /* Dashboard Layout */
-        .dashboard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            border-bottom: 4px solid var(--primary);
-        }
-
-        .stat-card h3 {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            opacity: 0.6;
-            margin: 0;
-        }
-
-        .stat-card .value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-
-        .charts-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .chart-box {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 12px;
-            height: 300px;
-        }
-
-        @media (max-width: 768px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo — Nova Origem Açaí</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: #0f0f0f;
+        color: #f5f5f5;
+        padding: 20px;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin-bottom: 4px; }
+    .sub { color: #9ca3af; font-size: .85rem; margin-bottom: 24px; }
+    .card {
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        padding: 18px;
+        margin-bottom: 18px;
+    }
+    .card h2 { font-size: 1rem; margin: 0 0 4px; display:flex; align-items:center; gap:8px; }
+    .card p.desc { color: #9ca3af; font-size: .8rem; margin: 0 0 14px; }
+    label { display: block; font-size: .8rem; color: #d1d5db; margin: 12px 0 6px; }
+    input[type="text"], textarea, select, input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #333;
+        background: #111;
+        color: #fff;
+        font-size: .88rem;
+    }
+    textarea { resize: vertical; min-height: 60px; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; }
+    .switch {
+        position: relative; width: 50px; height: 28px; flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute; cursor: pointer; inset: 0;
+        background: #333; border-radius: 999px; transition: .2s;
+    }
+    .slider::before {
+        content: ""; position: absolute; height: 20px; width: 20px; left: 4px; bottom: 4px;
+        background: white; border-radius: 50%; transition: .2s;
+    }
+    input:checked + .slider { background: #22c55e; }
+    input:checked + .slider::before { transform: translateX(22px); }
+    .dias { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .dia-btn {
+        padding: 6px 10px; border-radius: 8px; border: 1px solid #333; background: #111;
+        color: #9ca3af; font-size: .75rem; cursor: pointer;
+    }
+    .dia-btn.ativo { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    button.salvar {
+        width: 100%; padding: 13px; border-radius: 12px; border: none;
+        background: #7c3aed; color: #fff; font-weight: 700; font-size: .9rem;
+        cursor: pointer; margin-top: 8px;
+    }
+    button.salvar:disabled { opacity: .6; cursor: default; }
+    #statusMsg { font-size: .8rem; margin-top: 10px; min-height: 18px; }
+    #loginBox { max-width: 340px; margin: 80px auto; text-align: center; }
+    #loginBox input { margin-bottom: 12px; }
+    #loginBox button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #7c3aed; color: #fff; font-weight: 700; cursor: pointer; }
+    .hidden { display: none !important; }
+    .aviso-seg { font-size: .72rem; color: #6b7280; margin-top: 30px; line-height: 1.5; }
+</style>
 </head>
-
 <body>
 
-    <div class="dashboard-header">
-        <h1><i class="fas fa-crown text-primary"></i> Painel de Controlo Geral</h1>
-        <button onclick="window.print()" class="btn-filtro"><i class="fas fa-file-pdf"></i> Exportar Relatório</button>
-    </div>
+<div id="loginBox">
+    <h1>🔒 Painel Administrativo</h1>
+    <p class="sub">Nova Origem Açaí</p>
+    <input type="text" id="senhaInput" placeholder="Senha de acesso">
+    <button onclick="tentarLogin()">Entrar</button>
+    <p id="loginErro" style="color:#f87171; font-size:.8rem;"></p>
+</div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>Faturamento Bruto</h3>
-            <div class="value" id="faturamento-bruto">R$ 0,00</div>
-            <small id="qtd-pedidos">0 pedidos realizados</small>
-        </div>
-        <div class="stat-card" style="border-bottom-color: #f44336;">
-            <h3>Custo de Insumos (CMV)</h3>
-            <div class="value" id="custo-total">R$ 0,00</div>
-            <small>Baseado em margem de 35%</small>
-        </div>
-        <div class="stat-card" style="border-bottom-color: #4caf50;">
-            <h3>Lucro Estimado</h3>
-            <div class="value" id="lucro-liquido">R$ 0,00</div>
-            <small>Líquido após taxas e insumos</small>
-        </div>
-        <div class="stat-card" style="border-bottom-color: #2196f3;">
-            <h3>Ticket Médio</h3>
-            <div class="value" id="ticket-medio">R$ 0,00</div>
-            <small>Média por cliente</small>
-        </div>
-    </div>
+<div class="wrap hidden" id="painel">
+    <h1>Painel Administrativo</h1>
+    <p class="sub">Nova Origem Açaí — mudanças aparecem no site na hora, sem precisar reimplantar nada.</p>
 
-    <div class="charts-container">
-        <div class="chart-box">
-            <h3 style="font-size: 0.9rem;">Vendas por Hora</h3>
-            <canvas id="vendasHoraChart"></canvas>
+    <div class="card">
+        <div class="switch-row">
+            <div>
+                <h2>🏪 Loja aberta</h2>
+                <p class="desc">Desligue pra fechar o pedido online mesmo dentro do horário normal (ex: imprevisto, falta de insumo, fim de expediente antecipado).</p>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="toggleAberta" checked>
+                <span class="slider"></span>
+            </label>
         </div>
-        <div class="chart-box">
-            <h3 style="font-size: 0.9rem;">Meios de Pagamento</h3>
-            <canvas id="pagamentoChart"></canvas>
+        <div id="motivoBox" class="hidden">
+            <label for="motivoInput">Mensagem exibida para o cliente</label>
+            <textarea id="motivoInput" placeholder="Ex: Estamos fechados hoje por um imprevisto. Voltamos amanhã às 15h!"></textarea>
         </div>
     </div>
 
-    <script type="module" src="admin.js"></script>
+    <div class="card">
+        <div class="switch-row">
+            <div>
+                <h2>🔥 Promoção ativa</h2>
+                <p class="desc">Liga um banner no site e altera o preço (ou a quantidade de adicionais grátis) de um produto específico.</p>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="togglePromo">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div id="promoBox" class="hidden">
+            <label for="produtoSelect">Produto</label>
+            <select id="produtoSelect">
+                <option>Copo 400ml Tradicional</option>
+                <option>Copo 500ml Super</option>
+                <option>Copo Trufado 500ml</option>
+                <option>Shake Açai Tradicional 500ml</option>
+                <option>Cone Trufado</option>
+            </select>
+
+            <label for="tipoSelect">Tipo de promoção</label>
+            <select id="tipoSelect">
+                <option value="preco">Desconto no preço</option>
+                <option value="limiteGratis">Mais adicionais grátis</option>
+            </select>
+
+            <div id="campoPreco">
+                <label for="precoInput">Preço promocional (R$)</label>
+                <input type="number" step="0.10" id="precoInput" placeholder="Ex: 18.90">
+            </div>
+
+            <div id="campoLimiteGratis" class="hidden">
+                <label for="limiteGratisInput">Quantidade de adicionais grátis</label>
+                <input type="number" step="1" min="0" id="limiteGratisInput" placeholder="Ex: 4">
+            </div>
+
+            <label for="etiquetaInput">Texto do banner no site</label>
+            <input type="text" id="etiquetaInput" placeholder="Ex: Terça é dia de Copo 500ml por R$ 18,90!">
+
+            <label>Dias da semana (deixe todos desmarcados para valer todo dia)</label>
+            <div class="dias" id="diasContainer">
+                <button type="button" class="dia-btn" data-dia="0">Dom</button>
+                <button type="button" class="dia-btn" data-dia="1">Seg</button>
+                <button type="button" class="dia-btn" data-dia="2">Ter</button>
+                <button type="button" class="dia-btn" data-dia="3">Qua</button>
+                <button type="button" class="dia-btn" data-dia="4">Qui</button>
+                <button type="button" class="dia-btn" data-dia="5">Sex</button>
+                <button type="button" class="dia-btn" data-dia="6">Sáb</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="salvar" id="salvarBtn" onclick="salvarConfig()">Salvar alterações</button>
+    <p id="statusMsg"></p>
+
+    <p class="aviso-seg">
+        ⚠️ Este painel usa uma senha simples fixa no código, só pra evitar acesso casual —
+        não é uma autenticação de verdade. Não compartilhe o link/senha publicamente.
+        Para algo mais seguro no futuro, o ideal é migrar para o Firebase Authentication.
+    </p>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 🔧 Mesmo projeto Firebase usado no site.html
+    const firebaseConfig = {
+        apiKey: "SUA_API_KEY",
+        authDomain: "fb-pedidos.firebaseapp.com",
+        projectId: "fb-pedidos",
+        storageBucket: "fb-pedidos.appspot.com",
+        messagingSenderId: "440937401229",
+        appId: "1:440937401229:web:4a27c27a69792eb25bcbc4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const configRef = doc(db, "configuracoes", "loja");
+
+    // ⚠️ Senha simples de acesso — troque este valor antes de subir o site.
+    // Isso NÃO é segurança de verdade (é só um filtro contra acesso casual),
+    // porque qualquer pessoa que veja o código-fonte consegue ler essa senha.
+    const SENHA_ADMIN = "novaorigem2026";
+
+    let diasSelecionados = [];
+
+    window.tentarLogin = function () {
+        const valor = document.getElementById("senhaInput").value;
+        if (valor === SENHA_ADMIN) {
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("painel").classList.remove("hidden");
+            sessionStorage.setItem("adminLogado", "1");
+            carregarConfig();
+        } else {
+            document.getElementById("loginErro").innerText = "Senha incorreta.";
+        }
+    };
+
+    if (sessionStorage.getItem("adminLogado") === "1") {
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("painel").classList.remove("hidden");
+        carregarConfig();
+    }
+
+    async function carregarConfig() {
+        try {
+            const snap = await getDoc(configRef);
+            const dados = snap.exists() ? snap.data() : {};
+
+            document.getElementById("toggleAberta").checked = !dados.fechadaManual;
+            document.getElementById("motivoInput").value = dados.motivoFechamento || "";
+            document.getElementById("motivoBox").classList.toggle("hidden", !dados.fechadaManual);
+
+            const promo = dados.promocao || {};
+            document.getElementById("togglePromo").checked = !!promo.ativa;
+            document.getElementById("promoBox").classList.toggle("hidden", !promo.ativa);
+            if (promo.produtoNome) document.getElementById("produtoSelect").value = promo.produtoNome;
+            document.getElementById("tipoSelect").value = promo.tipo || "preco";
+            document.getElementById("precoInput").value = promo.precoPromocional ?? "";
+            document.getElementById("limiteGratisInput").value = promo.limiteGratisPromocional ?? "";
+            document.getElementById("etiquetaInput").value = promo.etiqueta || "";
+            atualizarCamposTipo();
+
+            diasSelecionados = promo.diasSemana || [];
+            document.querySelectorAll(".dia-btn").forEach(btn => {
+                btn.classList.toggle("ativo", diasSelecionados.includes(Number(btn.dataset.dia)));
+            });
+        } catch (e) {
+            console.error(e);
+            document.getElementById("statusMsg").innerText = "Não foi possível carregar as configurações atuais (conexão).";
+        }
+    }
+
+    function atualizarCamposTipo() {
+        const tipo = document.getElementById("tipoSelect").value;
+        document.getElementById("campoPreco").classList.toggle("hidden", tipo !== "preco");
+        document.getElementById("campoLimiteGratis").classList.toggle("hidden", tipo !== "limiteGratis");
+    }
+
+    document.getElementById("toggleAberta").addEventListener("change", (e) => {
+        document.getElementById("motivoBox").classList.toggle("hidden", e.target.checked);
+    });
+
+    document.getElementById("togglePromo").addEventListener("change", (e) => {
+        document.getElementById("promoBox").classList.toggle("hidden", !e.target.checked);
+    });
+
+    document.getElementById("tipoSelect").addEventListener("change", atualizarCamposTipo);
+
+    document.querySelectorAll(".dia-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const dia = Number(btn.dataset.dia);
+            if (diasSelecionados.includes(dia)) {
+                diasSelecionados = diasSelecionados.filter(d => d !== dia);
+                btn.classList.remove("ativo");
+            } else {
+                diasSelecionados.push(dia);
+                btn.classList.add("ativo");
+            }
+        });
+    });
+
+    window.salvarConfig = async function () {
+        const btn = document.getElementById("salvarBtn");
+        const statusMsg = document.getElementById("statusMsg");
+        btn.disabled = true;
+        btn.innerText = "Salvando...";
+
+        const fechadaManual = !document.getElementById("toggleAberta").checked;
+        const promoAtiva = document.getElementById("togglePromo").checked;
+        const tipo = document.getElementById("tipoSelect").value;
+
+        const payload = {
+            fechadaManual,
+            motivoFechamento: document.getElementById("motivoInput").value.trim(),
+            promocao: {
+                ativa: promoAtiva,
+                produtoNome: document.getElementById("produtoSelect").value,
+                tipo,
+                precoPromocional: tipo === "preco" ? Number(document.getElementById("precoInput").value || 0) : null,
+                limiteGratisPromocional: tipo === "limiteGratis" ? Number(document.getElementById("limiteGratisInput").value || 0) : null,
+                etiqueta: document.getElementById("etiquetaInput").value.trim(),
+                diasSemana: diasSelecionados
+            },
+            atualizadoEm: Date.now()
+        };
+
+        try {
+            await setDoc(configRef, payload, { merge: true });
+            statusMsg.style.color = "#4ade80";
+            statusMsg.innerText = "✅ Salvo! O site já reflete a mudança em tempo real.";
+        } catch (e) {
+            console.error(e);
+            statusMsg.style.color = "#f87171";
+            statusMsg.innerText = "❌ Não foi possível salvar. Verifique a conexão e tente de novo.";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Salvar alterações";
+        }
+    };
+</script>
 </body>
-
 </html>
