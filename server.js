@@ -5,29 +5,33 @@ const fetch = require('node-fetch');
 
 const app = express();
 
+// ==================================================
+// 🔴 CORS
+// ==================================================
 app.use((req, res, next) => {
-    const origensPermitidas = [
-        'https://origemacai.vercel.app',
+
+    res.header(
+        'Access-Control-Allow-Origin',
         'https://jeancarlos9986-del.github.io'
-    ];
-    const origem = req.headers.origin;
+    );
 
-    // Libera se estiver na lista — sem falhas
-    if (origem && origensPermitidas.includes(origem)) {
-        res.header('Access-Control-Allow-Origin', origem);
-    }
+    res.header(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+    );
 
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin');
-    res.header('Access-Control-Max-Age', '86400');
+    res.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+    );
 
-    // ⚠️ No Safari precisa retornar 200, não 204
     if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
+        return res.sendStatus(204);
     }
 
     next();
 });
+
 // ==================================================
 // 🧪 ROTA DE TESTE CORS
 // ==================================================
@@ -140,20 +144,58 @@ app.post('/gerar-pix', async (req, res) => {
     }
 });
 
+// ⏳ Espera alguns milissegundos (usado no retry abaixo)
+function esperar(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// 🔎 Procura o pedido pelo id_pagamento_mp, tentando de novo algumas vezes.
+// Isso existe porque o site.html grava o pedido no Firestore SÓ DEPOIS de
+// receber a resposta do /gerar-pix. Se o cliente pagar muito rápido (PIX
+// aprovado quase instantaneamente), o webhook do Mercado Pago pode chegar
+// AQUI antes daquele addDoc terminar. Sem retry, a busca dá "vazia" e o
+// pagamento fica perdido (é o bug do "às vezes fica aguardando_pagamento").
+async function buscarPedidoComRetry(paymentId, tentativas = 6, intervaloMs = 2000) {
+    const pedidosRef = db.collection("pedidos");
+    for (let i = 0; i < tentativas; i++) {
+        const resultado = await pedidosRef
+            .where("id_pagamento_mp", "==", Number(paymentId))
+            .get();
+
+        if (!resultado.empty) {
+            let idDoDocumento = null;
+            resultado.forEach((doc) => { idDoDocumento = doc.id; });
+            return idDoDocumento;
+        }
+
+        console.log(`⏳ Pedido do pagamento ${paymentId} ainda não existe no Firestore (tentativa ${i + 1}/${tentativas}). Aguardando...`);
+        await esperar(intervaloMs);
+    }
+    return null;
+}
+
 // 🚨 ROTA DO WEBHOOK
 app.post('/webhook', async (req, res) => {
     try {
-        res.sendStatus(200);
 
-        const { action, data } = req.body;
+        const { action, data, type } = req.body;
 
-        if (action === 'payment.updated') {
+        // 🆕 Aceita tanto "payment.updated" quanto "payment.created": em pagamentos
+        // PIX aprovados muito rápido, o Mercado Pago às vezes só manda o evento de
+        // criação já com o status "approved", sem mandar um "updated" depois.
+        const ehEventoDePagamento =
+            action === 'payment.updated' ||
+            action === 'payment.created' ||
+            type === 'payment';
+
+        if (ehEventoDePagamento && data?.id) {
 
             const paymentId = data.id;
 
             console.log(
                 "🔔 Recebido aviso do Mercado Pago ID:",
-                paymentId
+                paymentId,
+                "| action:", action
             );
 
             const resposta = await fetch(
@@ -175,40 +217,35 @@ app.post('/webhook', async (req, res) => {
                 const pedidosRef =
                     db.collection("pedidos");
 
-                const consulta =
-                    pedidosRef.where(
-                        "id_pagamento_mp",
-                        "==",
-                        Number(paymentId)
-                    );
+                const idDoDocumento = await buscarPedidoComRetry(paymentId);
 
-                const resultado =
-                    await consulta.get();
-
-                if (resultado.empty) {
-                    return res.send(
-                        "Pedido não encontrado"
-                    );
+                if (!idDoDocumento) {
+                    // 🆕 Não confirma 200 aqui: se não achamos o pedido nem depois do
+                    // retry, respondemos erro de propósito. Assim o Mercado Pago
+                    // reenvia esse mesmo webhook automaticamente mais tarde (ele tenta
+                    // de novo por conta própria quando recebe algo diferente de 2xx),
+                    // em vez de desistir para sempre do pagamento.
+                    console.error(`❌ Pedido do pagamento ${paymentId} não encontrado mesmo após retry.`);
+                    return res.status(404).send("Pedido não encontrado - aguardando novo retry do Mercado Pago");
                 }
 
-                let dadosPedido = null;
-                let idDoDocumento = null;
+                // 🆕 Idempotência: se já estava confirmado, não faz nada de novo
+                // (evita reprocessar fidelidade/estoque se o MP reenviar o mesmo evento)
+                const docRef = pedidosRef.doc(idDoDocumento);
+                const docAtual = await docRef.get();
+                if (docAtual.data()?.status !== "aguardando_pagamento") {
+                    console.log("ℹ️ Pedido já estava confirmado, ignorando webhook duplicado.");
+                    return res.sendStatus(200);
+                }
 
-                resultado.forEach((doc) => {
-                    dadosPedido = doc.data();
-                    idDoDocumento = doc.id;
+                await docRef.update({
+                    status: "novo",
+                    data_pagamento: new Date()
                 });
 
-                await pedidosRef
-                    .doc(idDoDocumento)
-                    .update({
-                        status: "novo",
-                        data_pagamento:
-                            new Date()
-                    });
-
                 console.log(
-                    "✅ Pedido atualizado"
+                    "✅ Pedido atualizado:",
+                    idDoDocumento
                 );
             }
         }
