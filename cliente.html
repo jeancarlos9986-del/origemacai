@@ -4,132 +4,898 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cardápio - F&B Burguer</title>
+    <title>Painel de Clientes & Reativação — Nova Origem Açaí</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
         :root {
-            --primary: #ff9800;
-            --bg: #121212;
-            --card: #1e1e1e;
+            --primaria: #7C3AED;
+            --sucesso: #10B981;
+            --alerta: #F59E0B;
+            --perigo: #EF4444;
+            --whatsapp: #25D366;
+            --escuro: #1F2937;
+            --claro: #F9FAFB;
+            --borda: #E5E7EB;
+            --desativado: #9CA3AF;
+            --azul: #3B82F6;
+            --roxo-claro: #EDE9FE;
         }
 
         body {
-            background: var(--bg);
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
-            padding-bottom: 100px;
+            background: #F3F4F6;
+            padding: 16px;
+            color: var(--escuro);
         }
 
-        header {
+        .cabecalho {
             text-align: center;
-            padding: 20px;
-            background: #000;
-            border-bottom: 3px solid var(--primary);
+            margin-bottom: 20px;
         }
 
-        .item-card {
-            background: var(--card);
-            margin: 10px;
-            padding: 15px;
-            border-radius: 10px;
+        .cabecalho h1 {
+            font-size: 24px;
+            color: var(--primaria);
+            margin-bottom: 4px;
+        }
+
+        .cabecalho p {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .resumo-rapido {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .resumo-rapido span {
+            background: white;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: 500;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
+            border-top: 4px solid var(--primaria);
+        }
+
+        .card h3 {
+            font-size: 13px;
+            color: #6B7280;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .card .valor {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--escuro);
+        }
+
+        .card.sumidos {
+            border-top-color: var(--perigo);
+        }
+
+        .card.ativos {
+            border-top-color: var(--sucesso);
+        }
+
+        .card.valor {
+            border-top-color: var(--azul);
+        }
+
+        .barra-controles {
+            background: white;
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .botoes-filtro,
+        .botoes-ordem {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        select,
+        input,
+        textarea {
+            padding: 10px 12px;
+            border: 1px solid var(--borda);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        button.filtro {
+            background: #F3F4F6;
+            color: var(--escuro);
+        }
+
+        button.filtro.ativo {
+            background: var(--primaria);
+            color: white;
+        }
+
+        button.primario {
+            background: var(--primaria);
+            color: white;
+        }
+
+        button.sucesso {
+            background: var(--sucesso);
+            color: white;
+        }
+
+        button.whatsapp {
+            background: var(--whatsapp);
+            color: white;
+        }
+
+        button.alerta {
+            background: var(--alerta);
+            color: #1F2937;
+        }
+
+        button.perigo {
+            background: var(--perigo);
+            color: white;
+        }
+
+        button.copiar {
+            padding: 8px 10px;
+            font-size: 12px;
+            background: #E0E7FF;
+            color: #4338CA;
+        }
+
+        button.copiar.copiado {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #busca {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .lista-clientes {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .item-cliente {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            border-left: 4px solid var(--borda);
+            transition: all 0.2s;
+        }
+
+        .item-cliente.ativo {
+            border-left-color: var(--sucesso);
+        }
+
+        .item-cliente.sumido {
+            border-left-color: var(--perigo);
+        }
+
+        .item-cliente.novo {
+            border-left-color: var(--alerta);
+        }
+
+        .item-cliente.enviado {
+            opacity: 0.75;
+        }
+
+        .item-cliente.prioridade {
+            border-left-width: 6px;
+            background: #FFFBEB;
+        }
+
+        .cabecalho-cliente {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .dados-principais .nome {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .dados-principais .info {
+            font-size: 13px;
+            color: #6B7280;
+            line-height: 1.6;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status.ativo {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status.sumido {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .status.novo {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .desconto-tag {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: var(--roxo-claro);
+            color: var(--primaria);
+            margin-left: 6px;
+        }
+
+        .ticket-medio {
+            font-size: 12px;
+            color: var(--azul);
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .area-anotacao {
+            margin-top: 8px;
+        }
+
+        .area-anotacao textarea {
+            width: 100%;
+            min-height: 50px;
+            font-size: 12px;
+            resize: vertical;
+        }
+
+        .secao-cupom {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--borda);
+        }
+
+        .cupom-desativado {
+            background: #F3F4F6;
+            color: var(--desativado);
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 8px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
-        .controles {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .btn-qtd {
-            background: var(--primary);
-            border: none;
-            color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        #dados-entrega {
-            padding: 20px;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 12px;
+        .codigo-cupom {
+            display: inline-block;
+            background: #F5F3FF;
+            color: var(--primaria);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 15px;
             margin: 8px 0;
-            border-radius: 5px;
-            border: 1px solid #444;
-            background: #222;
-            color: white;
-            box-sizing: border-box;
+            letter-spacing: 1px;
         }
 
-        #btn-enviar {
-            background: #25D366;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
+        .validade {
+            font-size: 12px;
+            color: var(--alerta);
+            margin: 4px 0;
         }
 
-        #total-flutuante {
+        .modelos-msg {
+            margin: 10px 0;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .modelos-msg button {
+            padding: 6px 10px;
+            font-size: 12px;
+            background: #F9FAFB;
+            border: 1px solid var(--borda);
+        }
+
+        .mensagem-preview {
+            background: #F9FAFB;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #374151;
+            margin: 10px 0;
+            border-left: 3px solid var(--primaria);
+            white-space: pre-line;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .marcador-enviado {
+            font-size: 12px;
+            color: var(--sucesso);
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* 🆕 Status real do cupom, direto do Firestore (não é só "mandei mensagem") */
+        .status-cupom-real {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-top: 6px;
+        }
+
+        .status-cupom-real.convertido {
+            background: #D1FAE5;
+            color: #047857;
+        }
+
+        .status-cupom-real.aguardando {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .aviso-copiado {
             position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: var(--primary);
-            padding: 20px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
+            bottom: 24px;
+            right: 24px;
+            background: var(--sucesso);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+            font-weight: 500;
+            z-index: 100;
         }
     </style>
 </head>
 
 <body>
-    <header>
-        <h1>🍔 F&B Burguer</h1>
-    </header>
 
-    <div id="cardapio">
-        <h2 style="margin: 20px;">🍢 Espetos</h2>
-        <div id="lista-itens"></div>
+    <div class="cabecalho">
+        <h1>🍦 Painel de Clientes & Reativação</h1>
+        <p>Desconto progressivo · Anotações · Exportação · WhatsApp direto</p>
     </div>
 
-    <div id="dados-entrega">
-        <h3>📍 Finalizar Pedido</h3>
-        <input type="text" id="cliente-nome" placeholder="Seu Nome" required>
-        <input type="tel" id="cliente-fone" placeholder="WhatsApp (ex: 34999998888)" required>
-
-        <select id="tipo-pedido">
-            <option value="Retirada">Retirar no Balcão</option>
-            <option value="entrega">Entrega em Casa</option>
-        </select>
-
-        <input type="text" id="endereco-entrega" placeholder="Endereço (Se for entrega)">
-
-        <select id="metodo-pagamento">
-            <option value="Pix">Pix</option>
-            <option value="Cartão">Cartão</option>
-            <option value="Dinheiro">Dinheiro</option>
-        </select>
-
-        <button type="button" onclick="enviarPedido()">🚀 ENVIAR PEDIDO</button>
+    <div class="resumo-rapido">
+        <span>🎁 Cupons Ativados: <strong id="qtd-ativados">0</strong></span>
+        <span>✅ Mensagens Enviadas: <strong id="qtd-enviados">0</strong></span>
+        <span>🎯 Convertidos em Pedido: <strong id="qtd-convertidos">0</strong></span>
+        <button class="perigo" style="padding:6px 10px;font-size:12px;" onclick="resetarHistorico()">🗑️ Resetar
+            Tudo</button>
+        <button class="primario" style="padding:6px 10px;font-size:12px;" onclick="exportarLista()">📤 Exportar
+            Lista</button>
     </div>
 
-    <div id="total-flutuante">Total: R$ <span id="valor-total">0.00</span></div>
+    <div class="cards">
+        <div class="card">
+            <h3>👥 Pessoas Únicas</h3>
+            <div class="valor pessoas-unicas">0</div>
+        </div>
+        <div class="card">
+            <h3>📦 Total Pedidos</h3>
+            <div class="valor pedidos-total">0</div>
+        </div>
+        <div class="card ativos">
+            <h3>🟢 Ativos (≤15 dias)</h3>
+            <div class="valor ativos-15">0</div>
+        </div>
+        <div class="card sumidos">
+            <h3>🔴 Sumidos (>20 dias)</h3>
+            <div class="valor sumidos-20">0</div>
+        </div>
+        <div class="card valor">
+            <h3>💰 Total Gasto</h3>
+            <div class="valor total-valor">R$ 0</div>
+        </div>
+    </div>
 
-    <script type="module" src="cliente.js"></script>
+    <div class="barra-controles">
+        <div class="botoes-filtro">
+            <button class="filtro ativo" data-filtro="todos">Todos</button>
+            <button class="filtro" data-filtro="sumidos">🔴 Sumidos</button>
+            <button class="filtro" data-filtro="mais">📊 Mais Pedem</button>
+            <button class="filtro" data-filtro="novos">🟡 Recentes</button>
+        </div>
+        <select id="ordem">
+            <option value="dias">Ordenar por: Dias sem comprar</option>
+            <option value="valor">Maior valor total</option>
+            <option value="pedidos">Mais pedidos</option>
+            <option value="nome">Nome A-Z</option>
+        </select>
+        <input type="text" id="busca" placeholder="Buscar por nome, telefone...">
+        <button class="primario" id="btn-atualizar">🔄 Atualizar</button>
+    </div>
+
+    <div class="lista-clientes"></div>
+    <div class="aviso-copiado" id="avisoCopiado">✅ Copiado!</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import {
+            getFirestore, collection, query, where, orderBy, getDocs, doc, setDoc, getDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_zNrNdstdLSa95AjYF_W8XFMwIwlq4DE",
+            authDomain: "fb-pedidos.firebaseapp.com",
+            projectId: "fb-pedidos",
+            storageBucket: "fb-pedidos.firebasestorage.app",
+            messagingSenderId: "440937401229",
+            appId: "1:440937401229:web:4a27c27a69792eb25bcbc4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const ativados = JSON.parse(localStorage.getItem("cuponsAtivados") || "{}");
+        const enviados = JSON.parse(localStorage.getItem("mensagensEnviadas") || "{}");
+        const anotacoes = JSON.parse(localStorage.getItem("anotacoesClientes") || "{}");
+
+        // 🆕 Status real de cada cupom, direto do Firestore (não é uma flag local
+        // como "enviados" — reflete se o cliente REALMENTE aplicou o cupom em um pedido).
+        // Preenchido por buscarStatusCupons() antes de renderizar a lista.
+        let statusCupons = {};
+
+        // 🆕 Busca no Firestore, em paralelo, o status (`usado`) de todos os cupons
+        // já ativados localmente. Assim o painel mostra se cada cupom foi de fato
+        // convertido em pedido, e não só se a mensagem foi marcada como enviada.
+        async function buscarStatusCupons() {
+            const codigos = [...new Set(Object.values(ativados).map(a => a.cupom).filter(Boolean))];
+            const mapa = {};
+            await Promise.all(codigos.map(async (codigo) => {
+                try {
+                    const snap = await getDoc(doc(db, "cupons", codigo));
+                    if (snap.exists()) mapa[codigo] = snap.data();
+                } catch (e) {
+                    console.error(`Erro ao checar status do cupom ${codigo}:`, e);
+                }
+            }));
+            return mapa;
+        }
+
+        // 🎁 DESCONTO PROGRESSIVO — RETORNA SEMPRE VALORES DEFINIDOS
+        function definirDesconto(dias) {
+            if (dias > 60) return { valor: 20, texto: "20%", validezDias: 7 };
+            if (dias > 30) return { valor: 15, texto: "15%", validezDias: 7 };
+            return { valor: 10, texto: "10%", validezDias: 7 };
+        }
+
+        function limparTelefone(texto) {
+            if (!texto) return "sem-fone";
+            return String(texto).replace(/\D/g, "");
+        }
+
+        function formatarTelefoneWhatsapp(texto) {
+            const limpo = limparTelefone(texto);
+            if (limpo.length === 11) return limpo;
+            if (limpo.length === 9) return "5534" + limpo;
+            return "55" + limpo;
+        }
+
+        function calcularDiasAtras(timestamp) {
+            const dataPedido = new Date(timestamp);
+            const hoje = new Date();
+            const dtPedido = new Date(dataPedido.getFullYear(), dataPedido.getMonth(), dataPedido.getDate());
+            const dtHoje = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            return Math.floor((dtHoje - dtPedido) / (1000 * 60 * 60 * 24));
+        }
+
+        // 🆕 Código aleatório — NÃO dá pra adivinhar a partir do telefone
+        // (o código antigo era previsível: NOVAORIGEM-<6 últimos dígitos>-<desconto>,
+        // qualquer um que soubesse o telefone do cliente conseguiria montar um cupom válido)
+        function gerarCupom() {
+            const aleatorio = Math.random().toString(36).slice(2, 8).toUpperCase();
+            return `VOLTA-${aleatorio}`;
+        }
+
+        function gerarValidezData(diasValidos) {
+            const hoje = new Date();
+            const fim = new Date(hoje);
+            fim.setDate(hoje.getDate() + diasValidos);
+            return fim.toLocaleDateString('pt-BR');
+        }
+
+        function getModelosMensagem(nome, cupom, descontoTexto, dias, dataValidez) {
+            const nomeCurto = nome.trim().split(" ")[0];
+            return {
+                padrao: `Olá ${nomeCurto}! 😊
+
+Sentimos muito a sua falta por aqui! Já faz ${dias} dias que não vimos você por perto.
+
+Pensando em você, liberamos um cupom exclusivo de ${descontoTexto} de desconto no seu próximo pedido!
+
+🎁 Cupom: ${cupom}
+✅ Válido até ${dataValidez}
+
+Aguardamos você! 🍦💜`,
+
+                especial: `Oi ${nomeCurto}! Tudo bem? 🤗
+
+Você é um cliente muito especial para nós e sentimos muita saudade! Já faz ${dias} dias que não aparece.
+
+Para matar a saudade, preparamos um desconto especial de ${descontoTexto} só para você!
+
+🎁 Use: ${cupom}
+📅 Válido até ${dataValidez}
+
+Vem que tem sabor favorito esperando! 🍧`,
+
+                urgente: `Olá ${nomeCurto}! 📢
+
+Passando para avisar que preparamos uma condição especial para você voltar!
+
+Faz ${dias} dias que não pediu, então liberamos ${descontoTexto} de desconto:
+🎁 ${cupom}
+
+Válido só até ${dataValidez}! Aguardamos seu pedido! 😋`
+            };
+        }
+
+        function copiarTexto(texto, botao) {
+            navigator.clipboard.writeText(texto).then(() => {
+                botao.classList.add("copiado");
+                botao.textContent = "✅ Copiado!";
+                document.getElementById("avisoCopiado").style.display = "block";
+                setTimeout(() => {
+                    document.getElementById("avisoCopiado").style.display = "none";
+                    botao.classList.remove("copiado");
+                    botao.textContent = botao.dataset.tipo === "cupom" ? "🏷️ Copiar Cupom" : "📋 Copiar Mensagem";
+                }, 2500);
+            });
+        }
+
+        window.salvarAnotacao = function (chave, el) {
+            anotacoes[chave] = el.value;
+            localStorage.setItem("anotacoesClientes", JSON.stringify(anotacoes));
+        };
+
+        // ✅ FUNÇÃO DE ATIVAR — grava o cupom de verdade no Firestore
+        window.ativarCupom = async function (chave, nome, telefone, dias, btn) {
+            const desc = definirDesconto(dias);
+            const cupom = gerarCupom();
+            const dataValidez = gerarValidezData(desc.validezDias);
+            const validoAte = Date.now() + desc.validezDias * 86400000;
+            const foneLimpo = limparTelefone(telefone);
+
+            const textoOriginalBtn = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "⏳ Gerando...";
+
+            try {
+                // 🆕 Grava no Firestore — é isso que o site.html valida de verdade.
+                // Sem isso, o cupom não passa de um texto bonito que não funciona.
+                await setDoc(doc(db, "cupons", cupom), {
+                    codigo: cupom,
+                    telefone: foneLimpo,
+                    nome: nome,
+                    percentual: desc.valor,
+                    validoAte: validoAte,
+                    usado: false,
+                    criadoEm: Date.now(),
+                    origem: "reativacao_manual"
+                });
+            } catch (e) {
+                console.error("Erro ao gravar cupom no Firestore:", e);
+                alert("❌ Não foi possível gerar o cupom agora (erro de conexão com o Firestore). Tente novamente.");
+                btn.disabled = false;
+                btn.textContent = textoOriginalBtn;
+                return;
+            }
+
+            const modelos = getModelosMensagem(nome, cupom, desc.texto, dias, dataValidez);
+
+            ativados[chave] = {
+                cupom,
+                descontoTexto: desc.texto,
+                dataValidez,
+                telefone,
+                dataAtivacao: new Date().toISOString()
+            };
+            localStorage.setItem("cuponsAtivados", JSON.stringify(ativados));
+
+            const item = btn.closest(".secao-cupom");
+            item.innerHTML = `
+      <strong>✅ Cupom Ativado — ${desc.texto} de Desconto</strong>
+      <div class="codigo-cupom">${cupom}</div>
+      <div class="validade">📅 Válido até ${dataValidez} (${desc.validezDias} dias) · funciona só pra este telefone</div>
+      <div class="modelos-msg">
+        <button onclick="mostrarModelo(this, '${encodeURIComponent(modelos.padrao)}')">Padrão</button>
+        <button onclick="mostrarModelo(this, '${encodeURIComponent(modelos.especial)}')">Especial</button>
+        <button onclick="mostrarModelo(this, '${encodeURIComponent(modelos.urgente)}')">Urgente</button>
+      </div>
+      <div class="mensagem-preview">${modelos.padrao}</div>
+      <div class="acoes">
+        <button class="copiar" data-tipo="mensagem" onclick="copiarTexto(this.dataset.texto, this)" data-texto="${encodeURIComponent(modelos.padrao)}">📋 Copiar</button>
+        <button class="copiar" data-tipo="cupom" onclick="copiarTexto(this.dataset.texto, this)" data-texto="${cupom}">🏷️ Cupom</button>
+        <a href="https://wa.me/${formatarTelefoneWhatsapp(telefone)}?text=${encodeURIComponent(modelos.padrao)}" target="_blank">
+          <button class="whatsapp">💬 WhatsApp</button>
+        </a>
+      </div>
+    `;
+            atualizarResumo();
+        };
+
+        window.mostrarModelo = function (btn, msgCod) {
+            const msg = decodeURIComponent(msgCod);
+            const secao = btn.closest(".secao-cupom");
+            if (!secao) return;
+
+            const previewEl = secao.querySelector(".mensagem-preview");
+            if (previewEl) previewEl.textContent = msg;
+
+            const btnCopiar = secao.querySelector("[data-tipo='mensagem']");
+            if (btnCopiar) btnCopiar.dataset.texto = msgCod;
+
+            const itemCliente = secao.closest(".item-cliente");
+            const cupomAtivado = ativados[itemCliente.dataset.chave];
+            const linkWpp = secao.querySelector(".whatsapp").parentNode;
+            if (cupomAtivado && linkWpp) {
+                linkWpp.href = `https://wa.me/${formatarTelefoneWhatsapp(cupomAtivado.telefone)}?text=${msgCod}`;
+            }
+        };
+
+        window.marcarEnviado = function (chave, btn) {
+            enviados[chave] = true;
+            localStorage.setItem("mensagensEnviadas", JSON.stringify(enviados));
+            const item = btn.closest(".item-cliente");
+            item.classList.add("enviado");
+            const nomeEl = item.querySelector(".nome");
+            if (!nomeEl.textContent.includes("Enviado")) nomeEl.innerHTML += '<span class="marcador-enviado">✅ Enviado</span>';
+            btn.remove();
+            atualizarResumo();
+            alert("✅ Marcado como enviado!");
+        };
+
+        window.resetarHistorico = function () {
+            if (confirm("Tem certeza? Isso apaga todos os cupons ativados, mensagens enviadas e anotações!")) {
+                localStorage.removeItem("cuponsAtivados");
+                localStorage.removeItem("mensagensEnviadas");
+                localStorage.removeItem("anotacoesClientes");
+                location.reload();
+            }
+        };
+
+        window.exportarLista = function () {
+            const linhas = ["Nome|Telefone|Pedidos|Total Gasto|Dias sem comprar|Status|Cupom|Validade|Enviado"];
+            document.querySelectorAll(".item-cliente").forEach(item => {
+                const nome = item.querySelector(".nome").textContent.trim().replace("✅ Enviado", "");
+                const info = item.querySelector(".info").textContent.trim();
+                const status = item.querySelector(".status").textContent.trim();
+                const chave = item.dataset.chave;
+                const cupomDados = ativados[chave];
+                const cupom = cupomDados?.cupom || "Sem cupom";
+                const validez = cupomDados?.dataValidez || "-";
+                const enviado = item.classList.contains("enviado") ? "Sim" : "Não";
+                linhas.push(`${nome}|${info}|${status}|${cupom}|${validez}|${enviado}`);
+            });
+            const blob = new Blob([linhas.join("\n")], { type: "text/plain" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "clientes-nova-origem.txt";
+            a.click();
+        };
+
+        function atualizarResumo() {
+            document.getElementById("qtd-ativados").textContent = Object.keys(ativados).length;
+            document.getElementById("qtd-enviados").textContent = Object.keys(enviados).length;
+            const convertidos = Object.values(ativados).filter(a => statusCupons[a.cupom]?.usado).length;
+            document.getElementById("qtd-convertidos").textContent = convertidos;
+        }
+
+        async function carregarPainelClientes(filtro = "todos") {
+            try {
+                const hoje = new Date();
+                const inicio = new Date(hoje);
+                inicio.setDate(hoje.getDate() - 90);
+                inicio.setHours(0, 0, 0, 0);
+                const tsInicio = inicio.getTime();
+
+                const pedidosRef = collection(db, "pedidos");
+                const snapPedidos = await getDocs(query(pedidosRef, where("criadoEm", ">=", tsInicio), orderBy("criadoEm", "desc")));
+
+                const mapaClientes = new Map();
+                snapPedidos.docs.forEach(doc => {
+                    const p = doc.data();
+                    const foneLimpo = limparTelefone(p.fone);
+                    const chave = `${foneLimpo}||${(p.nome || "").trim().toLowerCase()}`;
+                    if (!mapaClientes.has(chave)) {
+                        mapaClientes.set(chave, {
+                            chave, nome: (p.nome || "Sem nome").trim(), telefone: p.fone || "-", foneLimpo,
+                            endereco: p.endereco || "-", totalPedidos: 1, ultimoPedido: p.criadoEm, totalValor: p.total || 0
+                        });
+                    } else {
+                        const c = mapaClientes.get(chave);
+                        c.totalPedidos++; c.totalValor += p.total || 0;
+                    }
+                });
+
+                // 🆕 Atualiza o status real (usado/não usado) de cada cupom já ativado
+                statusCupons = await buscarStatusCupons();
+
+                let lista = Array.from(mapaClientes.values());
+                const totalGeral = lista.reduce((s, c) => s + c.totalValor, 0);
+                const agora = Date.now();
+                const diasMs = 86400000;
+                const ativos = lista.filter(c => (agora - c.ultimoPedido) / diasMs <= 15).length;
+                const sumidos = lista.filter(c => (agora - c.ultimoPedido) / diasMs > 20).length;
+
+                if (filtro === "mais") lista.sort((a, b) => b.totalPedidos - a.totalPedidos);
+                else if (filtro === "sumidos") lista = lista.filter(c => calcularDiasAtras(c.ultimoPedido) > 20);
+                else if (filtro === "novos") lista = lista.filter(c => calcularDiasAtras(c.ultimoPedido) <= 7);
+
+                const ordem = document.getElementById("ordem").value;
+                if (ordem === "valor") lista.sort((a, b) => b.totalValor - a.totalValor);
+                else if (ordem === "pedidos") lista.sort((a, b) => b.totalPedidos - a.totalPedidos);
+                else if (ordem === "nome") lista.sort((a, b) => a.nome.localeCompare(b.nome));
+                else lista.sort((a, b) => calcularDiasAtras(a.ultimoPedido) - calcularDiasAtras(b.ultimoPedido));
+
+                document.querySelector(".pessoas-unicas").textContent = lista.length;
+                document.querySelector(".pedidos-total").textContent = snapPedidos.size;
+                document.querySelector(".ativos-15").textContent = ativos;
+                document.querySelector(".sumidos-20").textContent = sumidos;
+                document.querySelector(".total-valor").textContent = `R$ ${totalGeral.toFixed(2)}`;
+                atualizarResumo();
+
+                const listaEl = document.querySelector(".lista-clientes");
+                listaEl.innerHTML = "";
+
+                lista.forEach(cli => {
+                    const dias = calcularDiasAtras(cli.ultimoPedido);
+                    const desc = definirDesconto(dias);
+                    const jaEnviado = enviados[cli.chave];
+                    const cupomAtivado = ativados[cli.chave];
+                    const ticketMedio = (cli.totalValor / cli.totalPedidos).toFixed(2);
+                    let classeStatus = dias <= 15 ? "ativo" : dias > 20 ? "sumido" : "novo";
+                    let textoStatus = dias <= 15 ? "🟢 Ativo" : dias > 20 ? "🔴 Sumido" : "🟡 Recente";
+                    let classePrioridade = dias > 40 ? "prioridade" : "";
+
+                    listaEl.innerHTML += `
+          <div class="item-cliente ${classeStatus} ${classePrioridade} ${jaEnviado ? 'enviado' : ''}" data-chave="${cli.chave}">
+            <div class="cabecalho-cliente">
+              <div class="dados-principais">
+                <div class="nome">${cli.nome} ${jaEnviado ? '<span class="marcador-enviado">✅ Enviado</span>' : ''}</div>
+                <div class="info">📞 ${cli.telefone} | 📦 ${cli.totalPedidos}x | 💰 R$ ${cli.totalValor.toFixed(2)}<span class="ticket-medio">(médio R$${ticketMedio})</span></div>
+                <div class="info">📍 ${cli.endereco}</div>
+              </div>
+              <div>
+                <span class="status ${classeStatus}">${textoStatus} · ${dias} dia${dias !== 1 ? 's' : ''}</span>
+                ${dias > 20 ? `<span class="desconto-tag">até ${desc.texto}</span>` : ""}
+              </div>
+            </div>
+
+            <div class="area-anotacao">
+              <textarea placeholder="📝 Anotação interna (só você vê)..." onblur="salvarAnotacao('${cli.chave}', this)">${anotacoes[cli.chave] || ""}</textarea>
+            </div>
+
+            ${dias > 20 ? `
+            <div class="secao-cupom">
+              ${!cupomAtivado ? `
+                <strong>🔒 Cupom Desativado — ${desc.texto} máximo</strong>
+                <div class="cupom-desativado">
+                  <span>••••••••••••</span>
+                  <button class="alerta" onclick="ativarCupom('${cli.chave}','${cli.nome.replace(/'/g, "\\'")}','${cli.telefone.replace(/'/g, "\\'")}',${dias},this)">🔓 Ativar Cupom</button>
+                </div>
+              `: `
+                <strong>✅ Cupom Ativado — ${cupomAtivado.descontoTexto}</strong>
+                <div class="codigo-cupom">${cupomAtivado.cupom}</div>
+                <div class="validade">📅 Válido até ${cupomAtivado.dataValidez}</div>
+                ${statusCupons[cupomAtivado.cupom]?.usado
+                        ? `<div class="status-cupom-real convertido">🎯 Convertido em pedido${statusCupons[cupomAtivado.cupom].usadoEm ? " · " + new Date(statusCupons[cupomAtivado.cupom].usadoEm).toLocaleDateString('pt-BR') : ""}</div>`
+                        : `<div class="status-cupom-real aguardando">⏳ Ainda não usado</div>`
+                    }
+                <div class="modelos-msg">
+                  <button onclick="mostrarModelo(this,'${encodeURIComponent(getModelosMensagem(cli.nome, cupomAtivado.cupom, cupomAtivado.descontoTexto, dias, cupomAtivado.dataValidez).padrao)}')">Padrão</button>
+                  <button onclick="mostrarModelo(this,'${encodeURIComponent(getModelosMensagem(cli.nome, cupomAtivado.cupom, cupomAtivado.descontoTexto, dias, cupomAtivado.dataValidez).especial)}')">Especial</button>
+                  <button onclick="mostrarModelo(this,'${encodeURIComponent(getModelosMensagem(cli.nome, cupomAtivado.cupom, cupomAtivado.descontoTexto, dias, cupomAtivado.dataValidez).urgente)}')">Urgente</button>
+                </div>
+                <div class="mensagem-preview">${getModelosMensagem(cli.nome, cupomAtivado.cupom, cupomAtivado.descontoTexto, dias, cupomAtivado.dataValidez).padrao}</div>
+                <div class="acoes">
+                  <button class="copiar" data-tipo="mensagem" onclick="copiarTexto(this.dataset.texto,this)" data-texto="${encodeURIComponent(getModelosMensagem(cli.nome, cupomAtivado.cupom, cupomAtivado.descontoTexto, dias, cupomAtivado.dataValidez).padrao)}">📋 Copiar</button>
+                  <button class="copiar" data-tipo="cupom" onclick="copiarTexto(this.dataset.texto,this)" data-texto="${cupomAtivado.cupom}">🏷️ Cupom</button>
+                  <a href="https://wa.me/${formatarTelefoneWhatsapp(cli.telefone)}?text=${encodeURIComponent(getModelosMensagem(cli.nome, cupomAtivado.cupom, cupomAtivado.descontoTexto, dias, cupomAtivado.dataValidez).padrao)}" target="_blank"><button class="whatsapp">💬 WhatsApp</button></a>
+                  ${!jaEnviado ? `<button class="sucesso" onclick="marcarEnviado('${cli.chave}',this)">✅ Enviado</button>` : ""}
+                </div>
+              `}
+            </div>
+            `: ""}
+          </div>
+        `;
+                });
+
+            } catch (err) { console.error(err); alert("Erro: " + err.message); }
+        }
+
+        document.querySelectorAll(".filtro").forEach(btn => btn.addEventListener("click", () => {
+            document.querySelectorAll(".filtro").forEach(b => b.classList.remove("ativo"));
+            btn.classList.add("ativo"); carregarPainelClientes(btn.dataset.filtro);
+        }));
+        document.getElementById("ordem").addEventListener("change", () => carregarPainelClientes());
+        document.getElementById("btn-atualizar").addEventListener("click", () => carregarPainelClientes());
+        document.getElementById("busca").addEventListener("input", e => {
+            const t = e.target.value.toLowerCase();
+            document.querySelectorAll(".item-cliente").forEach(i => i.style.display = i.textContent.toLowerCase().includes(t) ? "block" : "none");
+        });
+        window.addEventListener("load", carregarPainelClientes);
+    </script>
 </body>
 
 </html>
