@@ -3133,6 +3133,18 @@
 
                 if (pedido.status === "aguardando_pagamento") return; // ainda não confirmado
 
+                // 🆕 CORREÇÃO: se a tela do checkout (QR Code do Pix) ainda estiver
+                // aberta, fecha ela automaticamente assim que o pagamento for
+                // confirmado (pelo webhook ou pelo botão manual). Sem isso, o
+                // modal de acompanhamento abre por trás e o cliente fica "preso"
+                // olhando pro QR Code mesmo já pago.
+                const checkoutModalEl = document.getElementById("checkoutModal");
+                if (checkoutModalEl && checkoutModalEl.style.display === "flex") {
+                    closeCheckout();
+                    if (intervalContadorPix) { clearInterval(intervalContadorPix); intervalContadorPix = null; }
+                    cart = []; saveCart(); updateCart(); // pedido já foi pago, esvazia o carrinho
+                }
+
                 document.getElementById("trackBar").style.display = "flex";
                 renderizarAcompanhamento(id, pedido);
 
@@ -5074,7 +5086,11 @@ Deseja continuar?`
             const MAX_TENTATIVAS = 3;
             let res;
             try {
-
+                res = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+                    headers: {
+                        "Authorization": `Bearer ${MP_TOKEN}`
+                    }
+                });
             } catch (e) {
                 // Falha de rede/conexão
                 if (tentativa < MAX_TENTATIVAS) {
