@@ -309,13 +309,9 @@ Olá, ${pedido.nome}! 😍
 
 Seu pedido foi entregue com sucesso.
 
-Muito obrigado pela preferência. ❤️
+Muito obrigado pela preferência, Deus abençoe! ❤️
 
-Seu feedback é muito importante para nós.
 
-⭐ Como estava o sabor?
-⭐ Como foi a entrega?
-⭐ O que podemos melhorar?
 
 Esperamos você novamente! 🚀
 `);
