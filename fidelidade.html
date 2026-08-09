@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Fidelidade — Nova Origem Açaí</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: #0f0f0f;
+        color: #f5f5f5;
+        padding: 20px;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; margin-bottom: 4px; }
+    .sub { color: #9ca3af; font-size: .85rem; margin-bottom: 20px; }
+
+    #loginBox { max-width: 340px; margin: 80px auto; text-align: center; }
+    #loginBox input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; margin-bottom: 12px; }
+    #loginBox button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: #7c3aed; color: #fff; font-weight: 700; cursor: pointer; }
+    .hidden { display: none !important; }
+
+    .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+    .toolbar input[type="text"] {
+        flex: 1; min-width: 200px; padding: 10px 12px; border-radius: 10px;
+        border: 1px solid #333; background: #1a1a1a; color: #fff; font-size: .85rem;
+    }
+    .toolbar select {
+        padding: 10px 12px; border-radius: 10px; border: 1px solid #333;
+        background: #1a1a1a; color: #fff; font-size: .85rem;
+    }
+
+    .resumo { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .resumo-card {
+        flex: 1; min-width: 140px; background: #1a1a1a; border: 1px solid #2a2a2a;
+        border-radius: 14px; padding: 14px 16px;
+    }
+    .resumo-card .num { font-size: 1.5rem; font-weight: 800; }
+    .resumo-card .lbl { font-size: .75rem; color: #9ca3af; }
+
+    .cliente-card {
+        background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px;
+        padding: 14px 16px; margin-bottom: 10px;
+        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .cliente-card.brinde-pronto { border-color: #22c55e; background: #14231a; }
+    .cliente-card.quase-la { border-color: #f59e0b; }
+
+    .cliente-info { flex: 1; min-width: 180px; }
+    .cliente-nome { font-weight: 700; font-size: .95rem; }
+    .cliente-fone { color: #9ca3af; font-size: .78rem; }
+
+    .cliente-progresso { flex: 2; min-width: 220px; }
+    .barra { background: #111; border-radius: 999px; height: 10px; overflow: hidden; margin-bottom: 4px; }
+    .barra-fill { height: 100%; background: linear-gradient(90deg,#7c3aed,#a855f7); border-radius: 999px; transition: width .3s; }
+    .barra-fill.pronto { background: linear-gradient(90deg,#22c55e,#4ade80); }
+    .progresso-texto { font-size: .75rem; color: #d1d5db; }
+
+    .cliente-extra { text-align: right; font-size: .75rem; color: #9ca3af; min-width: 110px; }
+    .badge {
+        display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700;
+        margin-top: 4px;
+    }
+    .badge.pronto { background: #16a34a33; color: #4ade80; }
+    .badge.quase { background: #f59e0b33; color: #fbbf24; }
+
+    #statusMsg { font-size: .85rem; color: #9ca3af; text-align: center; margin: 30px 0; }
+    #listaClientes { margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div id="loginBox">
+    <h1>🔒 Painel de Fidelidade</h1>
+    <p class="sub">Nova Origem Açaí</p>
+    <input type="text" id="senhaInput" placeholder="Senha de acesso">
+    <button onclick="tentarLogin()">Entrar</button>
+    <p id="loginErro" style="color:#f87171; font-size:.8rem;"></p>
+</div>
+
+<div class="wrap hidden" id="painel">
+    <h1>⭐ Painel de Fidelidade</h1>
+    <p class="sub">Todos os clientes cadastrados automaticamente pelo programa de fidelidade do site.</p>
+
+    <div class="resumo">
+        <div class="resumo-card">
+            <div class="num" id="resumoTotal">–</div>
+            <div class="lbl">Clientes no programa</div>
+        </div>
+        <div class="resumo-card">
+            <div class="num" id="resumoProntos">–</div>
+            <div class="lbl">Com brinde disponível 🎁</div>
+        </div>
+        <div class="resumo-card">
+            <div class="num" id="resumoQuase">–</div>
+            <div class="lbl">A 1-2 pedidos do brinde</div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" id="buscaInput" placeholder="Buscar por nome ou telefone...">
+        <select id="ordenarSelect">
+            <option value="proximidade">Mais perto do brinde primeiro</option>
+            <option value="pontos">Mais pontos primeiro</option>
+            <option value="recente">Pedido mais recente primeiro</option>
+            <option value="nome">Nome (A-Z)</option>
+        </select>
+    </div>
+
+    <div id="statusMsg">Carregando clientes...</div>
+    <div id="listaClientes"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 🔧 Mesmo projeto Firebase usado no site.html
+    const firebaseConfig = {
+        apiKey: "SUA_API_KEY",
+        authDomain: "fb-pedidos.firebaseapp.com",
+        projectId: "fb-pedidos",
+        storageBucket: "fb-pedidos.appspot.com",
+        messagingSenderId: "440937401229",
+        appId: "1:440937401229:web:4a27c27a69792eb25bcbc4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🆕 Mesma meta usada no site.html — se você mudar lá, muda aqui também
+    const PONTOS_PARA_BRINDE = 10;
+
+    // ⚠️ Mesma senha simples do admin.html (não é autenticação de verdade,
+    // só evita acesso casual). Pode trocar por outra se preferir.
+    const SENHA_ADMIN = "novaorigem2026";
+
+    window.tentarLogin = function () {
+        const valor = document.getElementById("senhaInput").value;
+        if (valor === SENHA_ADMIN) {
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("painel").classList.remove("hidden");
+            sessionStorage.setItem("fidelidadeLogado", "1");
+            carregarClientes();
+        } else {
+            document.getElementById("loginErro").innerText = "Senha incorreta.";
+        }
+    };
+
+    if (sessionStorage.getItem("fidelidadeLogado") === "1") {
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("painel").classList.remove("hidden");
+        carregarClientes();
+    }
+
+    let todosClientes = [];
+
+    async function carregarClientes() {
+        const statusMsg = document.getElementById("statusMsg");
+        try {
+            const snap = await getDocs(collection(db, "clientes"));
+
+            todosClientes = snap.docs.map(doc => {
+                const d = doc.data();
+                return {
+                    id: doc.id,
+                    nome: d.nome || "Sem nome",
+                    telefone: d.telefone || doc.id,
+                    pontos: d.pontos || 0,
+                    brindesDisponiveis: d.brindesDisponiveis || 0,
+                    totalPedidos: d.totalPedidos || 0,
+                    ultimoPedidoData: d.ultimoPedido?.data || d.atualizadoEm || 0
+                };
+            });
+
+            if (todosClientes.length === 0) {
+                statusMsg.innerText = "Ainda não há clientes cadastrados no programa de fidelidade.";
+                return;
+            }
+
+            statusMsg.classList.add("hidden");
+            renderizar();
+        } catch (e) {
+            console.error(e);
+            statusMsg.innerText = "❌ Não foi possível carregar os clientes agora. Verifique a conexão e tente de novo.";
+        }
+    }
+
+    function renderizar() {
+        const busca = document.getElementById("buscaInput").value.trim().toLowerCase();
+        const ordenar = document.getElementById("ordenarSelect").value;
+
+        let lista = todosClientes.filter(c =>
+            !busca ||
+            c.nome.toLowerCase().includes(busca) ||
+            c.telefone.includes(busca.replace(/\D/g, ""))
+        );
+
+        if (ordenar === "proximidade") {
+            // Quem já tem brinde disponível aparece primeiro, depois quem está mais perto de ganhar
+            lista.sort((a, b) => {
+                if (a.brindesDisponiveis !== b.brindesDisponiveis) return b.brindesDisponiveis - a.brindesDisponiveis;
+                return b.pontos - a.pontos;
+            });
+        } else if (ordenar === "pontos") {
+            lista.sort((a, b) => b.pontos - a.pontos);
+        } else if (ordenar === "recente") {
+            lista.sort((a, b) => b.ultimoPedidoData - a.ultimoPedidoData);
+        } else if (ordenar === "nome") {
+            lista.sort((a, b) => a.nome.localeCompare(b.nome));
+        }
+
+        // Resumo
+        const prontos = todosClientes.filter(c => c.brindesDisponiveis > 0).length;
+        const quase = todosClientes.filter(c => c.brindesDisponiveis === 0 && c.pontos >= PONTOS_PARA_BRINDE - 2).length;
+        document.getElementById("resumoTotal").innerText = todosClientes.length;
+        document.getElementById("resumoProntos").innerText = prontos;
+        document.getElementById("resumoQuase").innerText = quase;
+
+        const container = document.getElementById("listaClientes");
+        container.innerHTML = "";
+
+        if (lista.length === 0) {
+            container.innerHTML = `<div id="statusMsg">Nenhum cliente encontrado com essa busca.</div>`;
+            return;
+        }
+
+        lista.forEach(c => {
+            const pct = Math.min(100, Math.round((c.pontos / PONTOS_PARA_BRINDE) * 100));
+            const faltam = Math.max(0, PONTOS_PARA_BRINDE - c.pontos);
+            const temBrinde = c.brindesDisponiveis > 0;
+            const quaseLa = !temBrinde && faltam <= 2;
+
+            const card = document.createElement("div");
+            card.className = "cliente-card" + (temBrinde ? " brinde-pronto" : quaseLa ? " quase-la" : "");
+
+            let badge = "";
+            if (temBrinde) {
+                badge = `<span class="badge pronto">🎁 ${c.brindesDisponiveis} brinde${c.brindesDisponiveis > 1 ? "s" : ""} disponível</span>`;
+            } else if (quaseLa) {
+                badge = `<span class="badge quase">⚡ Falta${faltam === 1 ? "" : "m"} ${faltam}</span>`;
+            }
+
+            const dataFormatada = c.ultimoPedidoData
+                ? new Date(c.ultimoPedidoData).toLocaleDateString("pt-BR")
+                : "—";
+
+            card.innerHTML = `
+                <div class="cliente-info">
+                    <div class="cliente-nome">${escapeHtml(c.nome)}</div>
+                    <div class="cliente-fone">${formatarTelefone(c.telefone)}</div>
+                </div>
+                <div class="cliente-progresso">
+                    <div class="barra"><div class="barra-fill ${temBrinde ? "pronto" : ""}" style="width:${temBrinde ? 100 : pct}%;"></div></div>
+                    <div class="progresso-texto">
+                        ${temBrinde ? "Brinde pronto para resgate!" : `${c.pontos}/${PONTOS_PARA_BRINDE} pontos`}
+                        ${badge}
+                    </div>
+                </div>
+                <div class="cliente-extra">
+                    <div>${c.totalPedidos} pedido${c.totalPedidos === 1 ? "" : "s"}</div>
+                    <div>Último: ${dataFormatada}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function formatarTelefone(fone) {
+        const d = (fone || "").replace(/\D/g, "");
+        if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+        if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+        return fone;
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement("div");
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    document.getElementById("buscaInput").addEventListener("input", renderizar);
+    document.getElementById("ordenarSelect").addEventListener("change", renderizar);
+</script>
+</body>
+</html>
