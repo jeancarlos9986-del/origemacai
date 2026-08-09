@@ -368,6 +368,148 @@ async function reconciliarPagamentosPendentes() {
 
 setInterval(reconciliarPagamentosPendentes, 60 * 1000);
 
+// ==================================================
+// 🆕 BAIXA AUTOMÁTICA DE ESTOQUE (independente do navegador)
+// ==================================================
+// Antes, isso só rodava enquanto alguém deixava a aba do estoque.html aberta
+// no navegador — se a aba estivesse fechada, os pedidos ficavam marcados como
+// "já processados" (pra não descontar retroativo) SEM nunca ter descontado de
+// verdade. Rodando aqui no servidor, que fica sempre ligado, isso não depende
+// de ninguém deixar tela nenhuma aberta.
+//
+// 🆕 A pedido do dono da loja: também processa retroativamente os pedidos que
+// já estavam concluidos/prontos e nunca tiveram baixa (a flag "estoqueBaixado"
+// impede reprocessar o que já foi descontado, então isso roda uma única vez
+// por pedido, com segurança).
+
+function normEstoque(nome) {
+    return (nome || "").toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function pegarCampoEstoque(item, nomes) {
+    for (const nome of nomes) { if (item[nome] !== undefined) return item[nome]; }
+    return 0;
+}
+
+const CONSUMO_ESTOQUE = {
+    "400ml": { acai: 0.28 },
+    "500ml": { acai: 0.32 },
+    "Nutella": { qtd: 0.03 },
+    "Morango": { qtd: 0.03 },
+    "Granola": { qtd: 0.02 },
+    "Leite em pó": { qtd: 0.02 },
+    "Leite condensado": { qtd: 0.02 },
+    "Paçoca": { qtd: 0.02 },
+    "Banana": { qtd: 0.03 },
+    "Disquete": { qtd: 0.01 },
+    "Kit Kat": { qtd: 0.01 },
+    "Ouro Branco": { qtd: 0.01 },
+    "Sonho de Valsa": { qtd: 0.01 },
+    "Chocoball": { qtd: 0.01 },
+    "Amendoim": { qtd: 0.02 },
+    "Shake Açai Tradicional 500ml": { acai: 0.30, "Leite": 0.10, "Leite em pó": 0.025 },
+    "Ovomaltine": { qtd: 0.02 }
+};
+
+function calcularNecessidadesEstoque(itens) {
+    const nec = new Map();
+    const add = (nome, qtd) => {
+        if (!qtd || qtd <= 0) return;
+        const chave = normEstoque(nome);
+        const atual = nec.get(chave);
+        nec.set(chave, { nome, qtd: (atual?.qtd || 0) + qtd });
+    };
+    itens.forEach(item => {
+        const copo = normEstoque(item.nome).includes("400") ? "400ml" : "500ml";
+        add("Açaí", CONSUMO_ESTOQUE[copo].acai);
+        add(`Copo ${copo}`, 1);
+        add("Tampa", 1);
+        add("Colher", 1);
+        add("Guardanapo", 1);
+        let ads = [];
+        ["gratis", "pagos", "adicionais"].forEach(c => { if (Array.isArray(item[c])) ads.push(...item[c]); });
+        ads = [...new Set(ads.map(a => typeof a === "object" ? a.nome || "" : String(a || "")).filter(Boolean))];
+        ads.forEach(ad => {
+            const achou = Object.keys(CONSUMO_ESTOQUE).find(ch => normEstoque(ch) === normEstoque(ad));
+            if (achou && CONSUMO_ESTOQUE[achou].qtd) add(achou, CONSUMO_ESTOQUE[achou].qtd);
+        });
+    });
+    if (itens.length === 1) { add("Sacola 1 copo", 1); add("Porta-copo 1 copo", 1); }
+    else if (itens.length > 1) { add("Sacola 2+ copos", 1); add("Porta-copo 2+ copos", 1); }
+    return nec;
+}
+
+async function construirMapaEstoque() {
+    const snap = await db.collection("estoque").get();
+    const mapa = new Map();
+    snap.forEach(d => mapa.set(normEstoque(d.data().nome), { ref: db.collection("estoque").doc(d.id), nome: d.data().nome }));
+    return mapa;
+}
+
+async function processarPedidoEstoqueSeguro(pedidoId, mapaEstoque) {
+    let faltas = [];
+    let consumos = [];
+
+    await db.runTransaction(async tx => {
+        faltas = []; consumos = [];
+        const pedidoRef = db.collection("pedidos").doc(pedidoId);
+        const pedidoSnap = await tx.get(pedidoRef);
+        if (!pedidoSnap.exists) return;
+        const pedido = pedidoSnap.data();
+        if (pedido.estoqueBaixado) return;
+
+        const necessidades = [...calcularNecessidadesEstoque(pedido.itens || []).entries()]
+            .map(([chave, v]) => ({ chave, ...v, info: mapaEstoque.get(chave) }));
+
+        const leituras = [];
+        for (const nec of necessidades) {
+            leituras.push({ ...nec, snap: nec.info ? await tx.get(nec.info.ref) : null });
+        }
+
+        for (const L of leituras) {
+            if (!L.info || !L.snap || !L.snap.exists) { faltas.push(L.nome); continue; }
+            const atual = Number(pegarCampoEstoque(L.snap.data(), ["quantidade", "qtd", "quant"]));
+            const nova = Number((atual - L.qtd).toFixed(4));
+            tx.update(L.info.ref, { quantidade: Math.max(0, nova), atualizadoEm: new Date() });
+            consumos.push({ nome: L.info.nome, qtd: L.qtd });
+            if (nova < 0) faltas.push(L.info.nome);
+        }
+
+        tx.update(pedidoRef, faltas.length ? { estoqueBaixado: true, estoqueAlertaFalta: faltas } : { estoqueBaixado: true });
+    });
+
+    for (const c of consumos) {
+        await db.collection("movimentacoes").add({
+            nomeItem: c.nome, tipo: "saida", quantidade: c.qtd, observacao: `Pedido #${pedidoId.slice(-4)}`, data: new Date()
+        }).catch(e => console.error("❌ Falha ao registrar movimentação de estoque:", e.message));
+    }
+    if (faltas.length) {
+        console.warn(`⚠️ Estoque negativo ao processar pedido #${pedidoId.slice(-4)}: ${faltas.join(", ")}`);
+    } else if (consumos.length) {
+        console.log(`📦 Estoque baixado automaticamente para o pedido #${pedidoId.slice(-4)}`);
+    }
+}
+
+function monitorarEstoque() {
+    db.collection("pedidos")
+        .where("status", "in", ["concluido", "finalizado", "pronto"])
+        .onSnapshot(async snap => {
+            const pendentes = snap.docChanges()
+                .filter(c => (c.type === "added" || c.type === "modified") && !c.doc.data().estoqueBaixado)
+                .map(c => c.doc.id);
+            if (!pendentes.length) return;
+
+            const mapaEstoque = await construirMapaEstoque();
+            for (const id of pendentes) {
+                try { await processarPedidoEstoqueSeguro(id, mapaEstoque); }
+                catch (e) { console.error(`❌ Erro ao processar baixa de estoque do pedido #${id.slice(-4)}:`, e.message); }
+            }
+        }, erro => {
+            console.error("❌ Erro no listener de baixa automática de estoque:", erro.message);
+        });
+}
+
+monitorarEstoque();
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
