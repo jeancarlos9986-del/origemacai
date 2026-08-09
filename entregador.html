@@ -219,6 +219,41 @@
             opacity: .5;
         }
 
+        /* ✅ Contador de entregas concluídas (1 por endereço, não por item/pedido) */
+        .stats-entregas {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            background: var(--card);
+            border: 1px solid rgba(2, 132, 199, 0.25);
+            border-radius: 16px;
+            padding: 14px 16px;
+        }
+
+        .stat-box .stat-num {
+            display: block;
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #38bdf8;
+        }
+
+        .stat-box .stat-lbl {
+            font-size: .78rem;
+            color: var(--muted);
+        }
+
+        .stat-box .stat-sub {
+            font-size: .7rem;
+            color: var(--muted);
+            opacity: .8;
+        }
+
         .alerta-pago {
             border-radius: 12px 12px 0 0;
             margin: -22px -22px 18px -22px !important;
@@ -275,6 +310,15 @@
         </div>
 
     </header>
+
+    <div class="stats-entregas" id="statsEntregas">
+        <div class="stat-box">
+            <span class="stat-num" id="statEntregasHoje">0</span>
+            <span class="stat-lbl">Entregas hoje</span>
+            <div class="stat-sub">1 por endereço, mesmo com vários itens</div>
+        </div>
+
+    </div>
 
     <main id="lista-entregas">
         <div class="sem-pedidos">
