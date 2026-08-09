@@ -1,7 +1,36 @@
 import { db } from "./firebase.js";
 import {
-    collection, addDoc, getDocs, updateDoc, doc, setDoc, increment, onSnapshot, query, where, runTransaction, orderBy, writeBatch
+    collection, addDoc, getDocs, getDoc, updateDoc, doc, setDoc, increment, onSnapshot, query, where, runTransaction, orderBy, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// 🆕 Baixa de estoque agora mora em um módulo compartilhado (estoqueBaixa.js),
+// porque a cozinha (cozinha.js) também precisa chamar essa mesma lógica no
+// momento em que marca o pedido como "pronto" — sem depender da tela de
+// Estoque estar aberta. Aqui ficamos apenas como rede de segurança.
+import { construirMapaEstoque, processarPedidoSeguro } from "./estoqueBaixa.js";
+
+// ==============================================
+// 🆕 CAIXA POR FORMA DE PAGAMENTO (mesmo modelo do financeiro.js)
+// ==============================================
+// O financeiro.js guarda o saldo em configuracoes/caixa_empresa com os campos
+// "dinheiro", "pix", "cartao" e "total" — NUNCA um campo genérico "saldo".
+// Antes, as compras de estoque descontavam de um campo "saldo" que não existe
+// nesse documento, então o financeiro nunca refletia essas compras. Esta
+// função replica exatamente a lógica do financeiro.js pra manter os dois em sincronia.
+async function ajustarSaldoCaixa(valor, forma) {
+    const ref = doc(db, "configuracoes", "caixa_empresa");
+    const snapAtual = await getDoc(ref);
+    const atual = snapAtual.exists() ? snapAtual.data() : { dinheiro: 0, pix: 0, cartao: 0, total: 0 };
+    const novo = { ...atual, ultimaAtualizacao: new Date() };
+    valor = Number(valor.toFixed(2));
+
+    if (forma === "dinheiro") novo.dinheiro = Number(((novo.dinheiro || 0) + valor).toFixed(2));
+    else if (forma === "pix") novo.pix = Number(((novo.pix || 0) + valor).toFixed(2));
+    else if (forma === "cartao") novo.cartao = Number(((novo.cartao || 0) + valor).toFixed(2));
+    else return; // "aprazo" não mexe no caixa agora — vira conta a pagar
+
+    novo.total = Number(((novo.dinheiro || 0) + (novo.pix || 0) + (novo.cartao || 0)).toFixed(2));
+    await setDoc(ref, novo, { merge: true });
+}
 
 // ==============================================
 // FUNÇÕES AUXILIARES
@@ -25,118 +54,6 @@ function pegarCampo(item, nomes) {
         if (item[nome] !== undefined) return item[nome];
     }
     return 0;
-}
-
-// ==============================================
-// DADOS E REGRAS
-// ==============================================
-// ==============================================
-// DADOS E REGRAS — CORRIGIDO COM NUTELLA E TODOS OS ADICIONAIS
-// ==============================================
-const CONSUMO = {
-    "400ml": { acai: 0.28 }, 
-    "500ml": { acai: 0.32 },
-    "Nutella": { qtd: 0.03 },
-    "Morango": { qtd: 0.03 },
-    "Granola": { qtd: 0.02 },
-    "Leite em pó": { qtd: 0.02 },
-    "Leite condensado": { qtd: 0.02 },
-    "Paçoca": { qtd: 0.02 },
-    "Banana": { qtd: 0.03 },
-    "Disquete": { qtd: 0.01 },
-    "Kit Kat": { qtd: 0.01 },
-    "Ouro Branco": { qtd: 0.01 },
-    "Sonho de Valsa": { qtd: 0.01 },
-    "Chocoball": { qtd: 0.01 },
-    "Amendoim": { qtd: 0.02 },
-    "Shake Açai Tradicional 500ml": { acai: 0.30, "Leite": 0.10, "Leite em pó": 0.025 },
-    "Ovomaltine": { qtd: 0.02 }
-};
-
-// ==============================================
-// BAIXA DE ESTOQUE POR PEDIDO (ATÔMICA, SEM TRANSAÇÃO ANINHADA)
-// ==============================================
-
-// Calcula tudo que um pedido consome, já agregado por item (uma entrada por insumo).
-function calcularNecessidades(itens) {
-    const nec = new Map(); // chave normalizada -> { nome, qtd }
-    const add = (nome, qtd) => {
-        if (!qtd || qtd <= 0) return;
-        const chave = norm(nome);
-        const atual = nec.get(chave);
-        nec.set(chave, { nome, qtd: (atual?.qtd || 0) + qtd });
-    };
-    itens.forEach(item => {
-        const copo = norm(item.nome).includes("400") ? "400ml" : "500ml";
-        add("Açaí", CONSUMO[copo].acai);
-        add(`Copo ${copo}`, 1);
-        add("Tampa", 1);
-        add("Colher", 1);
-        add("Guardanapo", 1);
-        let ads = [];
-        ["gratis", "pagos", "adicionais"].forEach(c => { if (Array.isArray(item[c])) ads.push(...item[c]); });
-        ads = [...new Set(ads.map(a => typeof a === "object" ? a.nome || "" : String(a || "")).filter(Boolean))];
-        ads.forEach(ad => {
-            const achou = Object.keys(CONSUMO).find(ch => norm(ch) === norm(ad));
-            if (achou && CONSUMO[achou].qtd) add(achou, CONSUMO[achou].qtd);
-        });
-    });
-    if (itens.length === 1) { add("Sacola 1 copo", 1); add("Porta-copo 1 copo", 1); }
-    else if (itens.length > 1) { add("Sacola 2+ copos", 1); add("Porta-copo 2+ copos", 1); }
-    return nec;
-}
-
-async function construirMapaEstoque() {
-    const snap = await getDocs(collection(db, "estoque"));
-    const mapa = new Map();
-    snap.forEach(d => mapa.set(norm(d.data().nome), { ref: doc(db, "estoque", d.id), nome: d.data().nome }));
-    return mapa;
-}
-
-// Uma única transação: lê o pedido, lê cada insumo necessário, escreve tudo de uma vez.
-// Nunca lança erro por falta de estoque — deixa o saldo ir a zero e registra o alerta,
-// pra nunca travar o fechamento do pedido.
-async function processarPedidoSeguro(pedidoId, mapaEstoque) {
-    let faltas = [];
-    let consumos = [];
-
-    await runTransaction(db, async tx => {
-        faltas = []; consumos = [];
-        const pedidoRef = doc(db, "pedidos", pedidoId);
-        const pedidoSnap = await tx.get(pedidoRef);
-        if (!pedidoSnap.exists()) return;
-        const pedido = pedidoSnap.data();
-        if (pedido.estoqueBaixado) return;
-
-        const necessidades = [...calcularNecessidades(pedido.itens || []).entries()]
-            .map(([chave, v]) => ({ chave, ...v, info: mapaEstoque.get(chave) }));
-
-        // 1) TODAS as leituras primeiro (regra do Firestore: leitura antes de escrita)
-        const leituras = [];
-        for (const nec of necessidades) {
-            leituras.push({ ...nec, snap: nec.info ? await tx.get(nec.info.ref) : null });
-        }
-
-        // 2) Agora as escritas
-        for (const L of leituras) {
-            if (!L.info || !L.snap || !L.snap.exists()) { faltas.push(L.nome); continue; }
-            const atual = Number(pegarCampo(L.snap.data(), ["quantidade", "qtd", "quant"]));
-            const nova = Number((atual - L.qtd).toFixed(4));
-            tx.update(L.info.ref, { quantidade: Math.max(0, nova), atualizadoEm: new Date() });
-            consumos.push({ nome: L.info.nome, qtd: L.qtd });
-            if (nova < 0) faltas.push(L.info.nome);
-        }
-
-        tx.update(pedidoRef, faltas.length ? { estoqueBaixado: true, estoqueAlertaFalta: faltas } : { estoqueBaixado: true });
-    });
-
-    // Registro de movimentações fora da transação (é só log, não precisa ser atômico com a baixa).
-    for (const c of consumos) {
-        await addDoc(collection(db, "movimentacoes"), {
-            nomeItem: c.nome, tipo: "saida", quantidade: c.qtd, observacao: `Pedido #${pedidoId.slice(-4)}`, data: new Date()
-        }).catch(e => console.error("Falha ao registrar movimentação", e));
-    }
-    if (faltas.length) console.warn(`⚠️ Estoque negativo ao processar pedido #${pedidoId.slice(-4)}: ${faltas.join(", ")}`);
 }
 
 // Marca pedidos que JÁ existiam antes de abrirmos esta tela como processados,
@@ -314,6 +231,7 @@ document.getElementById("btn-salvar").addEventListener("click", async () => {
         atualizadoEm: new Date()
     };
     const lancarGasto = document.getElementById("lancar-gasto-item").checked;
+    const formaPagamento = document.getElementById("forma-pagamento-item").value;
     if (!dados.nome || dados.quantidade <= 0) return alert("Preencha tudo!");
     try {
         const s = await getDocs(collection(db, "estoque"));
@@ -324,15 +242,25 @@ document.getElementById("btn-salvar").addEventListener("click", async () => {
             const valorCompra = Number((dados.quantidade * dados.custoUnitario).toFixed(2));
             if (valorCompra > 0) {
                 await addDoc(collection(db, "gastos"), {
-                    descricao: `Compra: ${dados.nome}`, valor: valorCompra, tipo: "insumo", natureza: "empresa", data: new Date()
+                    descricao: `Compra: ${dados.nome}`, valor: valorCompra, tipo: "insumo", natureza: "empresa",
+                    formaPagamento, data: new Date()
                 });
-                await setDoc(doc(db, "configuracoes", "caixa_empresa"), {
-                    saldo: increment(-valorCompra), ultimaAtualizacao: new Date()
-                }, { merge: true });
+
+                if (formaPagamento === "aprazo") {
+                    // 🆕 Não desconta o caixa agora — entra em Contas a Pagar pra ser quitada depois
+                    await addDoc(collection(db, "contas_pagar"), {
+                        descricao: `Compra: ${dados.nome}`, valor: valorCompra,
+                        dataVenc: new Date(Date.now() + 7 * 86400000), pago: false
+                    });
+                } else {
+                    await ajustarSaldoCaixa(-valorCompra, formaPagamento);
+                }
             }
         }
 
-        alert(lancarGasto ? "✅ Cadastrado e lançado como gasto no financeiro!" : "✅ Cadastrado (sem lançar gasto — só a contagem do estoque).");
+        alert(lancarGasto
+            ? (formaPagamento === "aprazo" ? "✅ Cadastrado! Lançado como conta a pagar (a prazo)." : "✅ Cadastrado e descontado do caixa (" + formaPagamento + ")!")
+            : "✅ Cadastrado (sem lançar gasto — só a contagem do estoque).");
         atualizarTudo();
         carregarSel();
     } catch (e) {
@@ -348,7 +276,14 @@ document.getElementById("btn-mov").addEventListener("click", async () => {
     const tipo = t(document.getElementById("tipo-mov").value);
     const qtd = n(document.getElementById("qtd-mov").value);
     const obs = t(document.getElementById("obs-mov").value);
+    const precoDigitado = document.getElementById("preco-mov").value;
+    const formaPagamento = document.getElementById("forma-mov").value;
     if (!id || qtd <= 0) return alert("Preencha tudo!");
+
+    // 🆕 Se for compra ("entrada"), o preço vem do campo (pré-preenchido com o último,
+    // mas editável) — pode ser diferente do que está salvo no cadastro do item.
+    let valorCompra = 0;
+    let precoUsado = null;
     try {
         await runTransaction(db, async tx => {
             const ref = doc(db, "estoque", id);
@@ -356,34 +291,90 @@ document.getElementById("btn-mov").addEventListener("click", async () => {
             if (!s.exists()) throw new Error("Item não existe mais. Atualize a página.");
             const dadosItem = s.data();
             const qatual = Number(pegarCampo(dadosItem, ["quantidade", "qtd", "quant"]));
-            const custo = Number(pegarCampo(dadosItem, ["custoUnitario", "custo", "valor"]));
+            const custoSalvo = Number(pegarCampo(dadosItem, ["custoUnitario", "custo", "valor"]));
             const nova = tipo === "entrada" ? qatual + qtd : qatual - qtd;
             if (nova < 0) throw new Error(`Estoque insuficiente de "${dadosItem.nome}" (disponível: ${qatual}).`);
 
-            tx.update(ref, { quantidade: nova, atualizadoEm: new Date() });
+            const atualizacaoItem = { quantidade: nova, atualizadoEm: new Date() };
+
+            if (tipo === "entrada") {
+                // Usa o preço digitado se o usuário informou algo; senão cai no último preço salvo.
+                precoUsado = precoDigitado !== "" && !isNaN(Number(precoDigitado)) ? Number(precoDigitado) : custoSalvo;
+                valorCompra = Number((qtd * precoUsado).toFixed(2));
+                // 🆕 Atualiza o "último preço" do item pra próxima compra já vir sugerido
+                if (precoUsado !== custoSalvo) atualizacaoItem.custoUnitario = precoUsado;
+            }
+
+            tx.update(ref, atualizacaoItem);
             tx.set(doc(collection(db, "movimentacoes")), {
                 itemId: id, nomeItem: dadosItem.nome, tipo, quantidade: qtd, observacao: obs, data: new Date()
             });
 
-            if (tipo === "entrada") {
-                const valorCompra = Number((qtd * custo).toFixed(2));
+            if (tipo === "entrada" && valorCompra > 0) {
                 tx.set(doc(collection(db, "gastos")), {
-                    descricao: `Compra: ${dadosItem.nome}`, valor: valorCompra, tipo: "insumo", natureza: "empresa", data: new Date()
+                    descricao: `Compra: ${dadosItem.nome}`, valor: valorCompra, tipo: "insumo", natureza: "empresa",
+                    formaPagamento, data: new Date()
                 });
-                tx.set(doc(db, "configuracoes", "caixa_empresa"), {
-                    saldo: increment(-valorCompra), ultimaAtualizacao: new Date()
-                }, { merge: true });
+
+                if (formaPagamento === "aprazo") {
+                    // 🆕 A prazo: não desconta o caixa agora, vira conta a pagar
+                    tx.set(doc(collection(db, "contas_pagar")), {
+                        descricao: `Compra: ${dadosItem.nome}`, valor: valorCompra,
+                        dataVenc: new Date(Date.now() + 7 * 86400000), pago: false
+                    });
+                } else {
+                    const caixaRef = doc(db, "configuracoes", "caixa_empresa");
+                    const caixaSnap = await tx.get(caixaRef);
+                    const caixaAtual = caixaSnap.exists() ? caixaSnap.data() : { dinheiro: 0, pix: 0, cartao: 0, total: 0 };
+                    const novoCaixa = { ...caixaAtual, ultimaAtualizacao: new Date() };
+                    if (formaPagamento === "dinheiro") novoCaixa.dinheiro = Number(((novoCaixa.dinheiro || 0) - valorCompra).toFixed(2));
+                    else if (formaPagamento === "pix") novoCaixa.pix = Number(((novoCaixa.pix || 0) - valorCompra).toFixed(2));
+                    else if (formaPagamento === "cartao") novoCaixa.cartao = Number(((novoCaixa.cartao || 0) - valorCompra).toFixed(2));
+                    novoCaixa.total = Number(((novoCaixa.dinheiro || 0) + (novoCaixa.pix || 0) + (novoCaixa.cartao || 0)).toFixed(2));
+                    tx.set(caixaRef, novoCaixa, { merge: true });
+                }
             }
         });
         document.getElementById("qtd-mov").value = "";
+        document.getElementById("preco-mov").value = "";
         document.getElementById("obs-mov").value = "";
-        alert("✅ Registrado!");
+        alert(tipo === "entrada" && valorCompra > 0
+            ? (formaPagamento === "aprazo" ? "✅ Registrado! Lançado como conta a pagar (a prazo)." : `✅ Registrado e descontado do caixa (${formaPagamento})!`)
+            : "✅ Registrado!");
         atualizarTudo();
     } catch (e) {
         console.error(e);
         alert(`❌ ${e.message || "Não foi possível registrar a movimentação."}`);
     }
 });
+
+// 🆕 Pré-preenche o preço unitário com o último valor pago quando escolhe um item,
+// e mostra/esconde os campos de preço e forma de pagamento conforme o tipo escolhido.
+async function atualizarCamposMovimentacao() {
+    const tipo = document.getElementById("tipo-mov").value;
+    const precoBox = document.getElementById("preco-mov-box");
+    const formaBox = document.getElementById("forma-mov-box");
+    const mostrarCompra = tipo === "entrada";
+    precoBox.style.display = mostrarCompra ? "" : "none";
+    formaBox.style.display = mostrarCompra ? "" : "none";
+}
+
+async function preencherUltimoPreco() {
+    const id = document.getElementById("sel-item").value;
+    const precoInput = document.getElementById("preco-mov");
+    if (!id) { precoInput.value = ""; return; }
+    try {
+        const snap = await getDocs(collection(db, "estoque"));
+        const itemDoc = snap.docs.find(d => d.id === id);
+        if (itemDoc) {
+            const custo = pegarCampo(itemDoc.data(), ["custoUnitario", "custo", "valor"]);
+            precoInput.value = custo || "";
+        }
+    } catch (e) { console.error("Erro ao buscar último preço", e); }
+}
+
+document.getElementById("tipo-mov").addEventListener("change", atualizarCamposMovimentacao);
+document.getElementById("sel-item").addEventListener("change", preencherUltimoPreco);
 
 async function carregarSel() {
     const s = await getDocs(collection(db, "estoque"));
@@ -401,4 +392,5 @@ document.addEventListener("DOMContentLoaded", () => {
     carregarSel();
     atualizarTudo();
     monitorar();
+    atualizarCamposMovimentacao(); // 🆕 estado inicial certo dos campos de preço/pagamento
 });
