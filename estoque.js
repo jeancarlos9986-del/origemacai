@@ -287,6 +287,10 @@ document.getElementById("btn-mov").addEventListener("click", async () => {
     try {
         await runTransaction(db, async tx => {
             const ref = doc(db, "estoque", id);
+            const caixaRef = doc(db, "configuracoes", "caixa_empresa");
+
+            // 🆕 TODAS as leituras primeiro — regra do Firestore: todo tx.get()
+            // precisa acontecer antes de qualquer tx.set()/tx.update() na mesma transação.
             const s = await tx.get(ref);
             if (!s.exists()) throw new Error("Item não existe mais. Atualize a página.");
             const dadosItem = s.data();
@@ -295,15 +299,28 @@ document.getElementById("btn-mov").addEventListener("click", async () => {
             const nova = tipo === "entrada" ? qatual + qtd : qatual - qtd;
             if (nova < 0) throw new Error(`Estoque insuficiente de "${dadosItem.nome}" (disponível: ${qatual}).`);
 
-            const atualizacaoItem = { quantidade: nova, atualizadoEm: new Date() };
-
             if (tipo === "entrada") {
                 // Usa o preço digitado se o usuário informou algo; senão cai no último preço salvo.
                 precoUsado = precoDigitado !== "" && !isNaN(Number(precoDigitado)) ? Number(precoDigitado) : custoSalvo;
                 valorCompra = Number((qtd * precoUsado).toFixed(2));
-                // 🆕 Atualiza o "último preço" do item pra próxima compra já vir sugerido
-                if (precoUsado !== custoSalvo) atualizacaoItem.custoUnitario = precoUsado;
             }
+
+            // Só precisamos ler o caixa se formos realmente mexer nele.
+            const vaiMexerNoCaixa = tipo === "entrada" && valorCompra > 0 && formaPagamento !== "aprazo";
+            let novoCaixa = null;
+            if (vaiMexerNoCaixa) {
+                const caixaSnap = await tx.get(caixaRef);
+                const caixaAtual = caixaSnap.exists() ? caixaSnap.data() : { dinheiro: 0, pix: 0, cartao: 0, total: 0 };
+                novoCaixa = { ...caixaAtual, ultimaAtualizacao: new Date() };
+                if (formaPagamento === "dinheiro") novoCaixa.dinheiro = Number(((novoCaixa.dinheiro || 0) - valorCompra).toFixed(2));
+                else if (formaPagamento === "pix") novoCaixa.pix = Number(((novoCaixa.pix || 0) - valorCompra).toFixed(2));
+                else if (formaPagamento === "cartao") novoCaixa.cartao = Number(((novoCaixa.cartao || 0) - valorCompra).toFixed(2));
+                novoCaixa.total = Number(((novoCaixa.dinheiro || 0) + (novoCaixa.pix || 0) + (novoCaixa.cartao || 0)).toFixed(2));
+            }
+
+            // 🆕 A partir daqui só escritas — nenhum tx.get() depois deste ponto.
+            const atualizacaoItem = { quantidade: nova, atualizadoEm: new Date() };
+            if (tipo === "entrada" && precoUsado !== custoSalvo) atualizacaoItem.custoUnitario = precoUsado;
 
             tx.update(ref, atualizacaoItem);
             tx.set(doc(collection(db, "movimentacoes")), {
@@ -323,14 +340,6 @@ document.getElementById("btn-mov").addEventListener("click", async () => {
                         dataVenc: new Date(Date.now() + 7 * 86400000), pago: false
                     });
                 } else {
-                    const caixaRef = doc(db, "configuracoes", "caixa_empresa");
-                    const caixaSnap = await tx.get(caixaRef);
-                    const caixaAtual = caixaSnap.exists() ? caixaSnap.data() : { dinheiro: 0, pix: 0, cartao: 0, total: 0 };
-                    const novoCaixa = { ...caixaAtual, ultimaAtualizacao: new Date() };
-                    if (formaPagamento === "dinheiro") novoCaixa.dinheiro = Number(((novoCaixa.dinheiro || 0) - valorCompra).toFixed(2));
-                    else if (formaPagamento === "pix") novoCaixa.pix = Number(((novoCaixa.pix || 0) - valorCompra).toFixed(2));
-                    else if (formaPagamento === "cartao") novoCaixa.cartao = Number(((novoCaixa.cartao || 0) - valorCompra).toFixed(2));
-                    novoCaixa.total = Number(((novoCaixa.dinheiro || 0) + (novoCaixa.pix || 0) + (novoCaixa.cartao || 0)).toFixed(2));
                     tx.set(caixaRef, novoCaixa, { merge: true });
                 }
             }
