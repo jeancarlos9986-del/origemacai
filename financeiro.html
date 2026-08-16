@@ -391,6 +391,34 @@
             background: rgba(245, 158, 11, .05);
         }
 
+        .linha-emprestimo {
+            background: rgba(236, 72, 153, .05);
+        }
+
+        .tag-emprestimo {
+            background: rgba(236, 72, 153, .18);
+            color: #d8b4fe;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+
+        .tag-devolucao {
+            background: rgba(0, 200, 83, .18);
+            color: var(--green);
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+
+        .lista-emprestimos {
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -499,6 +527,8 @@
             <button class="btn btn-aviso" id="btnEstoque"><i class="fas fa-boxes"></i> Estoque</button>
             <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar Dia</button>
             <button class="btn btn-primario" id="btnContas"><i class="fas fa-file-invoice-dollar"></i> Contas</button>
+            <button class="btn btn-primario" id="btnEmprestimos" style="background:#9333ea;"><i
+                    class="fas fa-hand-holding-usd"></i> Empréstimo</button>
             <button class="btn btn-primario" id="btnMeta"><i class="fas fa-bullseye"></i> Meta</button>
             <button class="btn btn-primario" id="btnAjustarCaixa"><i class="fas fa-sliders-h"></i> Ajustar
                 Caixa</button>
@@ -616,6 +646,11 @@
                 style="width:100%; margin-bottom:10px;">
             <input type="number" id="valorRec" placeholder="Valor R$" step="0.01"
                 style="width:100%; margin-bottom:10px;">
+            <select id="formaRec" style="width:100%; margin-bottom:10px;">
+                <option value="dinheiro">💵 Caiu em Dinheiro</option>
+                <option value="pix">⚡ Caiu no Pix</option>
+                <option value="cartao">💳 Caiu no Cartão</option>
+            </select>
             <div class="botoes-modal"><button class="btn" id="btnCancelarRec">Cancelar</button><button
                     class="btn btn-sucesso" id="btnSalvarRec">Registrar</button></div>
         </div>
@@ -654,6 +689,7 @@
             <div class="aviso-caixa-fisico">
                 <p><span>Dinheiro em vendas</span><strong id="dinheiroVendasFechar">R$ 0,00</strong></p>
                 <p><span>(+) Troco devolvido via Pix</span><strong id="trocoPixFechar">R$ 0,00</strong></p>
+                <p><span>(-) Gastos pagos em dinheiro</span><strong id="gastosDinheiroFechar">R$ 0,00</strong></p>
                 <p><span>= Dinheiro esperado</span><strong id="dinheiroEsperadoFechar">R$ 0,00</strong></p>
             </div>
             <input type="number" id="saldoReal" placeholder="Valor real em espécie R$" step="0.01"
@@ -670,6 +706,11 @@
                 <input type="text" id="nomeConta" placeholder="Ex: Aluguel">
                 <input type="number" id="valorConta" placeholder="Valor" step="0.01">
                 <input type="date" id="dataVenc">
+                <select id="formaConta">
+                    <option value="dinheiro">💵 Vou pagar em Dinheiro</option>
+                    <option value="pix">⚡ Vou pagar no Pix</option>
+                    <option value="cartao">💳 Vou pagar no Cartão</option>
+                </select>
                 <button class="btn btn-primario" id="btnAddConta">Adicionar</button>
             </div>
             <div class="lista-contas" id="listaContas"></div>
@@ -679,8 +720,11 @@
     <div class="modal" id="modalAjustarCaixa">
         <div class="modal-conteudo">
             <h4><i class="fas fa-sliders-h"></i> Ajustar Saldo do Caixa</h4>
-            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Informe o valor real que tem HOJE,
-                separado por tipo:</p>
+            <button id="btnRecalcularCaixa" class="btn btn-primario" style="width:100%; margin-bottom:14px; background:#00b1ea;">
+                <i class="fas fa-sync-alt"></i> Recalcular automaticamente (usar histórico real)
+            </button>
+            <p style="font-size:0.75rem; color:var(--muted); margin-bottom:10px;">Ou, se preferir, digite manualmente
+                o valor real que tem HOJE, separado por tipo:</p>
             <input type="number" id="saldo-dinheiro" placeholder="Dinheiro em Papel R$" step="0.01"
                 style="width:100%; margin-bottom:8px;">
             <input type="number" id="saldo-pix" placeholder="Saldo Pix Empresa R$" step="0.01"
@@ -688,7 +732,39 @@
             <input type="number" id="saldo-cartao" placeholder="Valor a Receber Cartão R$" step="0.01"
                 style="width:100%; margin-bottom:10px;">
             <div class="botoes-modal"><button class="btn" id="btnCancelarAjusteCaixa">Cancelar</button><button
-                    class="btn btn-primario" id="btnSalvarAjusteCaixa">Salvar</button></div>
+                    class="btn btn-primario" id="btnSalvarAjusteCaixa">Salvar Manual</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalEmprestimos">
+        <div class="modal-conteudo" style="max-width:560px;">
+            <h4><i class="fas fa-hand-holding-usd"></i> Empréstimo Pessoal</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Toda vez que você registra um gasto
+                (aqui ou no Estoque) com forma de pagamento "Dinheiro Pessoal", isso entra aqui automaticamente como
+                um empréstimo seu pra empresa. A empresa te paga de volta em 4 parcelas iguais — use "Registrar
+                Devolução" a cada parcela paga.</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card2); padding:12px; border-radius:10px; margin-bottom:12px;">
+                <span>Empresa te deve hoje:</span>
+                <strong id="saldoEmprestimoModal" style="color:#d8b4fe; font-size:1.1rem;">R$ 0,00</strong>
+            </div>
+            <!-- 🆕 O empréstimo sempre é pago de volta em 4 parcelas: mostra o valor
+                 total pego e quanto é cada uma das 4 parcelas. -->
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card2); padding:12px; border-radius:10px; margin-bottom:12px; border:1px solid #9333ea;">
+                <span><i class="fas fa-layer-group"></i> Parcelado em 4x de:</span>
+                <strong id="valorParcelaEmprestimo" style="color:#d8b4fe; font-size:1.1rem;">R$ 0,00</strong>
+            </div>
+            <div class="form-lancamento" style="margin-bottom:10px;">
+                <input type="text" id="descDevolucao" placeholder="Ex: Recebi de volta em dinheiro">
+                <input type="number" id="valorDevolucao" placeholder="Valor R$" min="0.01" step="0.01">
+                <select id="formaDevolucao">
+                    <option value="dinheiro">Dinheiro em Papel</option>
+                    <option value="pix">Pix da Empresa</option>
+                    <option value="cartao">Cartão</option>
+                </select>
+                <button class="btn btn-sucesso" id="btnSalvarDevolucao"><i class="fas fa-check"></i> Registrar
+                    Devolução</button>
+            </div>
+            <div class="lista-emprestimos" id="listaEmprestimos"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarEmprestimos">Fechar</button></div>
         </div>
     </div>
     <div class="modal" id="modalMeta">
