@@ -817,6 +817,27 @@
             animation: cartUp .3s ease;
         }
 
+        /* 🆕 Quando o cliente chega direto pelo link "acompanhar pedido" (ex: pelo
+           WhatsApp), o modal de status abre automático — mas se ele fechar o modal
+           pra dar uma olhada no cardápio, precisa ficar óbvio que a barra aqui
+           embaixo continua acompanhando o pedido dele. Esse glow chama atenção
+           por alguns segundos só nesse cenário. */
+        .track-bar.destaque-inicial {
+            animation: cartUp .3s ease, trackGlow 1.3s ease-in-out 4;
+        }
+
+        @keyframes trackGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 15px 40px rgba(2, 132, 199, .45);
+            }
+
+            50% {
+                box-shadow: 0 15px 40px rgba(2, 132, 199, .45), 0 0 0 6px rgba(56, 189, 248, .45);
+            }
+        }
+
         .track-left {
             display: flex;
             align-items: center;
@@ -848,6 +869,15 @@
         .track-subtitle {
             font-size: 0.8rem;
             opacity: 0.9;
+        }
+
+        /* 🆕 Quando o cliente tem um pedido em andamento E também já colocou
+           itens novos no carrinho, as duas barras flutuantes (carrinho e
+           acompanhamento) ocupavam exatamente o mesmo lugar na tela e uma
+           tampava a outra por completo. Essa classe empurra a barra de
+           acompanhamento pra cima da barra do carrinho nesse caso. */
+        .track-bar.acima-do-carrinho {
+            bottom: 96px;
         }
 
         /* Timeline do modal de acompanhamento */
@@ -1292,6 +1322,49 @@
             border-radius: 999px;
         }
 
+        /* 🆕 Dica visual de "role para baixo" — muitos clientes não percebem que dá
+           pra rolar o modal (principalmente no iPhone, onde a barra de rolagem fica
+           invisível) e acabam fechando sem preencher o WhatsApp ou sem ver os
+           adicionais grátis. Esse selo fica grudado no rodapé do modal e some
+           sozinho quando o cliente chega perto do fim do conteúdo. */
+        .scroll-hint {
+            position: sticky;
+            bottom: 6px;
+            left: 0;
+            right: 0;
+            margin: 10px auto 0;
+            width: fit-content;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: rgba(124, 58, 237, .92);
+            color: #fff;
+            font-size: .78rem;
+            font-weight: 700;
+            padding: 7px 14px;
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+            pointer-events: none;
+            z-index: 5;
+            animation: scrollHintBounce 1.4s ease-in-out infinite;
+        }
+
+        .scroll-hint.mostrar {
+            display: flex;
+        }
+
+        @keyframes scrollHintBounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(4px);
+            }
+        }
+
         .modal-top {
             display: flex;
             justify-content: space-between;
@@ -1370,6 +1443,59 @@
 
         .option.esgotado label {
             text-decoration: line-through;
+        }
+
+        /* 🆕 Seletor de quantidade por adicional (permite repetir o mesmo item) */
+        .qty-stepper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .qty-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, .06);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: .2s;
+            line-height: 1;
+        }
+
+        .qty-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .qty-btn:active {
+            transform: scale(.92);
+        }
+
+        .qty-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, .06);
+            border-color: var(--border);
+        }
+
+        .qty-value {
+            min-width: 22px;
+            text-align: center;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .option.qtd-ativa {
+            background: rgba(124, 58, 237, .08);
+            border-radius: 10px;
         }
 
         input,
@@ -1701,6 +1827,10 @@
                 padding: 14px 16px;
             }
 
+            .track-bar.acima-do-carrinho {
+                bottom: 88px;
+            }
+
             .modal-content {
                 padding: 18px;
             }
@@ -1773,34 +1903,40 @@
                 <div>
                     <div id="status" class="status"></div>
                     <small id="openInfo" style="color:#9ca3af; font-size:0.75rem;"></small>
-                    <small id="horarioFuncionamento" style="display:block; color:#9ca3af; font-size:0.72rem; margin-top:2px;"></small>
+                    <small id="horarioFuncionamento"
+                        style="display:block; color:#9ca3af; font-size:0.72rem; margin-top:2px;"></small>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- 🆕 MENSAGEM DE BOAS-VINDAS -->
-    <div id="boasVindasBanner" class="hidden" style="margin:12px 16px 0; padding:14px 16px; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+    <div id="boasVindasBanner" class="hidden"
+        style="margin:12px 16px 0; padding:14px 16px; background:linear-gradient(135deg,#7c3aed,#a855f7); color:#fff; border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
         <div style="display:flex; align-items:center; gap:10px;">
             <i class="fa-solid fa-hand-sparkles" style="font-size:1.3rem;"></i>
             <div>
                 <strong style="display:block; font-size:0.95rem;">Bem-vindo(a) à Nova Origem Açaí! 🍇</strong>
-                <small style="opacity:.9;">Monte seu açaí do seu jeito. Entrega rápida e pagamento por Pix, cartão ou dinheiro.</small>
+                <small style="opacity:.9;">Monte seu açaí do seu jeito. Entrega rápida e pagamento por Pix, cartão ou
+                    dinheiro.</small>
             </div>
         </div>
-        <button onclick="fecharBoasVindas()" style="background:rgba(255,255,255,.2); border:none; color:#fff; width:28px; height:28px; border-radius:50%; flex-shrink:0; cursor:pointer;">
+        <button onclick="fecharBoasVindas()"
+            style="background:rgba(255,255,255,.2); border:none; color:#fff; width:28px; height:28px; border-radius:50%; flex-shrink:0; cursor:pointer;">
             <i class="fa-solid fa-xmark"></i>
         </button>
     </div>
 
     <!-- 🆕 BANNER DE PROMOÇÃO (controlado pelo admin.html, sem precisar mexer no código) -->
-    <div id="promoBanner" class="hidden" style="margin:10px 16px 0; padding:12px 16px; background:linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; border-radius:14px; display:flex; align-items:center; gap:10px;">
+    <div id="promoBanner" class="hidden"
+        style="margin:10px 16px 0; padding:12px 16px; background:linear-gradient(135deg,#f59e0b,#ef4444); color:#fff; border-radius:14px; display:flex; align-items:center; gap:10px;">
         <i class="fa-solid fa-fire" style="font-size:1.2rem;"></i>
         <span style="font-size:.88rem; font-weight:600;"></span>
     </div>
 
     <!-- 🆕 AVISO DE LOJA FECHADA MANUALMENTE (controlado pelo admin.html) -->
-    <div id="lojaFechadaManualBanner" class="hidden" style="margin:10px 16px 0; padding:12px 16px; background:#1f2937; border:1px solid #ef4444; color:#fca5a5; border-radius:14px; display:flex; align-items:center; gap:10px;">
+    <div id="lojaFechadaManualBanner" class="hidden"
+        style="margin:10px 16px 0; padding:12px 16px; background:#1f2937; border:1px solid #ef4444; color:#fca5a5; border-radius:14px; display:flex; align-items:center; gap:10px;">
         <i class="fa-solid fa-store-slash" style="font-size:1.2rem;"></i>
         <span style="font-size:.88rem; font-weight:600;"></span>
     </div>
@@ -1856,8 +1992,10 @@
             <div class="fidelidade-destaque-texto">
                 <h2>Programa de Fidelidade Nova Origem</h2>
                 <p>A cada pedido você acumula <strong>1 ponto</strong> — não importa quantos itens peça. Ao completar
-                    <strong>10 pontos</strong>, você ganha um brinde especial 🎁. Seu cadastro é feito automaticamente
-                    pelo seu WhatsApp na hora de finalizar o pedido!
+                    <strong>10 pontos</strong>, você ganha um ADICIONAL PREMIUM GRÁTIS ou CONE TRUFADO 🎁. Seu cadastro
+                    é feito
+                    automaticamente
+                    pelo seu numero de WhatsApp na hora de finalizar o pedido!
                 </p>
             </div>
         </div>
@@ -2033,6 +2171,10 @@
             <button class="finish-btn" id="addCartBtn">
                 <i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho
             </button>
+
+            <!-- 🆕 Dica de rolagem — some quando o cliente chega perto do fim -->
+            <div class="scroll-hint" id="scrollHintCustom">Role para baixo <i class="fa-solid fa-chevron-down"></i>
+            </div>
         </div>
     </div>
 
@@ -2053,12 +2195,6 @@
                 <i class="fa-solid fa-clock"></i>
                 <span></span>
             </div>
-
-            <!-- REVIEW -->
-            <div id="reviewArea"></div>
-
-            <!-- SUGESTÕES / COMBOS -->
-            <div id="sugestoesArea"></div>
 
             <!-- 🆕 TELEFONE PRIMEIRO: chave do Programa de Fidelidade -->
             <div class="section-title"><i class="fa-solid fa-mobile-screen-button"></i> Vamos começar pelo seu
@@ -2109,6 +2245,12 @@
                     <i class="fa-solid fa-rotate-right"></i> Repetir último pedido
                 </button>
             </div>
+
+            <!-- REVIEW -->
+            <div id="reviewArea"></div>
+
+            <!-- SUGESTÕES / COMBOS -->
+            <div id="sugestoesArea"></div>
 
             <!-- 🆕 Campos liberados assim que o WhatsApp é preenchido -->
             <div id="camposLiberados" class="hidden">
@@ -2195,6 +2337,12 @@
                     <i class="fa-solid fa-paper-plane"></i> CONFIRMAR PEDIDO
                 </button>
 
+            </div>
+
+            <!-- 🆕 Dica de rolagem — some quando o cliente chega perto do fim -->
+            <div class="scroll-hint" id="scrollHintCheckout">
+                👇 Role para baixo e clique em <strong>CONFIRMAR PEDIDO</strong>
+                <i class="fa-solid fa-chevron-down"></i>
             </div>
 
             <!-- PIX ÁREA -->
@@ -2804,9 +2952,6 @@
 
 
 
-
-
-
             {
                 id: 7,
                 cat: "Copos",
@@ -2893,7 +3038,7 @@
 
             { nome: "Ouro Branco", preco: 3, ativo: true },
 
-            { nome: "Choco Ball", preco: 3, ativo: false },
+            { nome: "Choco Ball", preco: 3, ativo: true },
 
             { nome: "Disquete/Confete", preco: 3, ativo: true },
 
@@ -3166,7 +3311,21 @@
                 }
 
                 document.getElementById("trackBar").style.display = "flex";
+                ajustarPosicaoBarras();
                 renderizarAcompanhamento(id, pedido);
+
+                // 🆕 Cliente chegou direto pelo link "acompanhar pedido" (ex: pelo
+                // WhatsApp): o modal de status já abre sozinho, mas se ele fechar
+                // o modal e continuar navegando o cardápio, precisa ficar claro
+                // que essa barra aqui embaixo é onde acompanha o pedido dele.
+                if (abrirModalAutomaticamente) {
+                    const trackBarEl = document.getElementById("trackBar");
+                    trackBarEl.classList.add("destaque-inicial");
+                    clearTimeout(trackBarEl._destaqueTimeout);
+                    trackBarEl._destaqueTimeout = setTimeout(() => {
+                        trackBarEl.classList.remove("destaque-inicial");
+                    }, 6000);
+                }
 
                 // 🆕 só notifica quando o status MUDA (não na primeira leitura)
                 if (ultimoStatusNotificado !== null && ultimoStatusNotificado !== pedido.status) {
@@ -3188,6 +3347,7 @@
             unsubscribeTracking = null;
             localStorage.removeItem("pedidoAtivoId");
             document.getElementById("trackBar").style.display = "none";
+            ajustarPosicaoBarras();
             document.getElementById("trackModal").style.display = "none";
             clearInterval(intervaloMensagemDivertida); // 🆕 evita o timer rodando à toa em segundo plano
             intervaloMensagemDivertida = null;
@@ -3653,7 +3813,7 @@
 
             grid.innerHTML = filtered.map(product => `
 
-            <div class="card ${product.esgotado ? "" : ""}">
+            <div class="card ${product.esgotado ? "esgotado" : ""}">
 
    <div class="card-image">
 
@@ -3673,6 +3833,7 @@
 
     <img
         class="product-image"
+        loading="lazy"
         data-images='${JSON.stringify(product.imagens)}'
         data-index="0"
         src="${product.imagens[0]}"
@@ -3726,6 +3887,113 @@
         // =========================
         // CUSTOMIZAR
         // =========================
+        // 🆕 Liga a dica "Role para baixo" quando o conteúdo do modal não cabe
+        // inteiro na tela, e desliga automaticamente quando o cliente já rolou
+        // até perto do final (ou se o conteúdo nem precisa de rolagem).
+        function configurarDicaRolagem(modalContentEl, hintEl) {
+            if (!modalContentEl || !hintEl) return;
+
+            const avaliar = () => {
+                const temRolagem = modalContentEl.scrollHeight > modalContentEl.clientHeight + 20;
+                const pertoDoFim = modalContentEl.scrollTop + modalContentEl.clientHeight
+                    >= modalContentEl.scrollHeight - 40;
+                hintEl.classList.toggle("mostrar", temRolagem && !pertoDoFim);
+            };
+
+            // Evita empilhar vários listeners toda vez que o modal é reaberto
+            if (modalContentEl._dicaRolagemHandler) {
+                modalContentEl.removeEventListener("scroll", modalContentEl._dicaRolagemHandler);
+            }
+            modalContentEl._dicaRolagemHandler = avaliar;
+            modalContentEl.addEventListener("scroll", avaliar);
+
+            // Espera o conteúdo (checkboxes, itens do carrinho, etc.) renderizar
+            // antes de medir a altura, senão scrollHeight vem errado.
+            setTimeout(avaliar, 50);
+        }
+
+        // 🆕 Evita que a barra "Ver Carrinho" fique exatamente em cima da barra
+        // "Acompanhar Pedido" quando as duas estão visíveis ao mesmo tempo.
+        function ajustarPosicaoBarras() {
+            const cartBarEl = document.getElementById("cartBar");
+            const trackBarEl = document.getElementById("trackBar");
+            if (!cartBarEl || !trackBarEl) return;
+            const cartVisivel = cartBarEl.style.display === "flex";
+            const trackVisivel = trackBarEl.style.display === "flex";
+            trackBarEl.classList.toggle("acima-do-carrinho", cartVisivel && trackVisivel);
+        }
+
+        // 🆕 Liga os botões +/- de um grupo de contadores (adicionais grátis ou pagos).
+        // Usa delegação simples: encontra todos os .qty-stepper do seletor passado
+        // e liga um clique em cada botão, sem precisar duplicar essa lógica.
+        function configurarStepper(seletor, aoMudar) {
+            document.querySelectorAll(seletor).forEach(stepper => {
+                const valorEl = stepper.querySelector('.qty-value');
+                const btnMinus = stepper.querySelector('.qty-minus');
+                const btnPlus = stepper.querySelector('.qty-plus');
+
+                const render = () => {
+                    const qtd = Number(stepper.dataset.qtd || 0);
+                    valorEl.innerText = qtd;
+                    btnMinus.disabled = qtd <= 0;
+                    stepper.closest('.option')?.classList.toggle('qtd-ativa', qtd > 0);
+                };
+
+                stepper.dataset.qtd = "0";
+                render();
+
+                btnPlus.addEventListener('click', () => {
+                    stepper.dataset.qtd = Number(stepper.dataset.qtd) + 1;
+                    render();
+                    aoMudar();
+                });
+
+                btnMinus.addEventListener('click', () => {
+                    stepper.dataset.qtd = Math.max(0, Number(stepper.dataset.qtd) - 1);
+                    render();
+                    aoMudar();
+                });
+            });
+        }
+
+        // 🆕 Agrupa nomes repetidos pra exibição (ex: ["Nutella","Nutella","Kiwi"]
+        // vira "Nutella x2, Kiwi") — usado no resumo do carrinho e no comprovante.
+        function resumirLista(lista) {
+            const contagem = {};
+            lista.forEach(nome => { contagem[nome] = (contagem[nome] || 0) + 1; });
+            return Object.entries(contagem)
+                .map(([nome, qtd]) => qtd > 1 ? `${nome} x${qtd}` : nome)
+                .join(", ");
+        }
+
+        // 🆕 Usado ao reabrir um item do carrinho para editar: recebe a lista salva
+        // (com nomes repetidos) e já ajusta cada contador +/- pra quantidade certa.
+        function preencherQuantidades(seletor, listaSalva) {
+            document.querySelectorAll(seletor).forEach(stepper => {
+                const qtd = listaSalva.filter(n => n === stepper.dataset.nome).length;
+                stepper.dataset.qtd = qtd;
+                const valorEl = stepper.querySelector('.qty-value');
+                const btnMinus = stepper.querySelector('.qty-minus');
+                if (valorEl) valorEl.innerText = qtd;
+                if (btnMinus) btnMinus.disabled = qtd <= 0;
+                stepper.closest('.option')?.classList.toggle('qtd-ativa', qtd > 0);
+            });
+        }
+
+        // 🆕 Lê as quantidades escolhidas em cada grupo de contadores e devolve
+        // já "expandido" em uma lista com o nome repetido (ex: 2x Nutella vira
+        // ["Nutella","Nutella"]) — assim o resto do código (cálculo de valor,
+        // limite de grátis, carrinho, comprovante) continua funcionando igual,
+        // sem precisar mudar a estrutura de dados do pedido.
+        function lerQuantidades(seletor) {
+            const lista = [];
+            document.querySelectorAll(seletor).forEach(stepper => {
+                const qtd = Number(stepper.dataset.qtd || 0);
+                for (let i = 0; i < qtd; i++) lista.push(stepper.dataset.nome);
+            });
+            return lista;
+        }
+
         function openCustomize(id) {
             const product = PRODUCTS.find(p => p.id === id);
             if (!product) return;
@@ -3745,28 +4013,28 @@
                 document.getElementById("gratisTitle").innerText = `Escolha até ${product.limiteGratis} adicionais grátis`;
 
                 // 👇 1. Primeiro criamos os elementos na tela
+                // 🆕 Agora com contador +/- em vez de checkbox: dá pra pedir
+                // o MESMO adicional mais de uma vez (ex: 2x leite condensado).
                 gratisList.innerHTML = GRATIS.map(item => `
 <div class="option ${!item.ativo ? 'esgotado' : ''}">
-    <label>
-        <input type="checkbox"
-            class="gratisCheck"
-            value="${item.nome}"
-            ${!item.ativo ? "disabled" : ""}>
+    <label style="cursor:default;">
         ${item.nome}
     </label>
     ${item.ativo
-                        ? `<span style="color:#00c853;">grátis</span>`
+                        ? `<div class="qty-stepper gratisQty" data-nome="${item.nome}">
+                            <button type="button" class="qty-btn qty-minus" aria-label="Diminuir ${item.nome}">−</button>
+                            <span class="qty-value">0</span>
+                            <button type="button" class="qty-btn qty-plus" aria-label="Aumentar ${item.nome}">+</button>
+                           </div>`
                         : `<span style="color:#ef4444;font-weight:700;">ESGOTADO</span>`
                     }
 </div>
 `).join("");
 
                 // 👇 2. AGORA SIM: adicionamos os eventos DEPOIS que os elementos existem
-                document.querySelectorAll('.gratisCheck').forEach(chk => {
-                    chk.addEventListener('change', () => {
-                        atualizarContadorGratis();
-                        atualizarValorModal();
-                    });
+                configurarStepper('.gratisQty', () => {
+                    atualizarContadorGratis();
+                    atualizarValorModal();
                 });
 
                 // 👇 3. Atualiza o contador logo ao abrir
@@ -3777,18 +4045,21 @@
             }
 
             // EXTRAS
+            // 🆕 Também com contador +/- (permite repetir o mesmo adicional pago)
             extraList.innerHTML = EXTRAS.map(item => `
-<div class="option">
-    <label>
-        <input type="checkbox"
-            class="extraCheck"
-            value="${item.nome}"
-            data-price="${item.preco}"
-            ${!item.ativo ? "disabled" : ""}>
+<div class="option ${!item.ativo ? 'esgotado' : ''}">
+    <label style="cursor:default;">
         ${item.nome}
     </label>
     ${item.ativo
-                    ? `<span style="color:#c084fc;">+ ${money(item.preco)}</span>`
+                    ? `<div style="display:flex;align-items:center;gap:14px;">
+                        <span style="color:#c084fc;white-space:nowrap;">+ ${money(item.preco)}</span>
+                        <div class="qty-stepper extraQty" data-nome="${item.nome}" data-price="${item.preco}">
+                            <button type="button" class="qty-btn qty-minus" aria-label="Diminuir ${item.nome}">−</button>
+                            <span class="qty-value">0</span>
+                            <button type="button" class="qty-btn qty-plus" aria-label="Aumentar ${item.nome}">+</button>
+                        </div>
+                       </div>`
                     : `<span style="color:#ef4444;font-weight:700;">ESGOTADO</span>`
                 }
 </div>
@@ -3796,12 +4067,15 @@
 
             // 🆕 Sem isso, marcar um adicional pago nunca atualizava o valor na tela
             // (só aparecia certo depois de adicionar ao carrinho).
-            document.querySelectorAll('.extraCheck').forEach(chk => {
-                chk.addEventListener('change', atualizarValorModal);
-            });
+            configurarStepper('.extraQty', atualizarValorModal);
 
             document.getElementById("customModal").style.display = "flex";
             atualizarValorModal();
+
+            configurarDicaRolagem(
+                document.querySelector("#customModal .modal-content"),
+                document.getElementById("scrollHintCustom")
+            );
         }
 
         function closeCustomize() {
@@ -3832,15 +4106,10 @@
 
             document.getElementById("obs").value = item.obs || "";
 
-            (item.gratis || []).forEach(nome => {
-                const chk = [...document.querySelectorAll(".gratisCheck")].find(c => c.value === nome);
-                if (chk) chk.checked = true;
-            });
-            (item.extras || []).forEach(nome => {
-                const nomeBase = nome.replace(" (extra)", "");
-                const chk = [...document.querySelectorAll(".extraCheck")].find(c => c.value === nomeBase);
-                if (chk) chk.checked = true;
-            });
+            // 🆕 Conta quantas vezes cada nome aparece na lista salva e já deixa
+            // o contador +/- naquele valor (em vez de só marcar uma checkbox)
+            preencherQuantidades('.gratisQty', item.gratis || []);
+            preencherQuantidades('.extraQty', (item.extras || []).map(n => n.replace(" (extra)", "")));
 
             atualizarContadorGratis();
             atualizarValorModal();
@@ -3885,6 +4154,8 @@
             cartBar.style.display = cart.length
                 ? "flex"
                 : "none";
+
+            ajustarPosicaoBarras();
 
             saveCart();
             atualizarEstimativaCheckout();
@@ -4020,7 +4291,7 @@
                     ${item.gratis.length ? `
 
                         <small style="color:#00c853;">
-                            Grátis: ${item.gratis.join(", ")}
+                            Grátis: ${resumirLista(item.gratis)}
                         </small><br>
 
                     ` : ""}
@@ -4028,7 +4299,7 @@
                     ${item.extras.length ? `
 
                         <small style="color:#c084fc;">
-                            Extras: ${item.extras.join(", ")}
+                            Extras: ${resumirLista(item.extras)}
                         </small><br>
 
                     ` : ""}
@@ -4096,6 +4367,17 @@
             document.getElementById("checkoutModal")
                 .style.display = "flex";
 
+            // 🆕 Sempre volta pro topo do modal (WhatsApp) ao abrir/reabrir o
+            // checkout — evita que ele reabra "no meio" se o cliente tinha
+            // rolado antes, e ajuda a dica de rolagem a medir certo.
+            const checkoutContent = document.querySelector("#checkoutModal .modal-content");
+            if (checkoutContent) checkoutContent.scrollTop = 0;
+
+            configurarDicaRolagem(
+                checkoutContent,
+                document.getElementById("scrollHintCheckout")
+            );
+
         }
 
         function closeCheckout() {
@@ -4120,8 +4402,8 @@
                     <div class="review-top">
                         <strong>${item.nome}</strong>
                     </div>
-                    ${item.gratis?.length ? `<small style="color:#00c853;">Grátis: ${item.gratis.join(", ")}</small><br>` : ""}
-                    ${item.extras?.length ? `<small style="color:#c084fc;">Extras: ${item.extras.join(", ")}</small><br>` : ""}
+                    ${item.gratis?.length ? `<small style="color:#00c853;">Grátis: ${resumirLista(item.gratis)}</small><br>` : ""}
+                    ${item.extras?.length ? `<small style="color:#c084fc;">Extras: ${resumirLista(item.extras)}</small><br>` : ""}
                     ${item.obs ? `<small style="color:#fbbf24;">Obs: ${item.obs}</small><br>` : ""}
                     <div style="margin-top:12px; color:#c084fc; font-weight:800;">${money(item.preco)}</div>
                 </div>
@@ -4361,11 +4643,13 @@
         document.getElementById("trackBar")
             .addEventListener("click", () => {
                 document.getElementById("trackModal").style.display = "flex";
+                document.getElementById("trackBar").classList.remove("destaque-inicial");
             });
 
         document.getElementById("closeTrack")
             .addEventListener("click", () => {
                 document.getElementById("trackModal").style.display = "none";
+                document.getElementById("trackBar").classList.remove("destaque-inicial");
             });
 
         document.getElementById("closeComprovante")
@@ -4436,15 +4720,28 @@
 
                 if (!currentProduct) return;
 
-                const gratis = [];
-                const extras = [];
+                let extras = [];
 
                 let extrasValue = 0;
 
-                document.querySelectorAll(".gratisCheck:checked")
-                    .forEach(el => {
-                        gratis.push(el.value);
-                    });
+                // 🆕 Cada unidade escolhida vira uma entrada na lista (permite repetir
+                // o mesmo adicional, ex: ["Granola","Granola","Banana"] = 2x granola + 1x banana)
+                const gratis = lerQuantidades('.gratisQty');
+
+                // 🆕 Muitos clientes têm direito a adicionais grátis (granola, leite condensado,
+                // morango...) e simplesmente não percebem essa seção antes de tocar em
+                // "Adicionar ao Carrinho" — normalmente porque ela fica um pouco acima do botão
+                // e não é óbvio que dá pra rolar a tela. Damos uma última chance de escolher.
+                const temGratisDisponivel = document.getElementById("gratisBlock")
+                    && !document.getElementById("gratisBlock").classList.contains("hidden")
+                    && currentProduct.limiteGratis > 0;
+
+                if (temGratisDisponivel && gratis.length === 0) {
+                    const continuarSemGratis = confirm(
+                        `🎁 Você tem direito a até ${currentProduct.limiteGratis} adicionais GRÁTIS (granola, leite condensado, morango, etc.) e ainda não escolheu nenhum.\n\nDeseja voltar e escolher, ou continuar sem adicionais?\n\nToque em "Cancelar" para voltar e escolher, ou "OK" para continuar sem adicionais.`
+                    );
+                    if (!continuarSemGratis) return;
+                }
 
                 // Limite de grátis
                 let gratisFinal = [...gratis];
@@ -4485,14 +4782,14 @@ Deseja continuar?`
                     extrasValue += valorExcedente;
                 }
 
-                document.querySelectorAll(".extraCheck:checked")
-                    .forEach(el => {
-
-                        extras.push(el.value);
-
+                // 🆕 Idem para os adicionais pagos: expande pela quantidade escolhida
+                document.querySelectorAll(".extraQty").forEach(el => {
+                    const qtd = Number(el.dataset.qtd || 0);
+                    for (let i = 0; i < qtd; i++) {
+                        extras.push(el.dataset.nome);
                         extrasValue += Number(el.dataset.price);
-
-                    });
+                    }
+                });
 
                 // Adiciona os excedentes na lista de extras
                 excedentes.forEach(item => {
@@ -4581,6 +4878,12 @@ Deseja continuar?`
 
                         alert("Preencha nome e WhatsApp");
 
+                        const campoFaltante = !fone
+                            ? document.getElementById("fone")
+                            : document.getElementById("nome");
+                        campoFaltante.scrollIntoView({ behavior: "smooth", block: "center" });
+                        campoFaltante.focus();
+
                         return;
 
                     }
@@ -4606,12 +4909,14 @@ Deseja continuar?`
 
                         if (!document.getElementById("enderecoRua").value.trim()) {
                             alert("Preencha a Rua/Avenida do endereço de entrega.");
+                            document.getElementById("enderecoRua").scrollIntoView({ behavior: "smooth", block: "center" });
                             document.getElementById("enderecoRua").focus();
                             return;
                         }
 
                         if (!enderecoNumero) {
                             alert("Faltou o NÚMERO da residência. Preencha esse campo para o entregador não ter dificuldade em encontrar o endereço.");
+                            document.getElementById("enderecoNumero").scrollIntoView({ behavior: "smooth", block: "center" });
                             document.getElementById("enderecoNumero").focus();
                             return;
                         }
@@ -4622,6 +4927,7 @@ Deseja continuar?`
 
                         if (!precisaTroco) {
                             alert("Responda se precisa de troco antes de finalizar o pedido.");
+                            document.getElementById("precisaTroco").scrollIntoView({ behavior: "smooth", block: "center" });
                             document.getElementById("precisaTroco").focus();
                             return;
                         }
@@ -4629,6 +4935,7 @@ Deseja continuar?`
                         if (precisaTroco === "sim") {
                             if (!troco || Number(troco) <= 0) {
                                 alert("Informe o valor para o troco.");
+                                document.getElementById("troco").scrollIntoView({ behavior: "smooth", block: "center" });
                                 document.getElementById("troco").focus();
                                 return;
                             }
@@ -5058,7 +5365,7 @@ Deseja continuar?`
                 alert("PIX copiado com sucesso 💳");
             });
         function atualizarContadorGratis() {
-            const selecionados = document.querySelectorAll('.gratisCheck:checked').length;
+            const selecionados = lerQuantidades('.gratisQty').length;
             const limite = currentProduct.limiteGratis;
             const contadorEl = document.getElementById('contadorGratis');
 
@@ -5079,13 +5386,14 @@ Deseja continuar?`
             const valorBase = currentProduct.preco;
             let valorExtras = 0;
 
-            // Soma os extras pagos
-            document.querySelectorAll('.extraCheck:checked').forEach(el => {
-                valorExtras += Number(el.dataset.price);
+            // Soma os extras pagos (considerando a quantidade de cada um)
+            document.querySelectorAll('.extraQty').forEach(el => {
+                const qtd = Number(el.dataset.qtd || 0);
+                valorExtras += qtd * Number(el.dataset.price);
             });
 
             // Soma os grátis excedentes (se tiver)
-            const qtdGratis = document.querySelectorAll('.gratisCheck:checked').length;
+            const qtdGratis = lerQuantidades('.gratisQty').length;
             if (qtdGratis > currentProduct.limiteGratis) {
                 const excedentes = qtdGratis - currentProduct.limiteGratis;
                 valorExtras += excedentes * 2; // preço do excedente
@@ -5106,13 +5414,9 @@ Deseja continuar?`
             const MAX_TENTATIVAS = 3;
             let res;
             try {
-                res = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
-                    headers: {
-                        "Authorization": `Bearer ${MP_TOKEN}`
-                    }
-                });
+                // ✅ AGORA PERGUNTA AO SEU SERVIDOR, NÃO DIRETO AO MERCADO PAGO
+                res = await fetch(`https://origemacai.onrender.com/verificar-pagamento/${id}`);
             } catch (e) {
-                // Falha de rede/conexão
                 if (tentativa < MAX_TENTATIVAS) {
                     await new Promise(r => setTimeout(r, 4000));
                     return buscarStatusPagamento(id, tentativa + 1);
@@ -5120,9 +5424,7 @@ Deseja continuar?`
                 throw new Error("Sem conexão com o servidor de pagamentos.");
             }
 
-            const tipo = res.headers.get("content-type") || "";
-            if (!res.ok || !tipo.includes("application/json")) {
-                // Resposta inesperada (ex.: instabilidade momentânea). Tenta de novo antes de desistir.
+            if (!res.ok) {
                 if (tentativa < MAX_TENTATIVAS) {
                     await new Promise(r => setTimeout(r, 4000));
                     return buscarStatusPagamento(id, tentativa + 1);
@@ -5130,7 +5432,16 @@ Deseja continuar?`
                 throw new Error(`O servidor não respondeu corretamente (status ${res.status}).`);
             }
 
-            return res.json();
+            const dados = await res.json();
+
+            // ✅ Se foi pago, atualiza a tela automaticamente!
+            if (dados.pago || dados.status === 'approved') {
+                // 🔄 FECHA O QR CODE E MOSTRA A TELA DE ACOMPANHAMENTO
+                fecharTelaPix();
+                mostrarAcompanhamento();
+            }
+
+            return dados;
         }
 
         // ✅ FUNÇÃO DE VERIFICAÇÃO E LIBERAÇÃO
