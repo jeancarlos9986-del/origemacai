@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio - Nova Origem Açaí</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        :root {
+            --bg: #0b0b0f;
+            --card: #17171f;
+            --card2: #1f2937;
+            --primary: #7c3aed;
+            --primary2: #9333ea;
+            --green: #00c853;
+            --red: #ff1744;
+            --yellow: #f59e0b;
+            --muted: #9ca3af;
+            --border: rgba(255, 255, 255, .08);
+        }
+
+        body {
+            background: radial-gradient(circle at top, rgba(124, 58, 237, .12), transparent 30%), var(--bg);
+            color: #fff;
+            padding: 15px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .voltar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            padding: 18px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 10px 35px rgba(124, 58, 237, .35);
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            border-color: transparent;
+        }
+
+        .painel {
+            display: none;
+        }
+
+        .painel.ativo {
+            display: block;
+        }
+
+        .form-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .form-grid div {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .form-grid label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            color: white;
+            flex: 1;
+            min-width: 140px;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            border: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s;
+            flex: none;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .btn-secundario {
+            background: var(--card2) !important;
+        }
+
+        .btn-perigo {
+            background: linear-gradient(135deg, #ff1744, #b30015) !important;
+        }
+
+        .checkbox-linha {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 8px;
+            min-width: 200px;
+        }
+
+        .checkbox-linha input {
+            flex: none;
+            width: 18px;
+            height: 18px;
+            min-width: 0;
+            padding: 0;
+        }
+
+        .lista-itens {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .item-linha {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(31, 41, 55, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .item-linha img {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex: none;
+        }
+
+        .item-info {
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .item-info strong {
+            display: block;
+        }
+
+        .item-info span {
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .status-pills {
+            display: flex;
+            gap: 6px;
+            flex: none;
+        }
+
+        .pill {
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--card2);
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .pill.disponivel.on {
+            background: rgba(0, 200, 83, 0.18);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .pill.acabando.on {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: var(--yellow);
+            color: var(--yellow);
+        }
+
+        .pill.esgotado.on {
+            background: rgba(255, 23, 68, 0.18);
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .icones-acao {
+            display: flex;
+            gap: 8px;
+            flex: none;
+        }
+
+        .icones-ordem {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: none;
+        }
+
+        .icones-ordem .icone-btn {
+            padding: 6px 9px;
+        }
+
+        .icones-ordem .icone-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .icone-btn {
+            padding: 8px 10px;
+            min-width: 0;
+            flex: none;
+        }
+
+        .badge-tipo {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+            background: var(--card2);
+            color: var(--muted);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .modal-overlay.aberto {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 22px;
+            max-width: 520px;
+            width: 100%;
+            border: 1px solid var(--border);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .aviso-importar {
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .item-linha {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .status-pills,
+            .icones-acao {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
+        <div class="header"><i class="fas fa-utensils"></i> CARDÁPIO — TEMPO REAL</div>
+
+        <div class="card" style="border-color:var(--primary);">
+            <p style="color:var(--muted); font-size:0.9rem;">
+                Aqui você cadastra, edita, remove e marca a disponibilidade de produtos e adicionais.
+                Qualquer mudança aparece no site na hora, sem precisar mexer em código.
+            </p>
+            <div id="importar-box" style="margin-top:12px;"></div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-painel="painel-produtos"><i class="fas fa-ice-cream"></i>
+                Produtos</button>
+            <button class="tab-btn" data-painel="painel-adicionais"><i class="fas fa-candy-cane"></i>
+                Adicionais</button>
+        </div>
+
+        <div class="painel ativo" id="painel-produtos">
+            <section class="card">
+                <h3><i class="fas fa-plus-circle"></i> Novo Produto</h3>
+                <div class="form-grid" id="form-produto">
+                    <div><label>Nome</label><input type="text" id="prod-nome" placeholder="Ex: Copo 400ml Tradicional"></div>
+                    <div><label>Categoria</label><input type="text" id="prod-cat" placeholder="Copos" value="Copos"></div>
+                    <div><label>Preço R$</label><input type="number" id="prod-preco" step="0.01"></div>
+                    <div style="flex:2; min-width:220px;"><label>Descrição</label><input type="text" id="prod-desc" placeholder="Ex: Escolha até 2 adicionais grátis."></div>
+                    <div style="flex:2; min-width:220px;"><label>Imagens (uma URL por linha)</label>
+                        <textarea id="prod-imagens" placeholder="https://.../foto1.jpg"></textarea>
+                    </div>
+                    <div style="flex:2; min-width:220px;">
+                        <label>Ou envie o arquivo direto</label>
+                        <input type="file" id="prod-imagem-arquivo" accept="image/*" multiple>
+                        <button type="button" id="prod-enviar-imagem" class="btn-secundario" style="margin-top:8px;">📤 Enviar imagem(ns)</button>
+                        <p id="prod-upload-aviso" style="font-size:0.8rem; color:var(--muted); margin-top:6px;"></p>
+                    </div>
+                    <div><label>Limite de adicionais grátis</label><input type="number" id="prod-limite" value="0" min="0"></div>
+                    <div class="checkbox-linha"><input type="checkbox" id="prod-destaque"><label for="prod-destaque">🔥 Destacar como mais pedido</label></div>
+                    <div class="checkbox-linha"><input type="checkbox" id="prod-customizavel" checked><label for="prod-customizavel">Permite escolher adicionais</label></div>
+                    <input type="hidden" id="prod-editando-id">
+                    <button id="prod-salvar">Salvar Produto</button>
+                    <button id="prod-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar edição</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3><i class="fas fa-list"></i> Produtos Cadastrados</h3>
+                <p style="color:var(--muted); font-size:0.85rem; margin-bottom:12px;">
+                    Produtos com "🔥 Destacar como mais pedido" (marcado no formulário acima) sempre aparecem primeiro no site.
+                    Use as setinhas ▲▼ pra ordenar dentro do grupo de destaque e dentro do grupo normal.
+                </p>
+                <div class="lista-itens" id="lista-produtos">
+                    <p style="color:var(--muted);">Carregando...</p>
+                </div>
+            </section>
+        </div>
+
+        <div class="painel" id="painel-adicionais">
+            <section class="card">
+                <h3><i class="fas fa-plus-circle"></i> Novo Adicional</h3>
+                <div class="form-grid">
+                    <div><label>Nome</label><input type="text" id="ad-nome" placeholder="Ex: Amendoim"></div>
+                    <div><label>Tipo</label>
+                        <select id="ad-tipo">
+                            <option value="gratis">Grátis (escolhido no limite do copo)</option>
+                            <option value="extra">Pago (adicional extra)</option>
+                        </select>
+                    </div>
+                    <div id="ad-preco-box"><label>Preço R$ (se pago)</label><input type="number" id="ad-preco" step="0.01" value="0"></div>
+                    <div class="checkbox-linha"><input type="checkbox" id="ad-popular"><label for="ad-popular">🔥 Marcar como popular</label></div>
+                    <input type="hidden" id="ad-editando-id">
+                    <button id="ad-salvar">Salvar Adicional</button>
+                    <button id="ad-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar edição</button>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3><i class="fas fa-list"></i> Adicionais Cadastrados</h3>
+                <div class="lista-itens" id="lista-adicionais">
+                    <p style="color:var(--muted);">Carregando...</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script type="module" src="./cardapioAdmin.js"></script>
+</body>
+
+</html>
