@@ -614,6 +614,24 @@
             opacity: .55;
         }
 
+        /* 🆕 Produto acabando — ainda pode comprar, só avisa */
+        .card.acabando {
+            border: 1px solid rgba(245, 158, 11, .5);
+        }
+
+        .acabando-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(245, 158, 11, .95);
+            color: #1a1a1a;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: .68rem;
+            font-weight: 800;
+            z-index: 10;
+        }
+
         .esgotado-badge {
             position: absolute;
             inset: 0;
@@ -1445,6 +1463,42 @@
             text-decoration: line-through;
         }
 
+        /* 🆕 Adicional acabando — continua selecionável, só mostra aviso */
+        .option.acabando {
+            background: rgba(245, 158, 11, .07);
+        }
+
+        .badge-acabando {
+            display: inline-block;
+            font-size: .62rem;
+            font-weight: 800;
+            color: var(--yellow, #f59e0b);
+            margin-left: 6px;
+        }
+
+        /* 🆕 Destaque dos adicionais mais pedidos — fica no topo da lista com fundo suave */
+        .option.popular {
+            background: rgba(245, 158, 11, .07);
+            margin: 0 -14px;
+            padding-left: 14px;
+            padding-right: 14px;
+            border-radius: 10px;
+        }
+
+        .badge-popular {
+            display: inline-block;
+            font-size: .62rem;
+            font-weight: 800;
+            letter-spacing: .2px;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, .18);
+            padding: 2px 7px;
+            border-radius: 999px;
+            margin-left: 6px;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
         /* 🆕 Seletor de quantidade por adicional (permite repetir o mesmo item) */
         .qty-stepper {
             display: flex;
@@ -1864,7 +1918,7 @@
             background: rgba(0, 200, 83, 0.08);
             padding: 16px;
             border-radius: 12px;
-            margin: 20px 0;
+            margin: 0 0 12px 0;
             border: 1px solid rgba(0, 200, 83, 0.2);
             display: none;
         }
@@ -1883,6 +1937,29 @@
             margin-top: 4px;
             padding-top: 4px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 🆕 Rodapé fixo (sticky) do modal de personalização: resumo de valor +
+           botão "Adicionar ao Carrinho" grudados no fundo do modal, visíveis mesmo
+           rolando uma lista grande de adicionais. Gruda no fundo do próprio
+           .modal-content (que já tem overflow-y:auto), igual ao truque do scroll-hint. */
+        .resumo-fixo {
+            position: sticky;
+            bottom: -1px;
+            background: #14141e;
+            padding-top: 14px;
+            padding-bottom: 2px;
+            margin-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            box-shadow: 0 -12px 20px -8px rgba(0, 0, 0, .35);
+            z-index: 5;
+        }
+
+        /* A dica de rolagem agora fica embutida no fluxo normal, logo acima do
+           rodapé fixo, em vez de flutuar sozinha (evita sobrepor o rodapé). */
+        #scrollHintCustom {
+            position: static;
+            margin: 4px auto 0;
         }
     </style>
 </head>
@@ -2148,32 +2225,35 @@
             <div class="section-title">Adicionais Extras</div>
             <div class="group" id="extraList"></div>
 
-            <!-- 💸 RESUMO DE VALOR EM TEMPO REAL -->
-            <div id="resumoValor">
-                <div>
-                    <span>Valor Base:</span>
-                    <span id="valBase">R$ 0,00</span>
-                </div>
-                <div>
-                    <span>Adicionais:</span>
-                    <span id="valExtras">+ R$ 0,00</span>
-                </div>
-                <div>
-                    <span>TOTAL:</span>
-                    <span id="valTotal">R$ 0,00</span>
-                </div>
-            </div>
-
             <!-- OBS -->
             <div class="section-title">Observações</div>
             <textarea id="obs" rows="3" placeholder="Ex: pouco leite condensado, sem banana..."></textarea>
 
-            <button class="finish-btn" id="addCartBtn">
-                <i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho
-            </button>
-
             <!-- 🆕 Dica de rolagem — some quando o cliente chega perto do fim -->
             <div class="scroll-hint" id="scrollHintCustom">Role para baixo <i class="fa-solid fa-chevron-down"></i>
+            </div>
+
+            <!-- 🆕 RESUMO DE VALOR + BOTÃO — agora fixos (sticky) no rodapé do modal,
+                 então continuam visíveis mesmo rolando uma lista grande de adicionais. -->
+            <div class="resumo-fixo">
+                <div id="resumoValor">
+                    <div>
+                        <span>Valor Base:</span>
+                        <span id="valBase">R$ 0,00</span>
+                    </div>
+                    <div>
+                        <span>Adicionais:</span>
+                        <span id="valExtras">+ R$ 0,00</span>
+                    </div>
+                    <div>
+                        <span>TOTAL:</span>
+                        <span id="valTotal">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <button class="finish-btn" id="addCartBtn">
+                    <i class="fa-solid fa-cart-plus"></i> Adicionar ao Carrinho
+                </button>
             </div>
         </div>
     </div>
@@ -2340,9 +2420,7 @@
             </div>
 
             <!-- 🆕 Dica de rolagem — some quando o cliente chega perto do fim -->
-            <div class="scroll-hint" id="scrollHintCheckout">
-                👇 Role para baixo e clique em <strong>CONFIRMAR PEDIDO</strong>
-                <i class="fa-solid fa-chevron-down"></i>
+            <div class="scroll-hint" id="scrollHintCheckout">Role para baixo <i class="fa-solid fa-chevron-down"></i>
             </div>
 
             <!-- PIX ÁREA -->
@@ -2429,6 +2507,9 @@
 
         // 🆕 NOTIFICAÇÕES PUSH (mesmo com o site fechado)
         import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+        // 🆕 CARDÁPIO EM TEMPO REAL: produtos e adicionais agora vêm do Firestore
+        // (gerenciados pelo painel cardapio.html) em vez de ficarem fixos aqui no código.
+        import { escutarProdutos, escutarAdicionais } from "./catalogo.js";
         // =========================
         // FIREBASE
         // =========================
@@ -2452,6 +2533,21 @@
         const app = initializeApp(firebaseConfig);
 
         const db = getFirestore(app);
+
+        // 🆕 CARDÁPIO EM TEMPO REAL: assim que o painel cardapio.html mudar um preço,
+        // cadastrar um produto novo ou marcar algo como "acabando"/"esgotado", o site
+        // reflete na hora — sem precisar o cliente recarregar a página.
+        escutarProdutos(db, produtos => {
+            PRODUCTS = produtos;
+            catalogoCarregado = true;
+            if (typeof grid !== "undefined" && grid) {
+                renderProducts(document.getElementById("search")?.value || "");
+            }
+        });
+        escutarAdicionais(db, ({ gratis, extras }) => {
+            GRATIS = gratis;
+            EXTRAS = extras;
+        });
 
         // 🆕 NOTIFICAÇÕES PUSH: pede a chave VAPID em Configurações do projeto (ícone de
         // engrenagem) > Cloud Messaging > "Certificados push da Web" no Console do Firebase,
@@ -2896,159 +2992,14 @@
         }
 
 
-        const PRODUCTS = [
-
-            {
-                id: 1,
-                cat: "Copos",
-                nome: "Copo 400ml Tradicional",
-                preco: 18.90,
-                desc: "Escolha até 2 adicionais grátis.",
-                imagens: [
-
-                    "./unnamed.jpg",
-                    "./copo401.jpeg",
-
-                ],
-                limiteGratis: 2
-            },
-
-            {
-                id: 2,
-                cat: "Copos",
-                nome: "Copo 500ml Super",
-                preco: 22.90,
-                desc: "Escolha até 3 adicionais grátis.",
-                imagens: [
-                    "./copo506.jpeg",
-                    "./copo507.jpeg",
-                    "./copo508.jpeg",
-                    "./copo501.jpeg",
-
-                ],
-                limiteGratis: 3,
-                // 🆕 marque true no produto que mais vende para destacar na home
-                destaque: true
-            },
-
-
-            {
-                id: 19,
-                cat: "Copos",
-                nome: "Copo 700ml Mega",
-                preco: 29.90,
-                desc: "Escolha até 4 adicionais grátis.",
-                imagens: [
-                    "./copo 700ml.jpeg",
-                    "./copo 701ml.jpeg",
-
-                ],
-                limiteGratis: 4,
-                // 🆕 marque true no produto que mais vende para destacar na home
-                destaque: false
-
-
-            },
-
-
-
-            {
-                id: 7,
-                cat: "Copos",
-                nome: "Copo Trufado 500ml",
-                preco: 34.90,
-                desc: "Copo recheado de nutella, sinta nutella em cada colherada",
-                imagens: [
-                    "./copotrufado3.jpeg",
-                    "./copotrufado2.jpeg",
-                    "./Copo Trufado.jpeg"
-
-                ],
-                limiteGratis: 2
-
-            },
-
-            {
-                id: 55,
-                cat: "Copos",
-                nome: "Shake Açai Tradicional 500ml",
-                preco: 16.00,
-                desc: "Açai batido com leite, leite pó e leite condensado.",
-                imagens: [
-                    "./Shake02.jpeg",
-                    "./Shake01.jpeg",
-
-
-                ],
-                limiteGratis: 2
-
-            },
-
-
-
-            {
-                id: 9,
-                cat: "Copos",
-                nome: "Cone Trufado",
-                preco: 13.00,
-                desc: "Cone com açai e muitaaaaaaaa Nutella",
-                imagens: [
-                    "./cone02.jpeg",
-                    "./cone.jpeg"
-                ],
-
-                customizavel: false,
-                // 🆕 quando faltar o produto, é só marcar true aqui — some do botão e mostra o aviso
-                esgotado: false
-            },
-
-
-
-
-
-        ];
-
-        const GRATIS = [
-
-            { nome: "Banana", ativo: true },
-
-            { nome: "Granola", ativo: true },
-
-            { nome: "Leite condensado", ativo: true },
-
-            { nome: "Leite em pó", ativo: true },
-
-            { nome: "Morango", ativo: true }
-
-        ];
-
-        const EXTRAS = [
-
-            { nome: "Kiwi", preco: 2, ativo: true },
-
-            { nome: "Paçoca", preco: 2, ativo: true },
-
-            { nome: "Nutella", preco: 5, ativo: true },
-
-            { nome: "Kit Kat", preco: 4, ativo: true },
-
-            { nome: "Ovomaltine", preco: 4, ativo: true },
-
-            { nome: "Sonho De Valsa", preco: 3, ativo: true },
-
-            { nome: "Ouro Branco", preco: 3, ativo: true },
-
-            { nome: "Choco Ball", preco: 3, ativo: true },
-
-            { nome: "Disquete/Confete", preco: 3, ativo: true },
-
-            { nome: "Amendoim", preco: 2, ativo: true },
-
-
-
-
-
-        ];
+        // 🆕 PRODUCTS, GRATIS e EXTRAS não são mais fixos aqui — eles chegam em tempo
+        // real do Firestore (coleções "cardapio_produtos" e "cardapio_adicionais"),
+        // gerenciadas pelo painel cardapio.html. Ver a escuta em tempo real logo
+        // abaixo de "const db = getFirestore(app)".
+        let PRODUCTS = [];
+        let GRATIS = [];
+        let EXTRAS = [];
+        let catalogoCarregado = false; // evita mostrar "nenhum produto encontrado" antes do primeiro carregamento
 
         // =========================
         // VARIÁVEIS
@@ -3791,6 +3742,24 @@
 
             );
 
+            if (!catalogoCarregado) {
+
+                grid.innerHTML = `
+
+                <div class="empty-products">
+
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+
+                    <h3>Carregando cardápio...</h3>
+
+                </div>
+
+            `;
+
+                return;
+
+            }
+
             if (filtered.length === 0) {
 
                 grid.innerHTML = `
@@ -3813,7 +3782,7 @@
 
             grid.innerHTML = filtered.map(product => `
 
-            <div class="card ${product.esgotado ? "esgotado" : ""}">
+            <div class="card ${product.esgotado ? "esgotado" : (product.acabando ? "acabando" : "")}">
 
    <div class="card-image">
 
@@ -3825,6 +3794,10 @@
 
     ${!product.esgotado && product.destaque ? `
         <div class="destaque-badge">🔥 Mais pedido</div>
+    ` : ""}
+
+    ${!product.esgotado && product.acabando ? `
+        <div class="acabando-badge">⚠️ Últimas unidades hoje</div>
     ` : ""}
 
     ${product.esgotado ? `
@@ -3876,7 +3849,7 @@
 
                 button.addEventListener("click", () => {
 
-                    openCustomize(Number(button.dataset.id));
+                    openCustomize(button.dataset.id);
 
                 });
 
@@ -4015,10 +3988,11 @@
                 // 👇 1. Primeiro criamos os elementos na tela
                 // 🆕 Agora com contador +/- em vez de checkbox: dá pra pedir
                 // o MESMO adicional mais de uma vez (ex: 2x leite condensado).
-                gratisList.innerHTML = GRATIS.map(item => `
-<div class="option ${!item.ativo ? 'esgotado' : ''}">
+                // 🆕 Populares primeiro (sort estável — mantém a ordem original dentro de cada grupo)
+                gratisList.innerHTML = [...GRATIS].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0)).map(item => `
+<div class="option ${!item.ativo ? 'esgotado' : (item.acabando ? 'acabando' : '')} ${item.popular ? 'popular' : ''}">
     <label style="cursor:default;">
-        ${item.nome}
+        ${item.nome}${item.popular ? ' <span class="badge-popular">🔥 Mais pedido</span>' : ''}${item.ativo && item.acabando ? ' <span class="badge-acabando">⚠️ Acabando</span>' : ''}
     </label>
     ${item.ativo
                         ? `<div class="qty-stepper gratisQty" data-nome="${item.nome}">
@@ -4046,10 +4020,10 @@
 
             // EXTRAS
             // 🆕 Também com contador +/- (permite repetir o mesmo adicional pago)
-            extraList.innerHTML = EXTRAS.map(item => `
-<div class="option ${!item.ativo ? 'esgotado' : ''}">
+            extraList.innerHTML = [...EXTRAS].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0)).map(item => `
+<div class="option ${!item.ativo ? 'esgotado' : (item.acabando ? 'acabando' : '')} ${item.popular ? 'popular' : ''}">
     <label style="cursor:default;">
-        ${item.nome}
+        ${item.nome}${item.popular ? ' <span class="badge-popular">🔥 Mais pedido</span>' : ''}${item.ativo && item.acabando ? ' <span class="badge-acabando">⚠️ Acabando</span>' : ''}
     </label>
     ${item.ativo
                     ? `<div style="display:flex;align-items:center;gap:14px;">
@@ -4193,7 +4167,7 @@
 
             const nomesNoCarrinho = new Set(cart.map(i => i.nome));
             const produtosSugeridos = PRODUCTS
-                .filter(p => !nomesNoCarrinho.has(p.nome) && !p.nome.toLowerCase().includes("copo"))
+                .filter(p => !p.esgotado && !nomesNoCarrinho.has(p.nome) && !p.nome.toLowerCase().includes("copo"))
                 .slice(0, 3);
 
             // Adicionais que ainda não foram usados em nenhum item do carrinho
@@ -4231,7 +4205,7 @@
             document.querySelectorAll(".sugestao-add").forEach(btn => {
                 btn.addEventListener("click", () => {
                     if (btn.dataset.tipo === "produto") {
-                        const p = PRODUCTS.find(x => x.id === Number(btn.dataset.id));
+                        const p = PRODUCTS.find(x => x.id === btn.dataset.id);
                         if (!p) return;
                         cart.push({ nome: p.nome, preco: p.preco, gratis: [], extras: [], obs: "" });
                         updateCart();
