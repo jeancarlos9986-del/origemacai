@@ -6,216 +6,508 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Estoque - Nova Origem Açaí</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
         rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
         }
 
         :root {
-            --bg: #0b0b0f;
-            --bg2: #0f0f14;
-            --card: #17171f;
-            --card2: #1f2937;
-            --primary: #7c3aed;
-            --primary2: #9333ea;
-            --green: #00c853;
-            --red: #ff1744;
+            --bg: #08080c;
+            --bg-glow: rgba(139, 92, 246, .16);
+            --surface: #15151d;
+            --surface-2: #1c1c27;
+            --surface-3: #262633;
+            --primary: #8b5cf6;
+            --primary-dark: #6d28d9;
+            --primary-soft: rgba(139, 92, 246, .14);
+            --berry: #ec4899;
+            --green: #10b981;
+            --green-soft: rgba(16, 185, 129, .12);
+            --red: #f43f5e;
+            --red-soft: rgba(244, 63, 94, .12);
             --yellow: #f59e0b;
-            --muted: #9ca3af;
+            --yellow-soft: rgba(245, 158, 11, .12);
+            --text: #f5f5f7;
+            --muted: #9697a6;
             --border: rgba(255, 255, 255, .08);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --font: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
-            background: radial-gradient(circle at top, rgba(124, 58, 237, .12), transparent 30%), var(--bg);
-            color: #fff;
-            padding: 15px;
+            font-family: var(--font);
+            background:
+                radial-gradient(circle at 15% 0%, var(--bg-glow), transparent 45%),
+                radial-gradient(circle at 100% 20%, rgba(236, 72, 153, .08), transparent 40%),
+                var(--bg);
+            background-attachment: fixed;
+            color: var(--text);
             min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        ::selection {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-3);
+            border-radius: 10px;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1080px;
             margin: 0 auto;
+            padding: 0 16px;
         }
 
-        .voltar {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 700;
-            margin-bottom: 15px;
+        /* ===== Barra superior ===== */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(14px);
+            background: rgba(8, 8, 12, .78);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 22px;
         }
 
-        .header {
-            background: linear-gradient(135deg, var(--primary), var(--primary2));
-            padding: 18px;
-            border-radius: 16px;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-            font-weight: 800;
+        .topbar-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 12px 16px;
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 10px;
-            box-shadow: 0 10px 35px rgba(124, 58, 237, .35);
+            flex-wrap: wrap;
         }
 
-        .card {
-            background: var(--card);
-            padding: 20px;
-            border-radius: 16px;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            letter-spacing: .2px;
+            margin-right: auto;
+            white-space: nowrap;
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--primary), var(--berry));
+            font-size: .95rem;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, .35);
+        }
+
+        .brand small {
+            display: block;
+            font-weight: 600;
+            font-size: .68rem;
+            color: var(--muted);
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .nav-pills {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .nav-pills::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 13px;
+            border-radius: 999px;
             border: 1px solid var(--border);
-            margin-bottom: 20px;
+            background: var(--surface);
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: .82rem;
+            white-space: nowrap;
+            transition: .15s;
+        }
+
+        .nav-pill:hover {
+            color: var(--text);
+            border-color: var(--primary);
+        }
+
+        .nav-pill.ativo {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .page-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .page-heading .ico {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 8px 24px rgba(139, 92, 246, .3);
+            flex-shrink: 0;
+        }
+
+        .page-heading h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .page-heading p {
+            font-size: .78rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* ===== Cards ===== */
+        .card {
+            background: var(--surface);
+            padding: 18px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 18px;
         }
 
         .card h3 {
-            margin-bottom: 15px;
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: 700;
+            gap: 9px;
+            font-weight: 800;
+            font-size: .95rem;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
         }
 
+        .card h3 i {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            display: grid;
+            place-items: center;
+            font-size: .8rem;
+            flex-shrink: 0;
+        }
+
+        /* ===== Formulários ===== */
         .form-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             align-items: end;
         }
 
         .form-grid div {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
             flex: 1;
-            min-width: 140px;
+            min-width: 150px;
         }
 
         .form-grid label {
-            font-size: 0.85rem;
+            font-size: .76rem;
             color: var(--muted);
-            font-weight: 500;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
         }
 
         input,
         select,
+        textarea,
         button {
-            padding: 12px;
-            border-radius: 12px;
+            padding: 12px 13px;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--border);
-            background: var(--card2);
-            color: white;
+            background: var(--surface-2);
+            color: var(--text);
             flex: 1;
-            min-width: 140px;
+            min-width: 150px;
             font-family: inherit;
+            font-size: .92rem;
+        }
+
+        textarea {
+            width: 100%;
+            resize: vertical;
+            font-family: var(--font-mono);
+            font-size: .82rem;
+            line-height: 1.5;
+        }
+
+        select {
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+            background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+            padding-right: 32px;
+        }
+
+        input::placeholder {
+            color: #6b6c7a;
         }
 
         input:focus,
-        select:focus {
+        select:focus,
+        textarea:focus {
             outline: none;
             border-color: var(--primary);
+            background: var(--surface-3);
         }
 
         button {
-            background: linear-gradient(135deg, var(--primary), var(--primary2));
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             border: none;
             font-weight: 700;
             cursor: pointer;
-            transition: .2s;
+            transition: .15s;
             flex: none;
+            color: #fff;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
+            filter: brightness(1.12);
+            transform: translateY(-1px);
         }
 
-        .resumo-geral {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            padding: 15px;
-            background: rgba(124, 58, 237, .08);
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid rgba(124, 58, 237, .2);
+        button:active {
+            transform: translateY(0);
         }
 
-        .resumo-item {
-            flex: 1;
-            min-width: 200px;
+        .btn-secundario {
+            background: var(--surface-3) !important;
+            color: var(--text) !important;
         }
 
-        .resumo-item strong {
-            display: block;
-            font-size: 1.1rem;
-            margin-top: 2px;
+        .th-sort {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .th-sort:hover {
+            color: var(--text);
+        }
+
+        .chk-pedido,
+        .chk-rapida {
+            width: 18px;
+            height: 18px;
+            min-width: 0;
+            padding: 0;
+            flex: none;
         }
 
         .grade {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
-            margin-top: 10px;
+            margin-top: 4px;
         }
 
         .item-grade {
-            flex: 1;
-            min-width: 150px;
-            padding: 12px;
-            background: rgba(31, 41, 55, 0.7);
-            border-radius: 10px;
+            padding: 14px 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
             text-align: center;
+            transition: .15s;
+        }
+
+        .item-grade:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .item-grade i {
+            font-size: 1.05rem;
+        }
+
+        .item-grade p {
+            font-size: .74rem;
+            color: var(--muted);
+            font-weight: 600;
+            margin-top: 6px;
         }
 
         .item-grade strong {
-            font-size: 1.2rem;
+            font-family: var(--font-mono);
+            font-size: 1.15rem;
             display: block;
-            margin-top: 5px;
+            margin-top: 4px;
+        }
+
+        /* ===== Tabelas ===== */
+        .table-wrap {
+            position: relative;
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            margin-top: 4px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            font-size: .85rem;
         }
 
         th,
         td {
-            padding: 12px 8px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid var(--border);
-            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        td:first-child,
+        th:first-child {
+            white-space: normal;
         }
 
         th {
-            background: var(--card2);
-            font-weight: 700;
+            background: var(--surface-2);
+            font-weight: 800;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            color: var(--muted);
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
 
+        tbody tr:hover {
+            background: rgba(255, 255, 255, .025);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        td:nth-child(2), td:nth-child(4), td:nth-child(5) {
+            font-family: var(--font-mono);
+        }
+
+        /* ===== Estados (alerta/aviso/sucesso) ===== */
         .alerta {
             border-color: var(--red);
-            background: rgba(255, 23, 68, 0.08);
+            background: var(--red-soft);
         }
 
         .aviso {
             border-color: var(--yellow);
-            background: rgba(245, 158, 11, 0.08);
+            background: var(--yellow-soft);
         }
 
         .sucesso {
             border-color: var(--green);
-            background: rgba(0, 200, 83, 0.08);
+            background: var(--green-soft);
         }
 
+        /* ===== Modal ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 22px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+
+        .modal-box h3 {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-weight: 800;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .modal-box .form-grid {
+            flex-direction: column;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        /* ===== Responsivo ===== */
         @media (max-width: 768px) {
+            .container {
+                padding: 0 12px;
+            }
+
             .form-grid {
                 flex-direction: column;
                 align-items: stretch;
@@ -225,29 +517,62 @@
                 width: 100%;
             }
 
-            table {
-                display: block;
-                overflow-x: auto;
+            .page-heading h1 {
+                font-size: 1.02rem;
             }
 
-            .resumo-geral,
-            .grade {
-                flex-direction: column;
+            th, td {
+                padding: 10px 8px;
+                font-size: .8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .modal-box {
+                max-width: 100%;
+                border-radius: 18px 18px 0 0;
+                max-height: 92vh;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
             }
         }
     </style>
 </head>
 
 <body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <a href="gerenciamento.html" class="brand">
+                <span class="brand-mark"><i class="fas fa-arrow-left"></i></span>
+                <span><small>Nova Origem Açaí</small>Painel</span>
+            </a>
+            <nav class="nav-pills">
+                <a href="estoque.html" class="nav-pill ativo"><i class="fas fa-boxes"></i> Estoque</a>
+                <a href="financeiro.html" class="nav-pill"><i class="fas fa-coins"></i> Financeiro</a>
+                <a href="cardapio.html" class="nav-pill"><i class="fas fa-utensils"></i> Cardápio</a>
+            </nav>
+        </div>
+    </div>
+
     <div class="container">
-        <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
-        <div class="header"><i class="fas fa-boxes"></i> CONTROLE DE ESTOQUE INTELIGENTE</div>
+        <div class="page-heading">
+            <span class="ico"><i class="fas fa-boxes"></i></span>
+            <div>
+                <h1>Controle de Estoque Inteligente</h1>
+                <p>Insumos, movimentações e produção em um só lugar</p>
+            </div>
+        </div>
 
         <div id="alertas-estoque"></div>
-
-        <div id="total-estoque" class="resumo-geral">
-            <div class="resumo-item">Carregando...</div>
-        </div>
 
         <div class="card" style="border-color: var(--primary);">
             <h3><i class="fas fa-industry"></i> Capacidade de Produção</h3>
@@ -288,6 +613,13 @@
                 <div><label>Custo Unit. R$</label><input type="number" id="custo-item" step="0.01" required></div>
                 <div><label>Mínimo</label><input type="number" id="min-item" step="0.01"></div>
                 <div><label>Ideal</label><input type="number" id="ideal-item" step="0.01"></div>
+                <!-- 🆕 Validade opcional — usada pra alertar sobre insumos perecíveis vencendo -->
+                <div><label>Validade (opcional)</label><input type="date" id="validade-item"></div>
+                <!-- 🆕 Fornecedor + prazo de entrega — usados na sugestão de compra e no
+                     link rápido de WhatsApp na lista de compras. -->
+                <div><label>Fornecedor (opcional)</label><input type="text" id="fornecedor-item" placeholder="Ex: Distribuidora ABC"></div>
+                <div><label>WhatsApp do fornecedor</label><input type="text" id="fornecedor-tel-item" inputmode="numeric" placeholder="DDD + número"></div>
+                <div><label>Prazo de entrega (dias)</label><input type="number" id="leadtime-item" step="1" min="0" placeholder="2"></div>
                 <div style="flex-direction:row; align-items:center; gap:8px; min-width:230px;">
                     <input type="checkbox" id="lancar-gasto-item" checked
                         style="flex:none; width:18px; height:18px; min-width:0; padding:0;">
@@ -299,6 +631,9 @@
                         <option value="pix">⚡ Pix</option>
                         <option value="cartao">💳 Cartão</option>
                         <option value="aprazo">⏳ A Prazo (fica em Contas a Pagar)</option>
+                        <!-- 🆕 Comprei com meu dinheiro pessoal pra ajudar a empresa —
+                             não mexe no caixa da empresa, vira empréstimo no financeiro. -->
+                        <option value="pessoal">🤝 Dinheiro Pessoal (Empréstimo)</option>
                     </select></div>
                 <button id="btn-salvar">Salvar</button>
             </div>
@@ -310,10 +645,16 @@
                 <select id="sel-item">
                     <option value="">Selecione...</option>
                 </select>
+                <!-- 🆕 Ajuste agora tem direção (➕ soma / ➖ subtrai) — antes só subtraía,
+                     então não dava pra corrigir o estoque pra cima sem lançar como compra. -->
                 <select id="tipo-mov">
                     <option value="entrada">Compra</option>
                     <option value="saida">Uso</option>
-                    <option value="ajuste">Ajuste</option>
+                    <option value="ajuste_add">Ajuste ➕ (adicionar)</option>
+                    <option value="ajuste_sub">Ajuste ➖ (remover)</option>
+                    <!-- 🆕 Perda/Quebra: subtrai do estoque igual "Uso", mas fica separada
+                         nos relatórios pra você enxergar quanto está sendo desperdiçado. -->
+                    <option value="perda">📉 Perda/Quebra</option>
                 </select>
                 <input type="number" id="qtd-mov" placeholder="Quantidade" step="0.01" required>
                 <div id="preco-mov-box"><label>Valor unitário (R$)</label><input type="number" id="preco-mov" step="0.01" placeholder="Último preço carregado..."></div>
@@ -322,6 +663,7 @@
                         <option value="pix">⚡ Pix</option>
                         <option value="cartao">💳 Cartão</option>
                         <option value="aprazo">⏳ A Prazo</option>
+                        <option value="pessoal">🤝 Dinheiro Pessoal (Empréstimo)</option>
                     </select></div>
                 <input type="text" id="obs-mov" placeholder="Obs">
                 <button id="btn-mov">Registrar</button>
@@ -330,64 +672,164 @@
 
         <div class="card sucesso">
             <h3><i class="fas fa-shopping-cart"></i> Lista de Compra Automática</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Prioridade</th>
-                        <th>Insumo</th>
-                        <th>Comprar</th>
-                        <th>Custo</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-compra">
-                    <tr>
-                        <td colspan="5">Calculando...</td>
-                    </tr>
-                </tbody>
-            </table>
-            <button onclick="copiarLista()" style="margin-top:10px;">📋 Copiar Lista</button>
+            <p style="font-size:.8rem; color:var(--muted); margin-bottom:10px;">
+                A coluna "Comprar" já considera o consumo médio dos últimos 30 dias e o prazo de
+                entrega do fornecedor (padrão de 2 dias quando não informado) — não é só "até o ideal".
+            </p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prioridade</th>
+                            <th>Insumo</th>
+                            <th>Comprar</th>
+                            <th>Custo</th>
+                            <th>Total</th>
+                            <th>Fornecedor</th>
+                            <th>Já pedi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-compra">
+                        <tr>
+                            <td colspan="7">Calculando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                <button onclick="copiarLista()">📋 Copiar Lista</button>
+                <button onclick="enviarListaWhatsApp()" class="btn-secundario">📲 Enviar por WhatsApp</button>
+                <button onclick="abrirModoCompraRapida()" class="btn-secundario">🛒 Modo Compra Rápida</button>
+            </div>
         </div>
 
         <section class="card">
             <h3><i class="fas fa-warehouse"></i> Estoque Atual</h3>
-            <table id="tab-estoque">
-                <thead>
-                    <tr>
-                        <th>Insumo</th>
-                        <th>Qtd</th>
-                        <th>Status</th>
-                        <th>Custo</th>
-                        <th>Investido</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="5">Carregando...</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="form-grid" style="margin-bottom:10px;">
+                <div><label>Buscar</label><input type="text" id="busca-estoque" placeholder="Nome do insumo..."></div>
+            </div>
+            <div class="table-wrap">
+                <table id="tab-estoque">
+                    <thead>
+                        <tr>
+                            <th class="th-sort" data-sort="nome">Insumo ⇅</th>
+                            <th class="th-sort" data-sort="qtd">Qtd ⇅</th>
+                            <th>Status</th>
+                            <th>Custo</th>
+                            <th>Investido</th>
+                            <th class="th-sort" data-sort="dias">Dias Restantes ⇅</th>
+                            <th class="th-sort" data-sort="validade">Validade ⇅</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tab-estoque-body">
+                        <tr>
+                            <td colspan="8">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h3><i class="fas fa-chart-line"></i> Consumo por Insumo (últimos 30 dias)</h3>
+            <div class="form-grid" style="margin-bottom:12px;">
+                <div><label>Insumo</label><select id="chart-insumo-select"></select></div>
+            </div>
+            <canvas id="chart-consumo" height="90"></canvas>
+        </section>
+
+        <section class="card">
+            <h3><i class="fas fa-triangle-exclamation"></i> Perdas / Quebras do Mês</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Insumo</th>
+                            <th>Qtd perdida</th>
+                            <th>Valor estimado</th>
+                            <th>Ocorrências</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tab-perdas-body">
+                        <tr>
+                            <td colspan="4">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </section>
 
         <section class="card">
             <h3><i class="fas fa-clock"></i> Últimas Movimentações</h3>
-            <table id="tab-mov">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Insumo</th>
-                        <th>Tipo</th>
-                        <th>Qtd</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td colspan="4">—</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrap">
+                <table id="tab-mov">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Insumo</th>
+                            <th>Tipo</th>
+                            <th>Qtd</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tab-mov-body">
+                        <tr>
+                            <td colspan="4">—</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- 🆕 Exportar CSV das movimentações + relatório mensal por insumo -->
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                <button onclick="exportarMovimentacoesCSV()">📥 Exportar CSV</button>
+                <input type="month" id="relatorio-mes" style="flex:none; min-width:150px;">
+                <button onclick="exportarRelatorioMensal()" class="btn-secundario">📊 Relatório Mensal por Insumo</button>
+            </div>
         </section>
     </div>
+
+    <!-- 🆕 Modal do Modo Compra Rápida — checklist grande pra usar no celular
+         enquanto está no fornecedor/mercado. -->
+    <div class="modal-overlay" id="modal-compra-rapida">
+        <div class="modal-box" style="max-width:480px;">
+            <h3><i class="fas fa-shopping-basket"></i> Modo Compra Rápida</h3>
+            <div id="compra-rapida-lista" style="display:flex; flex-direction:column; gap:10px; margin-top:10px; max-height:60vh; overflow-y:auto;"></div>
+            <div class="modal-actions">
+                <button id="compra-rapida-fechar" class="btn-secundario">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 Modal de edição de item -->
+    <div class="modal-overlay" id="modal-editar-item">
+        <div class="modal-box">
+            <h3><i class="fas fa-pen"></i> Editar Insumo</h3>
+            <input type="hidden" id="edit-id">
+            <div class="form-grid">
+                <div><label>Nome</label><input type="text" id="edit-nome"></div>
+                <div><label>Unidade</label><select id="edit-unidade">
+                        <option value="kg">kg</option>
+                        <option value="l">Litro</option>
+                        <option value="un">Unid</option>
+                        <option value="cx">Caixa</option>
+                    </select></div>
+                <div><label>Custo Unit. R$</label><input type="number" id="edit-custo" step="0.01"></div>
+                <div><label>Mínimo</label><input type="number" id="edit-min" step="0.01"></div>
+                <div><label>Ideal</label><input type="number" id="edit-ideal" step="0.01"></div>
+                <div><label>Validade</label><input type="date" id="edit-validade"></div>
+                <div><label>Fornecedor</label><input type="text" id="edit-fornecedor"></div>
+                <div><label>WhatsApp do fornecedor</label><input type="text" id="edit-fornecedor-tel" inputmode="numeric"></div>
+                <div><label>Prazo de entrega (dias)</label><input type="number" id="edit-leadtime" step="1" min="0"></div>
+            </div>
+            <p style="font-size:0.75rem; color:var(--muted); margin-top:8px;">Pra mudar a quantidade, use a Movimentação (ajuste ➕/➖).</p>
+            <div class="modal-actions">
+                <button id="edit-salvar">💾 Salvar</button>
+                <button id="edit-cancelar" class="btn-secundario">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script type="module" src="./estoque.js"></script>
 </body>
 
