@@ -29,7 +29,7 @@ const RECEITA_PRODUTO = {
             "Guardanapo": 1
         }
     },
-    "Copo 700ml Super": {
+    "Copo 700ml Mega": {
         acai: 0.565,
         embalagem: {
             "Copo 700ml": 1,
@@ -117,22 +117,28 @@ const CONSUMO_ADICIONAL = {
 
 function acumularReceita(add, nomeProduto, vezes) {
     const chaveProduto = norm(nomeProduto);
-    let receita = RECEITA_PRODUTO[chaveProduto];
+
+    // ✅ Busca com chave normalizada — resolve o problema principal
+    const chaveEncontrada = Object.keys(RECEITA_PRODUTO)
+        .find(chave => norm(chave) === chaveProduto);
+
+    let receita = chaveEncontrada ? RECEITA_PRODUTO[chaveEncontrada] : null;
+
     if (!receita) {
         console.warn(`⚠️ Produto "${nomeProduto}" sem receita cadastrada — usando receita padrão de copo 500ml.`);
         receita = RECEITA_PADRAO;
+    } else {
+        console.log(`✅ Receita encontrada: "${nomeProduto}" → usando "${chaveEncontrada}"`);
     }
 
     // Açaí
     add("Açaí", receita.acai * vezes);
-
     // Embalagem
     if (receita.embalagem) {
         Object.entries(receita.embalagem).forEach(([nomeItem, qtd]) => {
             if (qtd > 0) add(nomeItem, qtd * vezes);
         });
     }
-
     // Ingredientes
     if (receita.ingredientes) {
         Object.entries(receita.ingredientes).forEach(([nomeItem, qtd]) => {
@@ -149,10 +155,8 @@ export function calcularNecessidades(itens) {
         const atual = nec.get(chave);
         nec.set(chave, { nome, qtd: (atual?.qtd || 0) + qtd });
     };
-
     itens.forEach(item => {
         acumularReceita(add, item.nome, 1);
-
         let ads = [];
         if (Array.isArray(item.gratis)) ads.push(...item.gratis);
         if (Array.isArray(item.extras)) ads.push(...item.extras);
@@ -161,7 +165,6 @@ export function calcularNecessidades(itens) {
             .map(a => a.replace(/\s*\(extra\)\s*$/i, "").trim())
             .filter(Boolean);
         ads = [...new Set(ads)];
-
         ads.forEach(ad => {
             const achou = Object.keys(CONSUMO_ADICIONAL).find(ch => norm(ch) === norm(ad));
             if (achou) {
@@ -171,11 +174,9 @@ export function calcularNecessidades(itens) {
             }
         });
     });
-
     // Embalagem de pedido
     if (itens.length === 1) { add("Sacola 1 copo", 1); add("Porta-copo 1 copo", 1); }
     else if (itens.length > 1) { add("Sacola 2+ copos", 1); add("Porta-copo 2+ copos", 1); }
-
     return nec;
 }
 
@@ -211,15 +212,12 @@ export async function processarPedidoSeguro(pedidoId, mapaEstoque) {
         if (!pedidoSnap.exists()) return;
         const pedido = pedidoSnap.data();
         if (pedido.estoqueBaixado) return;
-
         const necessidades = [...calcularNecessidades(pedido.itens || []).entries()]
             .map(([chave, v]) => ({ chave, ...v, info: mapaEstoque.get(chave) }));
-
         const leituras = [];
         for (const nec of necessidades) {
             leituras.push({ ...nec, snap: nec.info ? await tx.get(nec.info.ref) : null });
         }
-
         for (const L of leituras) {
             if (!L.info || !L.snap || !L.snap.exists()) { faltas.push(L.nome); continue; }
             const atual = Number(pegarCampo(L.snap.data(), ["quantidade", "qtd", "quant"]));
@@ -228,10 +226,8 @@ export async function processarPedidoSeguro(pedidoId, mapaEstoque) {
             consumos.push({ nome: L.info.nome, qtd: L.qtd });
             if (nova < 0) faltas.push(L.info.nome);
         }
-
         tx.update(pedidoRef, faltas.length ? { estoqueBaixado: true, estoqueAlertaFalta: faltas } : { estoqueBaixado: true, estoqueAlertaFalta: [] });
     });
-
     for (const c of consumos) {
         await addDoc(collection(db, "movimentacoes"), {
             nomeItem: c.nome, tipo: "saida", quantidade: c.qtd, observacao: `Pedido #${pedidoId.slice(-4)}`, data: new Date()
@@ -247,12 +243,10 @@ export async function processarProducaoSegura(contagens, mapaEstoque) {
         faltas = []; consumos = [];
         const necessidades = [...calcularNecessidadesProducao(contagens).entries()]
             .map(([chave, v]) => ({ chave, ...v, info: mapaEstoque.get(chave) }));
-
         const leituras = [];
         for (const nec of necessidades) {
             leituras.push({ ...nec, snap: nec.info ? await tx.get(nec.info.ref) : null });
         }
-
         for (const L of leituras) {
             if (!L.info || !L.snap || !L.snap.exists()) { faltas.push(L.nome); continue; }
             const atual = Number(pegarCampo(L.snap.data(), ["quantidade", "qtd", "quant"]));
@@ -262,7 +256,6 @@ export async function processarProducaoSegura(contagens, mapaEstoque) {
             if (nova < 0) faltas.push(L.info.nome);
         }
     });
-
     for (const c of consumos) {
         await addDoc(collection(db, "movimentacoes"), {
             nomeItem: c.nome, tipo: "saida", quantidade: c.qtd,
@@ -283,15 +276,12 @@ export async function estornarPedidoSeguro(pedidoId, mapaEstoque) {
         const pedido = pedidoSnap.data();
         if (!pedido.estoqueBaixado || pedido.estoqueEstornado) return;
         if (pedido.estoqueIgnoradoHistorico) return;
-
         const necessidades = [...calcularNecessidades(pedido.itens || []).entries()]
             .map(([chave, v]) => ({ chave, ...v, info: mapaEstoque.get(chave) }));
-
         const leituras = [];
         for (const nec of necessidades) {
             leituras.push({ ...nec, snap: nec.info ? await tx.get(nec.info.ref) : null });
         }
-
         for (const L of leituras) {
             if (!L.info || !L.snap || !L.snap.exists()) continue;
             const atual = Number(pegarCampo(L.snap.data(), ["quantidade", "qtd", "quant"]));
@@ -299,10 +289,8 @@ export async function estornarPedidoSeguro(pedidoId, mapaEstoque) {
             tx.update(L.info.ref, { quantidade: nova, atualizadoEm: new Date() });
             devolucoes.push({ nome: L.info.nome, qtd: L.qtd });
         }
-
         tx.update(pedidoRef, { estoqueEstornado: true });
     });
-
     for (const d of devolucoes) {
         await addDoc(collection(db, "movimentacoes"), {
             nomeItem: d.nome, tipo: "entrada", quantidade: d.qtd,
