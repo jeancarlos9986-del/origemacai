@@ -78,6 +78,28 @@ function mapearProduto(id, data) {
         limiteGratis: Number(data.limiteGratis) || 0,
         destaque: !!data.destaque,
         customizavel: data.customizavel !== false,
+        // "tamanhoMontar" só é preenchido em produtos que são uma opção de
+        // tamanho do fluxo "Monte do seu jeito" (ex: "400ml", "500ml"). Quando
+        // preenchido, o site.html tira esse produto da lista normal e o
+        // agrupa dentro de um único card "Monte do seu jeito".
+        tamanhoMontar: String(data.tamanhoMontar || "").trim(),
+        // 🆕 Campos do fluxo "copo pronto, mas editável" (seção ⭐ Queridinhos):
+        //   - queridinho: controla em qual seção do site o produto aparece,
+        //     independente de "customizavel" (agora os queridinhos também são
+        //     customizáveis, pra permitir trocar os adicionais padrão).
+        //   - extrasFixos: nomes de adicionais pagos que já vêm inclusos no
+        //     preço do copo e não podem ser removidos (ex: ["Nutella"] no
+        //     Nutella Lovers, ou ["Nutella","Ovomaltine"] no Duo Lovers).
+        //     Mantém compatibilidade com produtos antigos salvos só com o
+        //     campo "extraFixo" (string única, pré-migração).
+        //   - gratisPadrao: lista de adicionais grátis pré-selecionados quando
+        //     o cliente abre o copo — ele pode trocar livremente entre si,
+        //     desde que não ultrapasse o "limiteGratis" do produto.
+        queridinho: !!data.queridinho,
+        extrasFixos: Array.isArray(data.extrasFixos) && data.extrasFixos.length
+            ? data.extrasFixos.map(String).map(s => s.trim()).filter(Boolean)
+            : (String(data.extraFixo || "").trim() ? [String(data.extraFixo).trim()] : []),
+        gratisPadrao: Array.isArray(data.gratisPadrao) ? data.gratisPadrao.map(String) : [],
         ordem: Number.isFinite(ordemNum) ? ordemNum : ORDEM_PADRAO,
         status,
         esgotado: status === STATUS.ESGOTADO,
@@ -95,6 +117,14 @@ export async function salvarProduto(db, dados, id = null) {
         limiteGratis: Number(dados.limiteGratis) || 0,
         destaque: !!dados.destaque,
         customizavel: dados.customizavel !== false,
+        tamanhoMontar: String(dados.tamanhoMontar || "").trim(),
+        queridinho: !!dados.queridinho,
+        extrasFixos: Array.isArray(dados.extrasFixos)
+            ? dados.extrasFixos.map(s => String(s).trim()).filter(Boolean)
+            : [],
+        gratisPadrao: Array.isArray(dados.gratisPadrao)
+            ? dados.gratisPadrao.map(s => String(s).trim()).filter(Boolean)
+            : [],
         status: dados.status || STATUS.DISPONIVEL,
         atualizadoEm: new Date()
     };
@@ -192,7 +222,12 @@ export async function salvarAdicional(db, dados, id = null) {
     const payload = {
         nome: (dados.nome || "").trim(),
         tipo: dados.tipo === "extra" ? "extra" : "gratis",
-        preco: dados.tipo === "extra" ? (Number(dados.preco) || 0) : 0,
+        // 🆕 Antes, adicionais "grátis" sempre ficavam com preco=0 (não tinham
+        // como custar nada). Agora todo adicional grátis também tem um preço
+        // próprio — ele só é cobrado quando o cliente ultrapassa o limite
+        // grátis do copo (ex: escolheu 2 grátis, mas o copo só libera 1).
+        // Adicionais "extra" continuam sempre cobrados normalmente.
+        preco: Number(dados.preco) || 0,
         popular: !!dados.popular,
         status: dados.status || STATUS.DISPONIVEL,
         atualizadoEm: new Date()
