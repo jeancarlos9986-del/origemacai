@@ -371,7 +371,11 @@
     <div class="container">
         <a href="gerenciamento.html" class="voltar"><i class="fas fa-arrow-left"></i> Voltar ao Painel</a>
         <div class="header"><i class="fas fa-utensils"></i> CARDÁPIO — TEMPO REAL</div>
-
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span id="nome-usuario" style="font-size:0.9rem; color:#9ca3af;"></span>
+            <button id="btn-logout"
+                style="background:rgba(255,23,68,.15); color:#ff5252; border:1px solid rgba(255,23,68,.4); padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer;">Sair</button>
+        </div>
         <div class="card" style="border-color:var(--primary);">
             <p style="color:var(--muted); font-size:0.9rem;">
                 Aqui você cadastra, edita, remove e marca a disponibilidade de produtos e adicionais.
@@ -391,32 +395,78 @@
             <section class="card">
                 <h3><i class="fas fa-plus-circle"></i> Novo Produto</h3>
                 <div class="form-grid" id="form-produto">
-                    <div><label>Nome</label><input type="text" id="prod-nome" placeholder="Ex: Copo 400ml Tradicional"></div>
-                    <div><label>Categoria</label><input type="text" id="prod-cat" placeholder="Copos" value="Copos"></div>
+                    <div><label>Nome</label><input type="text" id="prod-nome" placeholder="Ex: Copo 400ml Tradicional">
+                    </div>
+                    <div><label>Categoria</label><input type="text" id="prod-cat" placeholder="Copos" value="Copos">
+                    </div>
                     <div><label>Preço R$</label><input type="number" id="prod-preco" step="0.01"></div>
-                    <div style="flex:2; min-width:220px;"><label>Descrição</label><input type="text" id="prod-desc" placeholder="Ex: Escolha até 2 adicionais grátis."></div>
+                    <div style="flex:2; min-width:220px;"><label>Descrição</label><input type="text" id="prod-desc"
+                            placeholder="Ex: Escolha até 2 adicionais grátis."></div>
                     <div style="flex:2; min-width:220px;"><label>Imagens (uma URL por linha)</label>
                         <textarea id="prod-imagens" placeholder="https://.../foto1.jpg"></textarea>
                     </div>
                     <div style="flex:2; min-width:220px;">
                         <label>Ou envie o arquivo direto</label>
                         <input type="file" id="prod-imagem-arquivo" accept="image/*" multiple>
-                        <button type="button" id="prod-enviar-imagem" class="btn-secundario" style="margin-top:8px;">📤 Enviar imagem(ns)</button>
+                        <button type="button" id="prod-enviar-imagem" class="btn-secundario" style="margin-top:8px;">📤
+                            Enviar imagem(ns)</button>
                         <p id="prod-upload-aviso" style="font-size:0.8rem; color:var(--muted); margin-top:6px;"></p>
                     </div>
-                    <div><label>Limite de adicionais grátis</label><input type="number" id="prod-limite" value="0" min="0"></div>
-                    <div class="checkbox-linha"><input type="checkbox" id="prod-destaque"><label for="prod-destaque">🔥 Destacar como mais pedido</label></div>
-                    <div class="checkbox-linha"><input type="checkbox" id="prod-customizavel" checked><label for="prod-customizavel">Permite escolher adicionais</label></div>
+                    <div><label>Limite de adicionais grátis</label><input type="number" id="prod-limite" value="0"
+                            min="0"></div>
+                    <div style="flex:2; min-width:260px;">
+                        <label>Opção do "Monte do seu jeito"</label>
+                        <input type="text" id="prod-tamanho-montar"
+                            placeholder='Ex: 400ml, 500ml, Shake 500ml — deixe vazio se for um produto normal'>
+                        <p style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+                            Preencha só se este produto for uma das opções dentro do único botão "Monte do seu jeito"
+                            (pode ser um tamanho de copo como "400ml", ou até um produto diferente, como "Shake 500ml").
+                            No site, produtos com esse campo preenchido não aparecem como cards separados — eles viram
+                            opções dentro de um único botão, listadas por ordem de preço, onde o cliente escolhe uma
+                            e libera os adicionais grátis definidos aqui em cima.
+                        </p>
+                    </div>
+                    <div class="checkbox-linha"><input type="checkbox" id="prod-destaque"><label for="prod-destaque">🔥
+                            Destacar como mais pedido</label></div>
+                    <div class="checkbox-linha"><input type="checkbox" id="prod-queridinho"><label
+                            for="prod-queridinho">⭐ Aparece na seção "Queridinhos" (copo pronto, mas editável)</label>
+                    </div>
+                    <div class="checkbox-linha"><input type="checkbox" id="prod-customizavel" checked><label
+                            for="prod-customizavel">Permite escolher adicionais</label></div>
+                    <div style="flex:2; min-width:260px;">
+                        <label>Adicionais pagos inclusos e fixos (opcional)</label>
+                        <input type="text" id="prod-extra-fixo"
+                            placeholder='Ex: Nutella, Ovomaltine — deixe vazio se não tiver'>
+                        <p style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+                            Só pra produtos "Queridinhos". Preencha com o nome de um ou mais adicionais já cadastrados
+                            na aba Adicionais (tipo Pago), separados por vírgula, que já vêm inclusos no preço deste
+                            copo e o cliente <strong>não pode remover</strong> — ex: o Duo Lovers sempre vem com
+                            Nutella e Ovomaltine.
+                        </p>
+                    </div>
+                    <div style="flex:2; min-width:260px;">
+                        <label>Adicionais grátis padrão (opcional)</label>
+                        <input type="text" id="prod-gratis-padrao"
+                            placeholder="Ex: Leite condensado, Morango, Leite em pó">
+                        <p style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+                            Só pra produtos "Queridinhos". Nomes separados por vírgula, iguais aos cadastrados na
+                            aba Adicionais (tipo Grátis). Eles já vêm marcados quando o cliente abre o copo, mas
+                            ele pode trocar por outro adicional grátis à vontade — desde que não passe do
+                            "Limite de adicionais grátis" definido acima.
+                        </p>
+                    </div>
                     <input type="hidden" id="prod-editando-id">
                     <button id="prod-salvar">Salvar Produto</button>
-                    <button id="prod-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar edição</button>
+                    <button id="prod-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar
+                        edição</button>
                 </div>
             </section>
 
             <section class="card">
                 <h3><i class="fas fa-list"></i> Produtos Cadastrados</h3>
                 <p style="color:var(--muted); font-size:0.85rem; margin-bottom:12px;">
-                    Produtos com "🔥 Destacar como mais pedido" (marcado no formulário acima) sempre aparecem primeiro no site.
+                    Produtos com "🔥 Destacar como mais pedido" (marcado no formulário acima) sempre aparecem primeiro
+                    no site.
                     Use as setinhas ▲▼ pra ordenar dentro do grupo de destaque e dentro do grupo normal.
                 </p>
                 <div class="lista-itens" id="lista-produtos">
@@ -436,11 +486,20 @@
                             <option value="extra">Pago (adicional extra)</option>
                         </select>
                     </div>
-                    <div id="ad-preco-box"><label>Preço R$ (se pago)</label><input type="number" id="ad-preco" step="0.01" value="0"></div>
-                    <div class="checkbox-linha"><input type="checkbox" id="ad-popular"><label for="ad-popular">🔥 Marcar como popular</label></div>
+                    <div id="ad-preco-box"><label>Preço R$</label><input type="number" id="ad-preco" step="0.01"
+                            value="0">
+                        <p style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+                            Se o tipo for <strong>Pago</strong>, esse é o preço cobrado sempre.
+                            Se o tipo for <strong>Grátis</strong>, esse preço só é cobrado quando o cliente
+                            escolher mais unidades desse adicional do que o limite grátis do copo permite.
+                        </p>
+                    </div>
+                    <div class="checkbox-linha"><input type="checkbox" id="ad-popular"><label for="ad-popular">🔥 Marcar
+                            como popular</label></div>
                     <input type="hidden" id="ad-editando-id">
                     <button id="ad-salvar">Salvar Adicional</button>
-                    <button id="ad-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar edição</button>
+                    <button id="ad-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar
+                        edição</button>
                 </div>
             </section>
 
