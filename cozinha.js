@@ -1,27 +1,31 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-    getFirestore,
     collection,
     onSnapshot,
     doc,
     updateDoc,
     deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// 🆕 Baixa de estoque: antes só acontecia se a tela de Estoque estivesse
+// aberta em algum navegador. Agora disparamos direto daqui, no momento em
+// que a cozinha marca o pedido como "pronto" — funciona sempre, mesmo com
+// a tela de Estoque fechada.
+// 🆕 estornarPedidoSeguro: devolve o estoque debitado quando um pedido que já
+// tinha ficado "pronto" é removido/cancelado — antes isso não acontecia e o
+// saldo do sistema ficava menor do que o estoque físico real com o tempo.
+import { construirMapaEstoque, processarPedidoSeguro, estornarPedidoSeguro } from "./estoqueBaixa.js";
 
 // ======================================
-// CONFIGURAÇÃO FIREBASE
+// 🔒 LOGIN — usa a MESMA instância do Firebase do resto do site
+// (antes esse arquivo criava seu próprio initializeApp/getFirestore
+// separado, duplicando a config e impedindo o uso do auth-guard,
+// que depende do db/auth exportados por firebase.js)
 // ======================================
-const firebaseConfig = {
-    apiKey: "AIzaSyC_zNrNdstdLSa95AjYF_W8XFMwIwlq4DE",
-    authDomain: "fb-pedidos.firebaseapp.com",
-    projectId: "fb-pedidos",
-    storageBucket: "fb-pedidos.firebasestorage.app",
-    messagingSenderId: "440937401229",
-    appId: "1:440937401229:web:4a27c27a69792eb25bcbc4"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { db } from "./firebase.js";
+import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+protegerPagina(["cozinha"]).then(({ nome }) => {
+    renderizarUsuarioLogado(nome);
+    iniciarListenerPedidos();
+});
 
 // ======================================
 // 🆕 LINK DE ACOMPANHAMENTO DO PEDIDO
@@ -274,8 +278,23 @@ function adicionarEventosBotoes() {
     document.querySelectorAll(".btn-remover").forEach(btn => {
         btn.addEventListener("click", async () => {
             if (confirm("Tem certeza que deseja remover esse pedido?")) {
+                const pedidoId = btn.dataset.id;
                 try {
-                    await deleteDoc(doc(db, "pedidos", btn.dataset.id));
+                    // 🆕 Se o estoque já tinha sido debitado pra esse pedido (passou por
+                    // "pronto"), devolve os insumos ANTES de excluir — evita que o saldo
+                    // do sistema fique menor do que o estoque físico real. Não trava a
+                    // exclusão se o estorno falhar (ex: sem internet) — só avisa no console,
+                    // a tela de Estoque continua servindo de rede de segurança.
+                    const pedido = pedidos.find(p => p.id === pedidoId);
+                    if (pedido?.estoqueBaixado && !pedido?.estoqueEstornado) {
+                        try {
+                            const mapaEstoque = await construirMapaEstoque();
+                            await estornarPedidoSeguro(pedidoId, mapaEstoque);
+                        } catch (e) {
+                            console.error(`Erro ao estornar estoque do pedido #${pedidoId.slice(-4)} antes de remover:`, e);
+                        }
+                    }
+                    await deleteDoc(doc(db, "pedidos", pedidoId));
                 } catch (e) {
                     console.error("Erro ao remover pedido:", e);
                     alert("Erro ao remover pedido! Tente novamente.");
@@ -294,6 +313,20 @@ async function atualizarStatus(id, novoStatus) {
     } catch (e) {
         console.error("Erro ao atualizar:", e);
         alert("Erro ao atualizar status!");
+        return;
+    }
+
+    // 🆕 Dá baixa no estoque assim que o pedido fica "pronto" — não trava
+    // nem avisa o cliente/cozinha se algo der errado aqui, só loga no
+    // console (a tela de Estoque continua servindo de rede de segurança
+    // caso essa chamada falhe por qualquer motivo, ex: sem internet).
+    if (novoStatus === "pronto") {
+        try {
+            const mapaEstoque = await construirMapaEstoque();
+            await processarPedidoSeguro(id, mapaEstoque);
+        } catch (e) {
+            console.error(`Erro ao dar baixa no estoque do pedido #${id.slice(-4)}:`, e);
+        }
     }
 }
 
@@ -302,57 +335,63 @@ async function atualizarStatus(id, novoStatus) {
 // ======================================
 const avisoConexao = document.getElementById("avisoConexao");
 
-onSnapshot(collection(db, "pedidos"), (snapshot) => {
-    // Conexão ok — esconde aviso caso estivesse visível
-    if (avisoConexao) avisoConexao.style.display = "none";
-
-    pedidos = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
-
-    // Verifica novos pedidos para tocar som e notificar
-    if (!primeiraCarga) {
-        const idsAtuais = new Set(pedidos.map(p => p.id));
-        const novos = [...idsAtuais].filter(id => !pedidosConhecidos.has(id));
-
-        if (novos.length > 0) {
-            novos.forEach(id => {
-                const pedido = pedidos.find(p => p.id === id);
-                if (pedido?.status === "novo") {
-                    if (somAtivado) {
-                        audioNovoPedido.currentTime = 0;
-                        audioNovoPedido.play().catch(e => console.log("Áudio bloqueado:", e));
-                    }
-                    if (notificacoesAtivas && Notification.permission === "granted") {
-                        const numeroExibicao = pedido.numero ? String(pedido.numero).slice(-4) : "----";
-                        const notif = new Notification("🛒 Novo pedido!", {
-                            body: `${pedido.nome || "Cliente"} • R$ ${(pedido.total || 0).toFixed(2)} • Pedido #${numeroExibicao}`,
-                            icon: "./logonovonova.png.jpeg",
-                            tag: "novo-pedido-" + id,
-                            requireInteraction: true
-                        });
-                        notif.onclick = () => {
-                            window.focus();
-                            notif.close();
-                        };
-                    }
-                }
-            });
-        }
-    }
-
-    // Atualiza lista de conhecidos
-    pedidosConhecidos = new Set(pedidos.map(p => p.id));
-    primeiraCarga = false;
-
-    renderizarPedidos();
-}, (erro) => {
-    // ✅ Novo: se a conexão com o Firestore cair, avisa visualmente
-    // em vez de deixar o painel travado sem explicação.
-    console.error("Erro no listener de pedidos:", erro);
-    if (avisoConexao) avisoConexao.style.display = "block";
+protegerPagina(["cozinha"]).then(() => {
+    iniciarListenerPedidos();
 });
+
+function iniciarListenerPedidos() {
+    onSnapshot(collection(db, "pedidos"), (snapshot) => {
+        // Conexão ok — esconde aviso caso estivesse visível
+        if (avisoConexao) avisoConexao.style.display = "none";
+
+        pedidos = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Verifica novos pedidos para tocar som e notificar
+        if (!primeiraCarga) {
+            const idsAtuais = new Set(pedidos.map(p => p.id));
+            const novos = [...idsAtuais].filter(id => !pedidosConhecidos.has(id));
+
+            if (novos.length > 0) {
+                novos.forEach(id => {
+                    const pedido = pedidos.find(p => p.id === id);
+                    if (pedido?.status === "novo") {
+                        if (somAtivado) {
+                            audioNovoPedido.currentTime = 0;
+                            audioNovoPedido.play().catch(e => console.log("Áudio bloqueado:", e));
+                        }
+                        if (notificacoesAtivas && Notification.permission === "granted") {
+                            const numeroExibicao = pedido.numero ? String(pedido.numero).slice(-4) : "----";
+                            const notif = new Notification("🛒 Novo pedido!", {
+                                body: `${pedido.nome || "Cliente"} • R$ ${(pedido.total || 0).toFixed(2)} • Pedido #${numeroExibicao}`,
+                                icon: "./logonovonova.png.jpeg",
+                                tag: "novo-pedido-" + id,
+                                requireInteraction: true
+                            });
+                            notif.onclick = () => {
+                                window.focus();
+                                notif.close();
+                            };
+                        }
+                    }
+                });
+            }
+        }
+
+        // Atualiza lista de conhecidos
+        pedidosConhecidos = new Set(pedidos.map(p => p.id));
+        primeiraCarga = false;
+
+        renderizarPedidos();
+    }, (erro) => {
+        // ✅ Novo: se a conexão com o Firestore cair, avisa visualmente
+        // em vez de deixar o painel travado sem explicação.
+        console.error("Erro no listener de pedidos:", erro);
+        if (avisoConexao) avisoConexao.style.display = "block";
+    });
+}
 
 // ======================================
 // CONTROLE DE SOM
