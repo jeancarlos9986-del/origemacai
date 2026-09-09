@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Estoque - Nova Origem Açaí</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
         rel="stylesheet">
     <style>
         * {
@@ -437,7 +438,9 @@
             border-bottom: none;
         }
 
-        td:nth-child(2), td:nth-child(4), td:nth-child(5) {
+        td:nth-child(2),
+        td:nth-child(4),
+        td:nth-child(5) {
             font-family: var(--font-mono);
         }
 
@@ -521,7 +524,8 @@
                 font-size: 1.02rem;
             }
 
-            th, td {
+            th,
+            td {
                 padding: 10px 8px;
                 font-size: .8rem;
             }
@@ -560,6 +564,11 @@
                 <a href="financeiro.html" class="nav-pill"><i class="fas fa-coins"></i> Financeiro</a>
                 <a href="cardapio.html" class="nav-pill"><i class="fas fa-utensils"></i> Cardápio</a>
             </nav>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span id="nome-usuario" style="font-size:0.9rem; color:#9ca3af;"></span>
+            <button id="btn-logout"
+                style="background:rgba(255,23,68,.15); color:#ff5252; border:1px solid rgba(255,23,68,.4); padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer;">Sair</button>
         </div>
     </div>
 
@@ -617,9 +626,12 @@
                 <div><label>Validade (opcional)</label><input type="date" id="validade-item"></div>
                 <!-- 🆕 Fornecedor + prazo de entrega — usados na sugestão de compra e no
                      link rápido de WhatsApp na lista de compras. -->
-                <div><label>Fornecedor (opcional)</label><input type="text" id="fornecedor-item" placeholder="Ex: Distribuidora ABC"></div>
-                <div><label>WhatsApp do fornecedor</label><input type="text" id="fornecedor-tel-item" inputmode="numeric" placeholder="DDD + número"></div>
-                <div><label>Prazo de entrega (dias)</label><input type="number" id="leadtime-item" step="1" min="0" placeholder="2"></div>
+                <div><label>Fornecedor (opcional)</label><input type="text" id="fornecedor-item"
+                        placeholder="Ex: Distribuidora ABC"></div>
+                <div><label>WhatsApp do fornecedor</label><input type="text" id="fornecedor-tel-item"
+                        inputmode="numeric" placeholder="DDD + número"></div>
+                <div><label>Prazo de entrega (dias)</label><input type="number" id="leadtime-item" step="1" min="0"
+                        placeholder="2"></div>
                 <div style="flex-direction:row; align-items:center; gap:8px; min-width:230px;">
                     <input type="checkbox" id="lancar-gasto-item" checked
                         style="flex:none; width:18px; height:18px; min-width:0; padding:0;">
@@ -657,7 +669,8 @@
                     <option value="perda">📉 Perda/Quebra</option>
                 </select>
                 <input type="number" id="qtd-mov" placeholder="Quantidade" step="0.01" required>
-                <div id="preco-mov-box"><label>Valor unitário (R$)</label><input type="number" id="preco-mov" step="0.01" placeholder="Último preço carregado..."></div>
+                <div id="preco-mov-box"><label>Valor unitário (R$)</label><input type="number" id="preco-mov"
+                        step="0.01" placeholder="Último preço carregado..."></div>
                 <div id="forma-mov-box"><label>Forma de pagamento</label><select id="forma-mov">
                         <option value="dinheiro">💵 Dinheiro</option>
                         <option value="pix">⚡ Pix</option>
@@ -783,7 +796,8 @@
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
                 <button onclick="exportarMovimentacoesCSV()">📥 Exportar CSV</button>
                 <input type="month" id="relatorio-mes" style="flex:none; min-width:150px;">
-                <button onclick="exportarRelatorioMensal()" class="btn-secundario">📊 Relatório Mensal por Insumo</button>
+                <button onclick="exportarRelatorioMensal()" class="btn-secundario">📊 Relatório Mensal por
+                    Insumo</button>
             </div>
         </section>
     </div>
@@ -793,7 +807,9 @@
     <div class="modal-overlay" id="modal-compra-rapida">
         <div class="modal-box" style="max-width:480px;">
             <h3><i class="fas fa-shopping-basket"></i> Modo Compra Rápida</h3>
-            <div id="compra-rapida-lista" style="display:flex; flex-direction:column; gap:10px; margin-top:10px; max-height:60vh; overflow-y:auto;"></div>
+            <div id="compra-rapida-lista"
+                style="display:flex; flex-direction:column; gap:10px; margin-top:10px; max-height:60vh; overflow-y:auto;">
+            </div>
             <div class="modal-actions">
                 <button id="compra-rapida-fechar" class="btn-secundario">Fechar</button>
             </div>
@@ -818,10 +834,13 @@
                 <div><label>Ideal</label><input type="number" id="edit-ideal" step="0.01"></div>
                 <div><label>Validade</label><input type="date" id="edit-validade"></div>
                 <div><label>Fornecedor</label><input type="text" id="edit-fornecedor"></div>
-                <div><label>WhatsApp do fornecedor</label><input type="text" id="edit-fornecedor-tel" inputmode="numeric"></div>
-                <div><label>Prazo de entrega (dias)</label><input type="number" id="edit-leadtime" step="1" min="0"></div>
+                <div><label>WhatsApp do fornecedor</label><input type="text" id="edit-fornecedor-tel"
+                        inputmode="numeric"></div>
+                <div><label>Prazo de entrega (dias)</label><input type="number" id="edit-leadtime" step="1" min="0">
+                </div>
             </div>
-            <p style="font-size:0.75rem; color:var(--muted); margin-top:8px;">Pra mudar a quantidade, use a Movimentação (ajuste ➕/➖).</p>
+            <p style="font-size:0.75rem; color:var(--muted); margin-top:8px;">Pra mudar a quantidade, use a Movimentação
+                (ajuste ➕/➖).</p>
             <div class="modal-actions">
                 <button id="edit-salvar">💾 Salvar</button>
                 <button id="edit-cancelar" class="btn-secundario">Cancelar</button>
