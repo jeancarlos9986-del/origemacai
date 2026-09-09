@@ -1,358 +1,454 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+import {
+    collection,
+    onSnapshot,
+    doc,
+    updateDoc,
+    deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// 🆕 Baixa de estoque: antes só acontecia se a tela de Estoque estivesse
+// aberta em algum navegador. Agora disparamos direto daqui, no momento em
+// que a cozinha marca o pedido como "pronto" — funciona sempre, mesmo com
+// a tela de Estoque fechada.
+// 🆕 estornarPedidoSeguro: devolve o estoque debitado quando um pedido que já
+// tinha ficado "pronto" é removido/cancelado — antes isso não acontecia e o
+// saldo do sistema ficava menor do que o estoque físico real com o tempo.
+import { construirMapaEstoque, processarPedidoSeguro, estornarPedidoSeguro } from "./estoqueBaixa.js";
 
-<head>
+// ======================================
+// 🔒 LOGIN — usa a MESMA instância do Firebase do resto do site
+// (antes esse arquivo criava seu próprio initializeApp/getFirestore
+// separado, duplicando a config e impedindo o uso do auth-guard,
+// que depende do db/auth exportados por firebase.js)
+// ======================================
+import { db } from "./firebase.js";
+import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+protegerPagina(["cozinha"]).then(({ nome }) => {
+    renderizarUsuarioLogado(nome);
+    iniciarListenerPedidos();
+});
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+// ======================================
+// 🆕 LINK DE ACOMPANHAMENTO DO PEDIDO
+// ======================================
+// ⚠️ TROQUE PELA URL REAL ONDE O site.html ESTÁ PUBLICADO
+const SITE_URL = "https://jeancarlos9986-del.github.io/origemacai/site";
 
-    <title>
-        Entregador | Nova Origem Açaí
-    </title>
+function gerarLinkAcompanhamento(pedidoId) {
+    return `${SITE_URL}?pedido=${pedidoId}`;
+}
 
-    <link rel="manifest" href="./manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Nova Origem">
-    <link rel="apple-touch-icon" href="./logonovonova.png.jpeg">
+// ======================================
+// VARIÁVEIS ELEMENTOS
+// ======================================
+const painelPedidos = document.getElementById("painelPedidos");
+const semPedidos = document.getElementById("semPedidos");
+const botoesFiltro = document.querySelectorAll(".filtro-btn");
 
-    <!-- ✅ Adicionei fonte igual ao painel da cozinha -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+// ======================================
+// ESTADO E ÁUDIO
+// ======================================
+let pedidos = [];
+let pedidosConhecidos = new Set();
+let filtroAtivo = "todos";
+let primeiraCarga = true;
+let somAtivado = false;
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            /* ✅ Fonte melhorada */
+const audioNovoPedido = new Audio("./alerta.mp3");
+audioNovoPedido.volume = 0.8;
+
+// ======================================
+// FUNÇÕES AUXILIARES
+// ======================================
+
+function obterStatusTexto(status) {
+    const statusMap = {
+        novo: "🟣 NOVO",
+        preparo: "🟡 EM PREPARO",
+        pronto: "🟢 PRONTO",
+        em_rota: "🛵 EM ROTA",
+        concluido: "✅ ENTREGUE",
+        aguardando_pagamento: "⏳ AGUARDANDO PGTO"
+    };
+    return statusMap[status] || "❓ DESCONHECIDO";
+}
+
+function formatarData(timestamp) {
+    if (!timestamp) return "";
+    const data = new Date(timestamp);
+    return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ======================================
+// FILTRO
+// ======================================
+botoesFiltro.forEach(btn => {
+    btn.addEventListener("click", () => {
+        botoesFiltro.forEach(b => b.classList.remove("ativo"));
+        btn.classList.add("ativo");
+        filtroAtivo = btn.dataset.filtro;
+        renderizarPedidos();
+    });
+});
+
+// ======================================
+// RENDERIZAÇÃO PRINCIPAL
+// ======================================
+function renderizarPedidos() {
+    painelPedidos.innerHTML = "";
+
+    // Filtrar pedidos
+    let pedidosFiltrados = pedidos.filter(p => {
+        if (filtroAtivo === "todos") return p.status !== "concluido" && p.status !== "aguardando_pagamento";
+        return p.status === filtroAtivo;
+    });
+
+    // Ordenar: Novos primeiro, depois por horário
+    pedidosFiltrados.sort((a, b) => {
+        if (a.status === "novo" && b.status !== "novo") return -1;
+        if (a.status !== "novo" && b.status === "novo") return 1;
+        return (b.criadoEm || 0) - (a.criadoEm || 0);
+    });
+
+    if (pedidosFiltrados.length === 0) {
+        semPedidos.style.display = "block";
+        return;
+    }
+    semPedidos.style.display = "none";
+
+    // Criar Cards
+    pedidosFiltrados.forEach(pedido => {
+        const card = document.createElement("div");
+        card.className = `pedido-card ${pedido.status}`;
+
+        // Animação destaque para novos
+        if (pedido.status === "novo" && !primeiraCarga) {
+            card.classList.add("novo-pedido-animado");
         }
 
-        :root {
-            --bg: #0b0b0f;
-            --card: #17171f;
-            --card2: #1f2937;
-            --primary: #0284c7;
-            /* ✅ Cor principal para entregador */
-            --green: #00c853;
-            --yellow: #f59e0b;
-            --red: #ff1744;
-            --text: #ffffff;
-            --muted: #9ca3af;
-            --entrega: #0284c7;
-        }
+        const numeroExibicao = pedido.numero ? String(pedido.numero).slice(-4) : "----";
+        const horaFormatada = formatarData(pedido.criadoEm);
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            padding: 20px;
-            min-height: 100vh;
-        }
-
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .logo-area img {
-            width: 60px;
-            height: 60px;
-            border-radius: 16px;
-            border: 2px solid var(--primary);
-            /* ✅ Destaque na logo */
-            object-fit: cover;
-        }
-
-        .logo-area h1 {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #fff, #38bdf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .online {
-            background: rgba(0, 200, 83, .15);
-            color: #00ff84;
-            border: 1px solid rgba(0, 200, 83, .4);
-            padding: 10px 15px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        #aviso-instalar {
-            display: none;
-            background: rgba(245, 158, 11, 0.15);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            padding: 14px;
-            text-align: center;
-            font-weight: 700;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        /* ✅ Card melhorado */
-        .card-entrega {
-            background: var(--card);
-            border-radius: 24px;
-            padding: 22px;
-            margin-bottom: 18px;
-            border: 2px solid rgba(2, 132, 199, 0.2);
-            transition: .3s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-entrega::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-            background: var(--entrega);
-        }
-
-        .card-entrega:hover {
-            transform: translateY(-3px);
-            border-color: rgba(2, 132, 199, 0.5);
-        }
-
-        .info-valor {
-            background: var(--card2);
-            border-radius: 18px;
-            padding: 16px;
-            margin: 15px 0;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            line-height: 1.8;
-        }
-
-        .btn-rota {
-            background: #4285F4;
-            color: white;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 700;
-            transition: .2s;
-        }
-
-        .btn-rota:hover {
-            transform: scale(1.02);
-            filter: brightness(1.1);
-        }
-
-        .btn-acao {
-            border: none;
-            flex: 1;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: .2s;
-            font-size: 0.9rem;
-        }
-
-        .btn-acao:hover {
-            transform: scale(1.02);
-        }
-
-        .btn-iniciar {
-            background: var(--yellow);
-            color: white;
-        }
-
-        .btn-concluir {
-            background: var(--green);
-            color: white;
-        }
-
-        .btn-zap {
-            background: #25D366;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            transition: .2s;
-        }
-
-        .btn-zap:hover {
-            transform: scale(1.1);
-        }
-
-        .sem-pedidos {
-            text-align: center;
-            margin-top: 100px;
-            color: var(--muted);
-        }
-
-        .sem-pedidos i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: .5;
-        }
-
-        /* ✅ Contador de entregas concluídas (1 por endereço, não por item/pedido) */
-        .stats-entregas {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .stat-box {
-            flex: 1;
-            min-width: 150px;
-            background: var(--card);
-            border: 1px solid rgba(2, 132, 199, 0.25);
-            border-radius: 16px;
-            padding: 14px 16px;
-        }
-
-        .stat-box .stat-num {
-            display: block;
-            font-size: 1.7rem;
-            font-weight: 800;
-            color: #38bdf8;
-        }
-
-        .stat-box .stat-lbl {
-            font-size: .78rem;
-            color: var(--muted);
-        }
-
-        .stat-box .stat-sub {
-            font-size: .7rem;
-            color: var(--muted);
-            opacity: .8;
-        }
-
-        .alerta-pago {
-            border-radius: 12px 12px 0 0;
-            margin: -22px -22px 18px -22px !important;
-            font-size: 0.9rem;
-        }
-
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-
-        @media(max-width:700px) {
-            body {
-                padding: 15px;
-            }
-
-            .topbar {
-                align-items: flex-start;
-            }
-
-            .logo-area h1 {
-                font-size: 1.4rem;
-            }
-        }
-    </style>
-
-</head>
-
-<body>
-
-    <div id="aviso-instalar">
-        <i class="fa-solid fa-circle-info"></i> 📲 Instale o aplicativo na tela inicial para acessar mais rápido.
-    </div>
-
-    <header class="topbar">
-
-        <div class="logo-area">
-            <img src="./logonovonova.png.jpeg" alt="Nova Origem">
-            <div>
-                <h1>
-                    Painel do Entregador
-                </h1>
-                <p style="color:#9ca3af; font-size:0.9rem;">
-                    Nova Origem Açaí • Entregas em Tempo Real
-                </p>
+        card.innerHTML = `
+            <div class="pedido-top">
+                <div>
+                    <div class="pedido-numero">Pedido #${numeroExibicao}</div>
+                    <div class="pedido-hora">
+                        <i class="fa-solid fa-clock"></i> ${horaFormatada}
+                    </div>
+                </div>
+                <div class="pedido-status status-${pedido.status}">
+                    ${obterStatusTexto(pedido.status)}
+                </div>
             </div>
-        </div>
 
-        <div class="online">
-            <i class="fa-solid fa-circle-pulse"></i> Sistema Online
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <span id="nome-usuario" style="font-size:0.9rem; color:#9ca3af;"></span>
-            <button id="btn-logout"
-                style="background:rgba(255,23,68,.15); color:#ff5252; border:1px solid rgba(255,23,68,.4); padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer;">Sair</button>
-        </div>
+            <div class="cliente-box">
+                <div><strong>Nome:</strong> <span>${pedido.nome || "Não informado"}</span></div>
+                <div><strong>Contato:</strong> <span>${pedido.fone || "-"}</span></div>
+                <div><strong>Tipo:</strong> <span>${pedido.entrega === 'entrega' ? '🏍️ Entrega' : '🏠 Retirada'}</span></div>
+                <div><strong>Pagamento:</strong> <span class="info-pagamento">${pedido.pagamento || "-"}</span></div>
+                ${pedido.endereco ? `<div><strong>Endereço:</strong> <span>${pedido.endereco}</span></div>` : ""}
+            </div>
 
-    </header>
+            <div class="link-acompanhamento">
+                <button class="btn-copiar-link" data-id="${pedido.id}">
+                    <i class="fa-solid fa-link"></i> Copiar Link
+                </button>
+                <button class="btn-whatsapp-link" data-id="${pedido.id}" data-fone="${pedido.fone || ""}" data-nome="${pedido.nome || ""}">
+                    <i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp
+                </button>
+            </div>
 
-    <div class="stats-entregas" id="statsEntregas">
-        <div class="stat-box">
-            <span class="stat-num" id="statEntregasHoje">0</span>
-            <span class="stat-lbl">Entregas hoje</span>
-            <div class="stat-sub">1 por endereço, mesmo com vários itens</div>
-        </div>
+            <div class="pedido-itens">
+                ${pedido.itens && pedido.itens.length > 0 ? pedido.itens.map(item => `
+                    <div class="pedido-item">
+                        <strong>${item.nome || "Item"}</strong>
+                        ${item.gratis?.length ? `<div class="item-gratis">✅ Grátis: ${item.gratis.join(", ")}</div>` : ""}
+                        ${item.extras?.length ? `<div class="item-extra">➕ Adicionais: ${item.extras.join(", ")}</div>` : ""}
+                        ${item.obs ? `<div class="item-obs">📝 Obs: ${item.obs}</div>` : ""}
+                        <div class="valor-item">R$ ${(item.preco || 0).toFixed(2)}</div>
+                    </div>
+                `).join("") : "<p style='text-align:center; color:#9ca3af;'>Nenhum item encontrado</p>"}
+            </div>
 
-    </div>
+            <div class="pedido-footer">
+                <div class="pedido-total">Total: R$ ${(pedido.total || 0).toFixed(2)}</div>
+                
+                <div class="acoes">
+                    ${pedido.status === "novo" ? `
+                        <button class="btn-preparo" data-id="${pedido.id}">
+                            <i class="fa-solid fa-fire"></i> Preparar
+                        </button>
+                    ` : ""}
 
-    <main id="lista-entregas">
-        <div class="sem-pedidos">
-            <i class="fa-solid fa-motorcycle"></i>
-            <h2>Nenhuma entrega pendente</h2>
-            <p>Os pedidos prontos para entrega aparecerão aqui automaticamente.</p>
-        </div>
-    </main>
+                    ${pedido.status === "preparo" ? `
+                        <button class="btn-pronto" data-id="${pedido.id}">
+                            <i class="fa-solid fa-check-circle"></i> Pronto
+                        </button>
+                    ` : ""}
 
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("./sw.js");
-            });
-        }
+                    ${pedido.status === "pronto" && pedido.entrega === "entrega" ? `
+                        <button class="btn-entrega" data-id="${pedido.id}">
+                            <i class="fa-solid fa-motorcycle"></i> Saiu Entrega
+                        </button>
+                    ` : ""}
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                    ${pedido.status === "pronto" && pedido.entrega === "retirada" ? `
+                        <button class="btn-concluir" data-id="${pedido.id}">
+                            <i class="fa-solid fa-hand-wave"></i> Cliente Retirou
+                        </button>
+                    ` : ""}
 
-            if (isMobile && !isStandalone) {
-                document.getElementById("aviso-instalar").style.display = "block";
+                    <button class="btn-remover" data-id="${pedido.id}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        painelPedidos.appendChild(card);
+    });
+
+    adicionarEventosBotoes();
+}
+
+// ======================================
+// EVENTOS DOS BOTÕES DE AÇÃO
+// ======================================
+function adicionarEventosBotoes() {
+    // 🆕 Copiar link de acompanhamento
+    document.querySelectorAll(".btn-copiar-link").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            const link = gerarLinkAcompanhamento(btn.dataset.id);
+            try {
+                await navigator.clipboard.writeText(link);
+                const original = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> Copiado!`;
+                setTimeout(() => btn.innerHTML = original, 1500);
+            } catch (e) {
+                prompt("Copie o link manualmente:", link);
             }
         });
-    </script>
+    });
 
-    <script type="module" src="./entregador.js">
-    </script>
+    // 🆕 Enviar link direto pelo WhatsApp
+    document.querySelectorAll(".btn-whatsapp-link").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const fone = (btn.dataset.fone || "").replace(/\D/g, "");
+            if (!fone) {
+                alert("Este pedido não tem telefone cadastrado.");
+                return;
+            }
+            const link = gerarLinkAcompanhamento(btn.dataset.id);
+            const msg = encodeURIComponent(
+                `Olá ${btn.dataset.nome || ""}! Aqui está o link para acompanhar seu pedido em tempo real 👇\n${link}`
+            );
+            window.open(`https://wa.me/55${fone}?text=${msg}`, "_blank");
+        });
+    });
 
-</body>
+    // Preparar
+    document.querySelectorAll(".btn-preparo").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            await atualizarStatus(btn.dataset.id, "preparo");
+        });
+    });
 
-</html>
+    // Marcar como Pronto
+    document.querySelectorAll(".btn-pronto").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            await atualizarStatus(btn.dataset.id, "pronto");
+        });
+    });
+
+    // Saiu para Entrega
+    document.querySelectorAll(".btn-entrega").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            await atualizarStatus(btn.dataset.id, "em_rota");
+        });
+    });
+
+    // Concluir / Retirada
+    document.querySelectorAll(".btn-concluir").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            await atualizarStatus(btn.dataset.id, "concluido");
+        });
+    });
+
+    // Remover/Excluir
+    document.querySelectorAll(".btn-remover").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            if (confirm("Tem certeza que deseja remover esse pedido?")) {
+                const pedidoId = btn.dataset.id;
+                try {
+                    // 🆕 Se o estoque já tinha sido debitado pra esse pedido (passou por
+                    // "pronto"), devolve os insumos ANTES de excluir — evita que o saldo
+                    // do sistema fique menor do que o estoque físico real. Não trava a
+                    // exclusão se o estorno falhar (ex: sem internet) — só avisa no console,
+                    // a tela de Estoque continua servindo de rede de segurança.
+                    const pedido = pedidos.find(p => p.id === pedidoId);
+                    if (pedido?.estoqueBaixado && !pedido?.estoqueEstornado) {
+                        try {
+                            const mapaEstoque = await construirMapaEstoque();
+                            await estornarPedidoSeguro(pedidoId, mapaEstoque);
+                        } catch (e) {
+                            console.error(`Erro ao estornar estoque do pedido #${pedidoId.slice(-4)} antes de remover:`, e);
+                        }
+                    }
+                    await deleteDoc(doc(db, "pedidos", pedidoId));
+                } catch (e) {
+                    console.error("Erro ao remover pedido:", e);
+                    alert("Erro ao remover pedido! Tente novamente.");
+                }
+            }
+        });
+    });
+}
+
+async function atualizarStatus(id, novoStatus) {
+    try {
+        await updateDoc(doc(db, "pedidos", id), {
+            status: novoStatus,
+            atualizadoEm: new Date()
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar:", e);
+        alert("Erro ao atualizar status!");
+        return;
+    }
+
+    // 🆕 Dá baixa no estoque assim que o pedido fica "pronto" — não trava
+    // nem avisa o cliente/cozinha se algo der errado aqui, só loga no
+    // console (a tela de Estoque continua servindo de rede de segurança
+    // caso essa chamada falhe por qualquer motivo, ex: sem internet).
+    if (novoStatus === "pronto") {
+        try {
+            const mapaEstoque = await construirMapaEstoque();
+            await processarPedidoSeguro(id, mapaEstoque);
+        } catch (e) {
+            console.error(`Erro ao dar baixa no estoque do pedido #${id.slice(-4)}:`, e);
+        }
+    }
+}
+
+// ======================================
+// REALTIME LISTENER FIREBASE
+// ======================================
+const avisoConexao = document.getElementById("avisoConexao");
+
+protegerPagina(["cozinha"]).then(() => {
+    iniciarListenerPedidos();
+});
+
+function iniciarListenerPedidos() {
+    onSnapshot(collection(db, "pedidos"), (snapshot) => {
+        // Conexão ok — esconde aviso caso estivesse visível
+        if (avisoConexao) avisoConexao.style.display = "none";
+
+        pedidos = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+
+        // Verifica novos pedidos para tocar som e notificar
+        if (!primeiraCarga) {
+            const idsAtuais = new Set(pedidos.map(p => p.id));
+            const novos = [...idsAtuais].filter(id => !pedidosConhecidos.has(id));
+
+            if (novos.length > 0) {
+                novos.forEach(id => {
+                    const pedido = pedidos.find(p => p.id === id);
+                    if (pedido?.status === "novo") {
+                        if (somAtivado) {
+                            audioNovoPedido.currentTime = 0;
+                            audioNovoPedido.play().catch(e => console.log("Áudio bloqueado:", e));
+                        }
+                        if (notificacoesAtivas && Notification.permission === "granted") {
+                            const numeroExibicao = pedido.numero ? String(pedido.numero).slice(-4) : "----";
+                            const notif = new Notification("🛒 Novo pedido!", {
+                                body: `${pedido.nome || "Cliente"} • R$ ${(pedido.total || 0).toFixed(2)} • Pedido #${numeroExibicao}`,
+                                icon: "./logonovonova.png.jpeg",
+                                tag: "novo-pedido-" + id,
+                                requireInteraction: true
+                            });
+                            notif.onclick = () => {
+                                window.focus();
+                                notif.close();
+                            };
+                        }
+                    }
+                });
+            }
+        }
+
+        // Atualiza lista de conhecidos
+        pedidosConhecidos = new Set(pedidos.map(p => p.id));
+        primeiraCarga = false;
+
+        renderizarPedidos();
+    }, (erro) => {
+        // ✅ Novo: se a conexão com o Firestore cair, avisa visualmente
+        // em vez de deixar o painel travado sem explicação.
+        console.error("Erro no listener de pedidos:", erro);
+        if (avisoConexao) avisoConexao.style.display = "block";
+    });
+}
+
+// ======================================
+// CONTROLE DE SOM
+// ======================================
+document.getElementById("ativarSom").addEventListener("click", () => {
+    somAtivado = !somAtivado;
+    const btn = document.getElementById("ativarSom");
+    if (somAtivado) {
+        btn.innerText = "🔕 Desativar Som";
+        btn.style.background = "rgba(0, 200, 83, 0.2)";
+        btn.style.color = "#00ff84";
+        audioNovoPedido.play().catch(() => { });
+    } else {
+        btn.innerText = "🔔 Ativar Som";
+        btn.style.background = "rgba(124, 58, 237, 0.2)";
+        btn.style.color = "#c084fc";
+    }
+});
+
+document.body.addEventListener("click", () => {
+    audioNovoPedido.load();
+});
+
+// ======================================
+// 🆕 NOTIFICAÇÕES (sem servidor — só permissão do navegador)
+// ======================================
+// Funciona: aba em segundo plano, outra aba/janela aberta, tela ligada.
+// NÃO funciona: celular com a tela bloqueada/app fechado — isso exige
+// notificação push de verdade, que precisa de um servidor por trás.
+const btnPush = document.getElementById("ativarPush");
+let notificacoesAtivas = false;
+
+async function ativarNotificacoesLocais() {
+    if (!("Notification" in window)) {
+        alert("Este navegador não suporta notificações.");
+        return;
+    }
+
+    if (Notification.permission === "denied") {
+        alert("As notificações estão bloqueadas para este site. Vá nas configurações do navegador (ícone de cadeado ao lado do endereço) e permita notificações.");
+        return;
+    }
+
+    const permissao = await Notification.requestPermission();
+    if (permissao !== "granted") {
+        alert("Você precisa permitir as notificações para receber os alertas.");
+        return;
+    }
+
+    notificacoesAtivas = true;
+    btnPush.textContent = "✅ Notificações Ativas";
+    btnPush.classList.add("push-ativo");
+
+    new Notification("🔔 Notificações ativadas!", {
+        body: "Você vai ser avisado quando chegar um novo pedido.",
+        icon: "./logonovonova.png.jpeg"
+    });
+}
+
+btnPush.addEventListener("click", ativarNotificacoesLocais);
