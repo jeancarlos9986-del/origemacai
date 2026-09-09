@@ -8,6 +8,14 @@ import {
     importarCatalogoAtualSeVazio
 } from "./catalogo.js";
 
+// 🔒 Este arquivo não tem um único ponto de entrada (roda tudo direto ao
+// carregar), então a checagem aqui só redireciona quem não tem permissão —
+// a proteção que realmente vale (impedir leitura/escrita) é garantida pelas
+// regras do Firestore, não por este guard.
+import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+
+protegerPagina(["cardapio"]).then(({ nome }) => renderizarUsuarioLogado(nome));
+
 function esc(s) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -95,7 +103,7 @@ escutarProdutos(db, produtos => {
             <img src="${esc(p.imagens[0])}" alt="" onerror="this.style.visibility='hidden'">
             <div class="item-info">
                 <strong>${esc(p.nome)} <span class="badge-tipo">${esc(p.cat)}</span></strong>
-                <span>R$ ${p.preco.toFixed(2)} ${p.limiteGratis > 0 ? `· até ${p.limiteGratis} adicionais grátis` : "· sem personalização"} ${p.destaque ? "· 🔥 destaque" : ""}</span>
+                <span>R$ ${p.preco.toFixed(2)} ${p.limiteGratis > 0 ? `· até ${p.limiteGratis} adicionais grátis` : "· sem personalização"} ${p.destaque ? "· 🔥 destaque" : ""} ${p.tamanhoMontar ? `· opção "${esc(p.tamanhoMontar)}" do Monte do seu jeito` : ""} ${p.queridinho ? "· ⭐ Queridinhos" : ""} ${Array.isArray(p.extrasFixos) && p.extrasFixos.length ? `· inclui ${esc(p.extrasFixos.join(", "))} fixo` : ""} ${Array.isArray(p.gratisPadrao) && p.gratisPadrao.length ? `· padrão: ${esc(p.gratisPadrao.join(", "))}` : ""}</span>
             </div>
             ${pillsStatus("produto", p.id, p.status)}
             <div class="icones-acao">
@@ -131,7 +139,11 @@ escutarProdutos(db, produtos => {
             document.getElementById("prod-desc").value = p.desc;
             document.getElementById("prod-imagens").value = p.imagens.join("\n");
             document.getElementById("prod-limite").value = p.limiteGratis;
+            document.getElementById("prod-tamanho-montar").value = p.tamanhoMontar || "";
             document.getElementById("prod-destaque").checked = p.destaque;
+            document.getElementById("prod-queridinho").checked = !!p.queridinho;
+            document.getElementById("prod-extra-fixo").value = Array.isArray(p.extrasFixos) ? p.extrasFixos.join(", ") : "";
+            document.getElementById("prod-gratis-padrao").value = Array.isArray(p.gratisPadrao) ? p.gratisPadrao.join(", ") : "";
             document.getElementById("prod-customizavel").checked = p.customizavel;
             document.getElementById("prod-cancelar-edicao").style.display = "";
             document.getElementById("prod-salvar").textContent = "Salvar Alterações";
@@ -162,7 +174,11 @@ function limparFormProduto() {
     document.getElementById("prod-desc").value = "";
     document.getElementById("prod-imagens").value = "";
     document.getElementById("prod-limite").value = "0";
+    document.getElementById("prod-tamanho-montar").value = "";
     document.getElementById("prod-destaque").checked = false;
+    document.getElementById("prod-queridinho").checked = false;
+    document.getElementById("prod-extra-fixo").value = "";
+    document.getElementById("prod-gratis-padrao").value = "";
     document.getElementById("prod-customizavel").checked = true;
     document.getElementById("prod-cancelar-edicao").style.display = "none";
     document.getElementById("prod-salvar").textContent = "Salvar Produto";
@@ -233,7 +249,13 @@ document.getElementById("prod-salvar").addEventListener("click", async () => {
         desc: document.getElementById("prod-desc").value.trim(),
         imagens: document.getElementById("prod-imagens").value.split("\n"),
         limiteGratis: document.getElementById("prod-limite").value,
+        tamanhoMontar: document.getElementById("prod-tamanho-montar").value.trim(),
         destaque: document.getElementById("prod-destaque").checked,
+        queridinho: document.getElementById("prod-queridinho").checked,
+        extrasFixos: document.getElementById("prod-extra-fixo").value
+            .split(",").map(s => s.trim()).filter(Boolean),
+        gratisPadrao: document.getElementById("prod-gratis-padrao").value
+            .split(",").map(s => s.trim()).filter(Boolean),
         customizavel: document.getElementById("prod-customizavel").checked
     };
     const idEditando = document.getElementById("prod-editando-id").value || null;
@@ -257,8 +279,11 @@ const listaAdicionaisEl = document.getElementById("lista-adicionais");
 const adTipoSel = document.getElementById("ad-tipo");
 const adPrecoBox = document.getElementById("ad-preco-box");
 
+// 🆕 Antes o preço só aparecia pra adicionais "Pago". Agora todo adicional
+// grátis também pode ter um preço (usado quando o cliente ultrapassa o
+// limite grátis do copo), então o campo fica sempre visível.
 function atualizarVisibilidadePreco() {
-    adPrecoBox.style.display = adTipoSel.value === "extra" ? "" : "none";
+    adPrecoBox.style.display = "";
 }
 adTipoSel.addEventListener("change", atualizarVisibilidadePreco);
 atualizarVisibilidadePreco();
@@ -274,7 +299,7 @@ function linhaAdicional(a, lista, i) {
             </div>
             <div class="item-info">
                 <strong>${esc(a.nome)} <span class="badge-tipo">${a.tipo === "extra" ? "Pago" : "Grátis"}</span> ${a.popular ? "🔥" : ""}</strong>
-                <span>${a.tipo === "extra" ? `+ R$ ${a.preco.toFixed(2)}` : "Escolhido dentro do limite grátis do copo"}</span>
+                <span>${a.tipo === "extra" ? `+ R$ ${a.preco.toFixed(2)}` : `Grátis até o limite do copo · R$ ${a.preco.toFixed(2)} se ultrapassar`}</span>
             </div>
             ${pillsStatus("adicional", a.id, a.status)}
             <div class="icones-acao">
