@@ -1,14 +1,29 @@
 import { db } from "./firebase.js";
+import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+const { nome } = await protegerPagina(["financeiro"]);
+renderizarUsuarioLogado(nome);
 import {
     collection, onSnapshot, addDoc, query, where, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, increment, orderBy, limit, runTransaction, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let totalVendas = 0, totalCustos = 0, totalGastosEmpresa = 0, totalGastosPessoal = 0, totalReceitasExtras = 0, totalTrocosPix = 0, totalGastosDinheiro = 0, qtdVendas = 0;
-let periodo = "dia", filtroNatureza = "todos", unsubscribeGastos = null, graficoDivisao, graficoVendas;
+let periodo = "mes", filtroNatureza = "todos", unsubscribeGastos = null, graficoDivisao, graficoVendas, graficoEvolucao;
+// 📅 Data de referência para os filtros — NÃO depende do relógio do dispositivo
+// depois do carregamento inicial. Trocar essa data (pelo calendário) muda o
+// "dia" consultado e também o "mês" (mês da data escolhida), sem precisar
+// alterar data/hora do celular/computador.
+let dataReferencia = new Date();
+const formatarDataInput = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const ehHoje = d => formatarDataInput(d) === formatarDataInput(new Date());
 let metaAtual = { tipo: "dia", valor: 0 };
 let totalEstoqueAtual = 0;
 let saldoEmprestimoAtual = 0;
+let totalContasReceberAtual = 0;
+// 💳 Taxas cobradas pela maquininha/conta em cada modalidade (em %). Usadas só
+// para calcular quanto se "perde" em taxas — não alteram o saldo do caixa.
+let taxasConfig = { pix: 0.49, debito: 1.18, credito: 2.82 };
 let ultimoPag = { dinheiro: 0, pix: 0, cartao: 0 }, ultimoCat = { insumo: 0, fixo: 0, taxa: 0, outros: 0 }, ultimoGraf = [0, 0, 0, 0, 0, 0, 0], ultimoLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+let ultimasTaxas = { pix: 0, debito: 0, credito: 0, total: 0 };
 
 const CUSTOS = {
     acai: { custoPorGrama: 0.02, gramasPorCopo: 300 }, copo400: 0.58, copo500: 0.63, tampa: 0.40, colher: 0.30, guardanapo: 0.20,
@@ -46,7 +61,7 @@ const ajustarSaldo = async (valor, forma = "dinheiro") => {
     valor = Number(valor.toFixed(2));
 
     if (forma === "pix") novo.pix = Number((novo.pix + valor).toFixed(2));
-    else if (forma === "cartao") novo.cartao = Number((novo.cartao + valor).toFixed(2));
+    else if (forma === "cartao" || forma.startsWith("cartao_")) novo.cartao = Number((novo.cartao + valor).toFixed(2));
     else if (forma === "pessoal" || forma === "aprazo") return; // NÃO ALTERA O CAIXA DA EMPRESA
     // 🐛 CORRIGIDO: antes, quando "forma" não era um dos valores acima (ex: "total"
     // ou vazio), o código somava o MESMO valor em dinheiro E em pix ao mesmo tempo —
@@ -57,6 +72,24 @@ const ajustarSaldo = async (valor, forma = "dinheiro") => {
     novo.total = Number((novo.dinheiro + novo.pix + novo.cartao).toFixed(2));
     await setDoc(doc(db, "configuracoes", "caixa_empresa"), novo, { merge: true });
 };
+
+// ==============================================
+// 💳 TAXAS DE PIX E CARTÃO
+// ==============================================
+async function carregarTaxas() {
+    try {
+        const snap = await getDoc(doc(db, "configuracoes", "taxas"));
+        if (snap.exists()) taxasConfig = { ...taxasConfig, ...snap.data() };
+    } catch { }
+}
+async function salvarTaxas() {
+    taxasConfig.pix = parseFloat(document.getElementById("taxaPixInput").value) || 0;
+    taxasConfig.debito = parseFloat(document.getElementById("taxaDebitoInput").value) || 0;
+    taxasConfig.credito = parseFloat(document.getElementById("taxaCreditoInput").value) || 0;
+    await setDoc(doc(db, "configuracoes", "taxas"), taxasConfig, { merge: true });
+    document.getElementById("modalTaxas").classList.remove("aberto");
+    carregarDados();
+}
 
 // ==============================================
 // 💰 CRÉDITO AUTOMÁTICO DAS VENDAS NO CAIXA
@@ -442,6 +475,74 @@ window.marcarPago = async (id, val, forma) => {
 };
 
 // ==============================================
+// 💰 CONTAS A RECEBER (dinheiro de clientes)
+// ==============================================
+function atualizarCardContasReceber() {
+    const el = document.getElementById("valorContasReceberCard");
+    if (el) el.textContent = moeda(totalContasReceberAtual);
+    const modal = document.getElementById("totalContasReceberModal");
+    if (modal) modal.textContent = moeda(totalContasReceberAtual);
+}
+
+function renderListaContasReceber(itens) {
+    const lista = document.getElementById("listaContasReceber");
+    if (!lista) return;
+    if (!itens.length) {
+        lista.innerHTML = `<div style="text-align:center; color:var(--muted); padding:10px;">Nenhuma conta a receber pendente.</div>`;
+        return;
+    }
+    const formaLabels = { dinheiro: "💵", pix: "⚡", cartao: "💳", cartao_debito: "💳", cartao_credito: "💳" };
+    let html = "";
+    itens.forEach(it => {
+        const forma = it.formaRecebimento || "dinheiro";
+        html += `<div class="item-conta">
+            <span>${formaLabels[forma] || "💵"} ${escapeHTML(it.cliente)} - ${moeda(it.valor)}</span>
+            <span>
+                <button class="btn btn-sucesso" style="padding:4px 8px; font-size:0.75rem;" onclick="marcarRecebido('${it.id}',${it.valor},'${forma}')">Recebido</button>
+                <button class="btn btn-perigo" style="padding:4px 8px; font-size:0.75rem;" onclick="excluirContaReceber('${it.id}')"><i class="fas fa-trash"></i></button>
+            </span>
+        </div>`;
+    });
+    lista.innerHTML = html;
+}
+
+function iniciarListenerContasReceber() {
+    onSnapshot(query(collection(db, "contas_receber"), orderBy("data", "desc")), snap => {
+        let total = 0; const itens = [];
+        snap.forEach(d => {
+            const c = d.data();
+            if (c.recebido) return; // já recebida — não conta nem aparece na lista
+            total += Number(c.valor || 0);
+            itens.push({ id: d.id, ...c });
+        });
+        totalContasReceberAtual = Math.round(total * 100) / 100;
+        atualizarCardContasReceber();
+        renderListaContasReceber(itens);
+    });
+}
+
+async function adicionarContaReceber() {
+    const cliente = document.getElementById("nomeClienteReceber").value.trim();
+    const valor = parseFloat(document.getElementById("valorContaReceber").value);
+    const forma = document.getElementById("formaContaReceber").value;
+    if (!cliente || isNaN(valor) || valor <= 0) return alert("Preencha o nome do cliente e o valor!");
+    await addDoc(collection(db, "contas_receber"), { cliente, valor, formaRecebimento: forma, recebido: false, data: new Date() });
+    document.getElementById("nomeClienteReceber").value = ""; document.getElementById("valorContaReceber").value = "";
+}
+
+window.marcarRecebido = async (id, valor, forma) => {
+    if (!confirm("Confirmar que esse valor já entrou no caixa?")) return;
+    await updateDoc(doc(db, "contas_receber", id), { recebido: true, dataRecebimento: new Date() });
+    await ajustarSaldo(valor, forma || "dinheiro"); // dinheiro do cliente entra no caixa da empresa
+    carregarDados();
+};
+
+window.excluirContaReceber = async (id) => {
+    if (!confirm("Excluir esta conta a receber? Use isso só se o valor não vai mais ser cobrado.")) return;
+    await deleteDoc(doc(db, "contas_receber", id));
+};
+
+// ==============================================
 // 🧾 FECHAMENTO DE CAIXA
 // ==============================================
 async function fecharCaixa() {
@@ -507,6 +608,7 @@ function abrirEdicao(id, d, v, t, natureza, forma) {
     document.getElementById("editar-valor").value = v;
     document.getElementById("editar-tipo").value = t;
     document.getElementById("editar-natureza").value = natureza || "empresa";
+    document.getElementById("editar-forma").value = forma || "dinheiro";
     document.getElementById("modalEditar").classList.add("aberto");
 }
 
@@ -516,26 +618,34 @@ async function salvarEdicao() {
     const v = parseFloat(document.getElementById("editar-valor").value);
     const t = document.getElementById("editar-tipo").value;
     const nat = document.getElementById("editar-natureza").value;
+    const formaNova = document.getElementById("editar-forma").value;
 
     if (!id || !d || isNaN(v) || v <= 0) return;
 
     const ant = (await getDoc(doc(db, "gastos", id))).data();
-    await updateDoc(doc(db, "gastos", id), { descricao: d, valor: v, tipo: t, natureza: nat });
+    const formaAntiga = ant.formaPagamento || "dinheiro";
+    await updateDoc(doc(db, "gastos", id), { descricao: d, valor: v, tipo: t, natureza: nat, formaPagamento: formaNova });
 
-    // A forma de pagamento não é editável neste modal — só descricao/valor/tipo/natureza.
-    // Como o saldo agora reage à FORMA (não à natureza), o ajuste é sempre: desfaz o
-    // valor antigo e aplica o novo valor, usando a mesma forma de pagamento original.
-    let delta = Number(ant.valor || 0) - v;
-    if (delta !== 0) await ajustarSaldo(delta, ant.formaPagamento || "dinheiro");
-
-    // Mantém o empréstimo automático sincronizado (só se a forma de pagamento original era "pessoal")
-    if (ant.formaPagamento === "pessoal") {
-        const antEraLoan = (ant.natureza || "empresa") !== "pessoal";
-        const agoraELoan = nat !== "pessoal";
-        if (antEraLoan && !agoraELoan) await removerEmprestimoDoGasto(id);
-        else if (!antEraLoan && agoraELoan) await criarEmprestimoAutomatico(id, d, v);
-        else if (antEraLoan && agoraELoan) await atualizarEmprestimoDoGasto(id, v, d);
+    // O saldo do caixa reage à FORMA DE PAGAMENTO. Se a forma mudou (ex: era
+    // "Dinheiro" e virou "Pix"), desfaz o valor antigo na forma antiga e aplica
+    // o valor novo na forma nova. Se só o valor mudou (forma igual), ajusta a
+    // diferença na mesma forma de sempre.
+    if (formaAntiga !== formaNova) {
+        await ajustarSaldo(Number(ant.valor || 0), formaAntiga); // desfaz o valor antigo
+        await ajustarSaldo(-v, formaNova); // aplica o valor novo, na forma nova
+    } else {
+        let delta = Number(ant.valor || 0) - v;
+        if (delta !== 0) await ajustarSaldo(delta, formaAntiga);
     }
+
+    // Mantém o empréstimo automático sincronizado. Um gasto vira "empréstimo do
+    // dono pra empresa" quando é de natureza Empresa E pago com Dinheiro Pessoal —
+    // isso pode mudar tanto pela natureza quanto pela forma de pagamento agora.
+    const antEraLoan = (ant.natureza || "empresa") !== "pessoal" && formaAntiga === "pessoal";
+    const agoraELoan = nat !== "pessoal" && formaNova === "pessoal";
+    if (antEraLoan && !agoraELoan) await removerEmprestimoDoGasto(id);
+    else if (!antEraLoan && agoraELoan) await criarEmprestimoAutomatico(id, d, v);
+    else if (antEraLoan && agoraELoan) await atualizarEmprestimoDoGasto(id, v, d);
 
     document.getElementById("modalEditar").classList.remove("aberto");
     carregarDados();
@@ -546,36 +656,71 @@ async function salvarEdicao() {
 // ==============================================
 async function carregarDados() {
     totalVendas = totalCustos = totalGastosEmpresa = totalGastosPessoal = totalReceitasExtras = totalTrocosPix = totalGastosDinheiro = qtdVendas = 0;
-    const pagamentos = { dinheiro: 0, pix: 0, cartao: 0 }, categorias = { insumo: 0, fixo: 0, taxa: 0, outros: 0 };
+    const pagamentos = { dinheiro: 0, pix: 0, cartao: 0, debito: 0, credito: 0 }, categorias = { insumo: 0, fixo: 0, taxa: 0, outros: 0 };
     const lista = document.getElementById("lista-extrato"); lista.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted)">Carregando...</td></tr>`;
     if (unsubscribeGastos) unsubscribeGastos = null;
 
-    let inicio, fim; const hoje = new Date();
+    // 🔧 Usa a data ESCOLHIDA no calendário (dataReferencia) como base — não o
+    // relógio do dispositivo. Assim dá pra consultar qualquer dia/mês passado
+    // sem mexer na data/hora do aparelho.
+    let inicio, fim; const hoje = dataReferencia;
     if (periodo === "dia") { inicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 0, 0, 0); fim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59); }
     else if (periodo === "mes") { inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1, 0, 0, 0); fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59); }
     else { inicio = new Date(2024, 0, 1); fim = new Date(2030, 11, 31); }
 
+    // Rótulo explicando qual período está sendo exibido de fato
+    const rotuloEl = document.getElementById("rotuloPeriodo");
+    if (rotuloEl) {
+        const fmtDia = hoje.toLocaleDateString('pt-BR');
+        const fmtMes = hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        if (periodo === "dia") rotuloEl.textContent = `📅 Mostrando: ${fmtDia}${ehHoje(hoje) ? ' (hoje)' : ''}`;
+        else if (periodo === "mes") rotuloEl.textContent = `📅 Mostrando: ${fmtMes}`;
+        else rotuloEl.textContent = `📅 Mostrando: todo o período`;
+    }
+
     let htmlVendas = "", dadosGraf = [0, 0, 0, 0, 0, 0, 0], diasSem = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    // Saldo líquido POR DIA DO MÊS (índice = dia, ex.: netPorDia[15] = dia 15) —
+    // só é usado quando periodo === "mes", pra montar o gráfico de evolução.
+    const netPorDia = new Array(32).fill(0);
     const pedidos = await getDocs(query(collection(db, "pedidos"), where("status", "==", "concluido"), where("criadoEm", ">=", inicio.getTime()), where("criadoEm", "<=", fim.getTime())));
     pedidos.forEach(doc => {
         const p = doc.data(), val = Number(p.total || 0), custo = calcularCustoPedido(p.itens || []);
         totalVendas += val; totalCustos += custo; qtdVendas++;
         const pg = (p.pagamento || "").toLowerCase();
-        if (pg.includes("dinheiro")) pagamentos.dinheiro += val; else if (pg.includes("pix")) pagamentos.pix += val; else if (pg.includes("cartão") || pg.includes("credito") || pg.includes("debito")) pagamentos.cartao += val;
+        if (pg.includes("dinheiro")) pagamentos.dinheiro += val;
+        else if (pg.includes("pix")) pagamentos.pix += val;
+        else if (pg.includes("débito") || pg.includes("debito")) { pagamentos.cartao += val; pagamentos.debito += val; }
+        else if (pg.includes("crédito") || pg.includes("credito") || pg.includes("cartão") || pg.includes("cartao")) { pagamentos.cartao += val; pagamentos.credito += val; }
         const dt = new Date(p.criadoEm); dadosGraf[dt.getDay()] += val;
-        htmlVendas += `<tr><td>${dt.toLocaleDateString('pt-BR')}</td><td>Venda #${String(p.numero || "").slice(-4)} - ${escapeHTML(p.pagamento)}</td><td class="entrada" style="text-align:right">+ ${moeda(val)}</td><td style="text-align:right">-</td><td class="entrada" style="text-align:right">${moeda(val - custo)}</td><td class="acoes-col">-</td></tr>`;
+        if (periodo === "mes") netPorDia[dt.getDate()] += (val - custo);
+        // 🧑 Nome do cliente: o pedido salva o campo "nome" (e "fone" pro telefone) —
+        // confirmado direto no código que cria o pedido.
+        const nomeCliente = p.nome || "-";
+        htmlVendas += `<tr><td>${dt.toLocaleDateString('pt-BR')}</td><td>${escapeHTML(nomeCliente)}${p.fone ? `<br><span style="color:var(--muted); font-size:.72rem;">${escapeHTML(p.fone)}</span>` : ""}</td><td>Venda #${String(p.numero || "").slice(-4)} - ${escapeHTML(p.pagamento)}</td><td class="entrada" style="text-align:right">+ ${moeda(val)}</td><td style="text-align:right">-</td><td class="entrada" style="text-align:right">${moeda(val - custo)}</td><td class="acoes-col"><button class="btn btn-editar" title="Editar forma de pagamento" onclick="abrirEdicaoPagamento('${doc.id}',${val},'${escapeHTML(p.pagamento)}')"><i class="fas fa-credit-card"></i></button></td></tr>`;
     });
 
     const receitas = await getDocs(query(collection(db, "receitas_extras"), where("data", ">=", inicio), where("data", "<=", fim)));
-    let htmlReceitas = ""; receitas.forEach(doc => { const r = doc.data(); totalReceitasExtras += Number(r.valor); htmlReceitas += `<tr><td>${new Date(r.data.toDate()).toLocaleDateString('pt-BR')}</td><td>Extra: ${escapeHTML(r.descricao)}</td><td class="entrada" style="text-align:right">+ ${moeda(r.valor)}</td><td style="text-align:right">-</td><td class="entrada" style="text-align:right">${moeda(r.valor)}</td><td class="acoes-col"><button class="btn btn-perigo" onclick="excluirRec('${doc.id}',${r.valor},'${r.formaPagamento || "dinheiro"}')"><i class="fas fa-trash"></i></button></td></tr>`; });
+    const receitasForma = { pix: 0, debito: 0, credito: 0 };
+    let htmlReceitas = ""; receitas.forEach(doc => {
+        const r = doc.data(), dtR = new Date(r.data.toDate()), f = r.formaPagamento || "dinheiro";
+        totalReceitasExtras += Number(r.valor); if (periodo === "mes") netPorDia[dtR.getDate()] += Number(r.valor);
+        if (f === "pix") receitasForma.pix += Number(r.valor);
+        else if (f === "cartao_debito") receitasForma.debito += Number(r.valor);
+        else if (f === "cartao_credito" || f === "cartao") receitasForma.credito += Number(r.valor);
+        htmlReceitas += `<tr><td>${dtR.toLocaleDateString('pt-BR')}</td><td>-</td><td>Extra: ${escapeHTML(r.descricao)}</td><td class="entrada" style="text-align:right">+ ${moeda(r.valor)}</td><td style="text-align:right">-</td><td class="entrada" style="text-align:right">${moeda(r.valor)}</td><td class="acoes-col"><button class="btn btn-perigo" onclick="excluirRec('${doc.id}',${r.valor},'${r.formaPagamento || "dinheiro"}')"><i class="fas fa-trash"></i></button></td></tr>`;
+    });
     window.excluirRec = async (id, val, forma) => { await deleteDoc(doc(db, "receitas_extras", id)); await ajustarSaldo(-val, forma || "dinheiro"); carregarDados(); };
 
     const trocos = await getDocs(query(collection(db, "trocos_pix"), where("data", ">=", inicio), where("data", "<=", fim)));
-    let htmlTrocos = ""; trocos.forEach(doc => { const tr = doc.data(); totalTrocosPix += Number(tr.valor); htmlTrocos += `<tr class="linha-troco"><td>${new Date(tr.data.toDate()).toLocaleDateString('pt-BR')}</td><td>${escapeHTML(tr.descricao)} <span class="tag-troco">ajuste</span></td><td style="text-align:right">-</td><td style="text-align:right; color:var(--yellow); font-weight:700;">- ${moeda(tr.valor)} (Pix)</td><td style="text-align:right; color:var(--muted);">retido no caixa físico</td><td class="acoes-col"><button class="btn btn-perigo" onclick="excluirTroco('${doc.id}',${tr.valor})"><i class="fas fa-trash"></i></button></td></tr>`; });
+    let htmlTrocos = ""; trocos.forEach(doc => { const tr = doc.data(); totalTrocosPix += Number(tr.valor); htmlTrocos += `<tr class="linha-troco"><td>${new Date(tr.data.toDate()).toLocaleDateString('pt-BR')}</td><td>-</td><td>${escapeHTML(tr.descricao)} <span class="tag-troco">ajuste</span></td><td style="text-align:right">-</td><td style="text-align:right; color:var(--yellow); font-weight:700;">- ${moeda(tr.valor)} (Pix)</td><td style="text-align:right; color:var(--muted);">retido no caixa físico</td><td class="acoes-col"><button class="btn btn-perigo" onclick="excluirTroco('${doc.id}',${tr.valor})"><i class="fas fa-trash"></i></button></td></tr>`; });
 
+    const netPorDiaBase = netPorDia.slice();
     unsubscribeGastos = onSnapshot(query(collection(db, "gastos"), where("data", ">=", inicio), where("data", "<=", fim)), snap => {
         totalGastosEmpresa = 0; totalGastosPessoal = 0; totalGastosDinheiro = 0;
         const linhas = [];
+        // Como este listener roda de novo a cada mudança, zera a parte de gastos
+        // do netPorDia antes de recontar (vendas/receitas já foram somadas acima).
+        for (let i = 0; i < netPorDia.length; i++) netPorDia[i] = netPorDiaBase[i];
         snap.forEach(doc => {
             const g = doc.data(), v = Number(g.valor || 0), nat = g.natureza || "empresa", forma = g.formaPagamento || "dinheiro";
             if (nat === "pessoal") totalGastosPessoal += v; else { totalGastosEmpresa += v; categorias[g.tipo || "outros"] += v; }
@@ -584,6 +729,7 @@ async function carregarDados() {
             // Físico Esperado" independente da natureza. Só gasto pago com forma "pessoal"
             // (dinheiro do seu próprio bolso) não mexe no caixa físico da empresa.
             if (forma === "dinheiro") totalGastosDinheiro += v;
+            if (periodo === "mes" && nat !== "pessoal" && g.data) netPorDia[g.data.toDate().getDate()] -= v;
             linhas.push({ id: doc.id, g, v, nat, forma });
         });
         const filtradas = filtroNatureza === "todos" ? linhas : linhas.filter(l => l.nat === filtroNatureza);
@@ -592,18 +738,92 @@ async function carregarDados() {
             const tagClasse = nat === "pessoal" ? "tag-pessoal" : "tag-empresa";
             const tagTexto = nat === "pessoal" ? "Pessoal" : "Empresa";
             const linhaClasse = nat === "pessoal" ? "linha-pessoal" : "";
-            htmlGastos += `<tr class="${linhaClasse}"><td>${g.data ? new Date(g.data.toDate()).toLocaleDateString('pt-BR') : "-"}</td><td>${escapeHTML(g.descricao)} <span class="${tagClasse}">${tagTexto}</span></td><td style="text-align:right">-</td><td class="saida" style="text-align:right">- ${moeda(v)}</td><td class="saida" style="text-align:right">- ${moeda(v)}</td><td class="acoes-col"><button class="btn btn-editar" onclick="abrirEdicao('${id}','${escapeHTML(g.descricao)}',${v},'${g.tipo}','${nat}','${forma}')"><i class="fas fa-pen"></i></button><button class="btn btn-perigo" onclick="excluirGasto('${id}',${v},'${nat}','${forma}')"><i class="fas fa-trash"></i></button></td></tr>`;
+            htmlGastos += `<tr class="${linhaClasse}"><td>${g.data ? new Date(g.data.toDate()).toLocaleDateString('pt-BR') : "-"}</td><td>-</td><td>${escapeHTML(g.descricao)} <span class="${tagClasse}">${tagTexto}</span></td><td style="text-align:right">-</td><td class="saida" style="text-align:right">- ${moeda(v)}</td><td class="saida" style="text-align:right">- ${moeda(v)}</td><td class="acoes-col"><button class="btn btn-editar" onclick="abrirEdicao('${id}','${escapeHTML(g.descricao)}',${v},'${g.tipo}','${nat}','${forma}')"><i class="fas fa-pen"></i></button><button class="btn btn-perigo" onclick="excluirGasto('${id}',${v},'${nat}','${forma}')"><i class="fas fa-trash"></i></button></td></tr>`;
         });
-        lista.innerHTML = htmlVendas + htmlReceitas + htmlTrocos + htmlGastos || `<tr><td colspan="6" style="text-align:center">Sem lançamentos.</td></tr>`;
+        lista.innerHTML = htmlVendas + htmlReceitas + htmlTrocos + htmlGastos || `<tr><td colspan="7" style="text-align:center">Sem lançamentos.</td></tr>`;
         ultimoPag = pagamentos; ultimoCat = categorias; ultimoGraf = dadosGraf; ultimoLabels = diasSem;
-        atualizarTela(pagamentos, categorias, dadosGraf, diasSem);
+        atualizarTela(pagamentos, categorias, dadosGraf, diasSem, netPorDia, fim.getDate(), receitasForma);
     });
+}
+
+// ==============================================
+// 📈 COMPARATIVO COM O PERÍODO ANTERIOR
+// ==============================================
+// Busca (uma vez, sem listener) os totais do dia/mês anterior ao selecionado,
+// só pra comparar. Não existe "anterior" pra "Todo o Período".
+async function calcularTotaisPeriodoAnterior(periodoAtual, refAtual) {
+    let inicio, fim;
+    if (periodoAtual === "dia") {
+        const ontem = new Date(refAtual); ontem.setDate(ontem.getDate() - 1);
+        inicio = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 0, 0, 0);
+        fim = new Date(ontem.getFullYear(), ontem.getMonth(), ontem.getDate(), 23, 59, 59);
+    } else if (periodoAtual === "mes") {
+        inicio = new Date(refAtual.getFullYear(), refAtual.getMonth() - 1, 1, 0, 0, 0);
+        fim = new Date(refAtual.getFullYear(), refAtual.getMonth(), 0, 23, 59, 59);
+    } else {
+        return null;
+    }
+    let vendas = 0, custos = 0, receitasExtra = 0, gastosEmpresa = 0;
+    try {
+        const pedidosSnap = await getDocs(query(collection(db, "pedidos"), where("status", "==", "concluido"), where("criadoEm", ">=", inicio.getTime()), where("criadoEm", "<=", fim.getTime())));
+        pedidosSnap.forEach(d => { const p = d.data(), v = Number(p.total || 0); vendas += v; custos += calcularCustoPedido(p.itens || []); });
+        const receitasSnap = await getDocs(query(collection(db, "receitas_extras"), where("data", ">=", inicio), where("data", "<=", fim)));
+        receitasSnap.forEach(d => receitasExtra += Number(d.data().valor || 0));
+        const gastosSnap = await getDocs(query(collection(db, "gastos"), where("data", ">=", inicio), where("data", "<=", fim)));
+        gastosSnap.forEach(d => { const g = d.data(); if ((g.natureza || "empresa") !== "pessoal") gastosEmpresa += Number(g.valor || 0); });
+    } catch (e) { console.error("Erro ao buscar período anterior", e); return null; }
+    return { vendas, lucroLiq: Number((vendas - custos + receitasExtra - gastosEmpresa).toFixed(2)) };
+}
+
+// Monta o "↑12% vs ontem" que aparece do lado dos cards
+function variacaoHTML(atual, anterior, rotulo) {
+    if (anterior === null || anterior === undefined) return "";
+    if (anterior === 0) return atual > 0 ? ` <span style="color:var(--green); font-size:.72rem; font-weight:700;">novo vs ${rotulo}</span>` : "";
+    const diff = ((atual - anterior) / Math.abs(anterior)) * 100;
+    const seta = diff >= 0 ? "▲" : "▼";
+    const cor = diff >= 0 ? "var(--green)" : "var(--red)";
+    return ` <span style="color:${cor}; font-size:.72rem; font-weight:700;">${seta} ${Math.abs(diff).toFixed(0)}% vs ${rotulo}</span>`;
+}
+
+// ==============================================
+// 💳 EDITAR FORMA DE PAGAMENTO DE UMA VENDA
+// ==============================================
+function detectarFormaPedido(pagamentoStr) {
+    const pg = (pagamentoStr || "").toLowerCase();
+    if (pg.includes("pix")) return "pix";
+    if (pg.includes("débito") || pg.includes("debito")) return "cartao_debito";
+    if (pg.includes("crédito") || pg.includes("credito") || pg.includes("cartão") || pg.includes("cartao")) return "cartao_credito";
+    return "dinheiro";
+}
+function abrirEdicaoPagamento(id, valor, pagamentoAtual) {
+    document.getElementById("editarPag-id").value = id;
+    document.getElementById("editarPag-valor").value = valor;
+    document.getElementById("editarPag-forma").value = detectarFormaPedido(pagamentoAtual);
+    document.getElementById("modalEditarPagamento").classList.add("aberto");
+}
+async function salvarEdicaoPagamento() {
+    const id = document.getElementById("editarPag-id").value;
+    const valor = Number(document.getElementById("editarPag-valor").value);
+    const novaForma = document.getElementById("editarPag-forma").value;
+    if (!id) return;
+    const ref = doc(db, "pedidos", id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return;
+    const antigaForma = detectarFormaPedido(snap.data().pagamento);
+    document.getElementById("modalEditarPagamento").classList.remove("aberto");
+    if (antigaForma === novaForma) return;
+    const rotulos = { dinheiro: "Dinheiro", pix: "Pix", cartao_debito: "Cartão Débito", cartao_credito: "Cartão Crédito" };
+    await updateDoc(ref, { pagamento: rotulos[novaForma] });
+    // Desfaz o valor da forma antiga e credita na forma nova, sem duplicar nem perder dinheiro do caixa
+    await ajustarSaldo(-valor, antigaForma);
+    await ajustarSaldo(valor, novaForma);
+    carregarDados();
 }
 
 // ==============================================
 // 🖥️ ATUALIZAÇÃO DA TELA
 // ==============================================
-async function atualizarTela(pag, cat, dadosGraf, labels) {
+async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMes, receitasForma = { pix: 0, debito: 0, credito: 0 }) {
     const lucroOp = Number((totalVendas - totalCustos).toFixed(2));
     const receitaTotal = totalVendas + totalReceitasExtras;
     const lucroLiq = Number((lucroOp + totalReceitasExtras - totalGastosEmpresa).toFixed(2));
@@ -612,17 +832,56 @@ async function atualizarTela(pag, cat, dadosGraf, labels) {
     const saldo = await saldoCaixa();
     const dinheiroEsperado = Number((pag.dinheiro + totalTrocosPix - totalGastosDinheiro).toFixed(2));
 
+    // 💳 Quanto foi recebido em cada modalidade (vendas + receitas extras) e
+    // quanto disso foi "perdido" em taxa da maquininha/conta, no período.
+    const baseTaxaPix = Number((pag.pix + receitasForma.pix).toFixed(2));
+    const baseTaxaDebito = Number((pag.debito + receitasForma.debito).toFixed(2));
+    const baseTaxaCredito = Number((pag.credito + receitasForma.credito).toFixed(2));
+    const taxaPixValor = Number((baseTaxaPix * (taxasConfig.pix / 100)).toFixed(2));
+    const taxaDebitoValor = Number((baseTaxaDebito * (taxasConfig.debito / 100)).toFixed(2));
+    const taxaCreditoValor = Number((baseTaxaCredito * (taxasConfig.credito / 100)).toFixed(2));
+    const taxaTotalValor = Number((taxaPixValor + taxaDebitoValor + taxaCreditoValor).toFixed(2));
+
+    // 📈 Comparativo com o período anterior (dia anterior / mês anterior)
+    const rotuloAnterior = periodo === "dia" ? "ontem" : periodo === "mes" ? "mês anterior" : "";
+    const comparativo = await calcularTotaisPeriodoAnterior(periodo, dataReferencia);
+    const badgeVendas = comparativo ? variacaoHTML(totalVendas, comparativo.vendas, rotuloAnterior) : "";
+    const badgeSaldo = comparativo ? variacaoHTML(lucroLiq, comparativo.lucroLiq, rotuloAnterior) : "";
+
     const cards = document.getElementById("cards-principais");
     cards.innerHTML = `
-        <div class="card-resumo"><div class="rotulo">Total Vendas</div><div class="valor">${moeda(totalVendas)}</div><div class="destaque">${qtdVendas} pedidos</div></div>
+        <div class="card-resumo"><div class="rotulo">Total Vendas</div><div class="valor">${moeda(totalVendas)}</div><div class="destaque">${qtdVendas} pedidos${badgeVendas}</div></div>
         <div class="card-resumo"><div class="rotulo">Receitas Extras</div><div class="valor" style="color:var(--green)">${moeda(totalReceitasExtras)}</div></div>
+        <div class="card-resumo" style="border-color:var(--green);"><div class="rotulo">A Receber</div><div class="valor" id="valorContasReceberCard" style="color:var(--green)">${moeda(totalContasReceberAtual)}</div><div class="destaque">de clientes</div></div>
         <div class="card-resumo"><div class="rotulo">Custos Produção</div><div class="valor" style="color:var(--yellow)">${moeda(totalCustos)}</div></div>
         <div class="card-resumo"><div class="rotulo">Gastos Empresa</div><div class="valor" style="color:var(--red)">${moeda(totalGastosEmpresa)}</div></div>
         <div class="card-resumo" style="border-color:#9333ea;"><div class="rotulo">Gastos Pessoais</div><div class="valor" style="color:#d8b4fe">${moeda(totalGastosPessoal)}</div><div class="destaque">não afeta o lucro</div></div>
         <div class="card-resumo" style="border-color:#9333ea;"><div class="rotulo">Empresa te deve</div><div class="valor" id="valorEmprestimoCard" style="color:#d8b4fe">${moeda(saldoEmprestimoAtual)}</div><div class="destaque" id="destaqueEmprestimoCard">4x de ${moeda(saldoEmprestimoAtual / 4)}</div></div>
         <div class="card-resumo" style="border-color:var(--yellow);"><div class="rotulo">Estoque Parado</div><div class="valor" id="valorEstoqueCard" style="color:var(--yellow)">${moeda(totalEstoqueAtual)}</div><div class="destaque">dinheiro em mercadoria</div></div>
-        <div class="card-resumo ${lucroLiq < 0 ? 'alerta-negativo' : ''}"><div class="rotulo">Saldo Final (empresa)</div><div class="valor" style="color:${lucroLiq < 0 ? 'var(--red)' : 'var(--green)'}">${moeda(lucroLiq)}</div><div class="destaque">Margem ${margem}% | Ticket ${moeda(ticket)}</div></div>
+        <div class="card-resumo ${lucroLiq < 0 ? 'alerta-negativo' : ''}"><div class="rotulo">Saldo Final (empresa)</div><div class="valor" style="color:${lucroLiq < 0 ? 'var(--red)' : 'var(--green)'}">${moeda(lucroLiq)}</div><div class="destaque">Margem ${margem}% | Ticket ${moeda(ticket)}${badgeSaldo}</div></div>
     `;
+
+    // 🔝 Mini resumo fixo na topbar
+    const miniCaixa = document.getElementById("miniSaldoCaixa"), miniPeriodo = document.getElementById("miniSaldoPeriodo"), miniRotulo = document.getElementById("miniRotuloPeriodo");
+    if (miniCaixa) miniCaixa.textContent = moeda(saldo.total);
+    if (miniPeriodo) { miniPeriodo.textContent = moeda(lucroLiq); miniPeriodo.style.color = lucroLiq < 0 ? "var(--red)" : "var(--green)"; }
+    if (miniRotulo) miniRotulo.textContent = periodo === "dia" ? (ehHoje(dataReferencia) ? "hoje" : dataReferencia.toLocaleDateString('pt-BR')) : periodo === "mes" ? "no mês" : "no período";
+
+    // 📈 Gráfico de evolução diária — só faz sentido olhando um mês inteiro
+    const cardEvolucao = document.getElementById("cardEvolucaoMes");
+    if (periodo === "mes" && netPorDia && ultimoDiaMes) {
+        cardEvolucao.style.display = "";
+        const labelsDias = [], saldoAcumulado = []; let acumulado = 0;
+        for (let d = 1; d <= ultimoDiaMes; d++) { acumulado += netPorDia[d] || 0; labelsDias.push(String(d)); saldoAcumulado.push(Number(acumulado.toFixed(2))); }
+        if (graficoEvolucao) graficoEvolucao.destroy();
+        graficoEvolucao = new Chart(document.getElementById("graficoEvolucaoMes"), {
+            type: "line",
+            data: { labels: labelsDias, datasets: [{ label: "Saldo acumulado R$", data: saldoAcumulado, borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.15)", fill: true, tension: .3, pointRadius: 2 }] },
+            options: { plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: "Dia do mês" } } } }
+        });
+    } else {
+        cardEvolucao.style.display = "none";
+    }
 
     document.getElementById("resumo-extra").innerHTML = `
         <div class="cards-resumo" style="margin-top:15px;">
@@ -633,12 +892,21 @@ async function atualizarTela(pag, cat, dadosGraf, labels) {
             <div class="card-resumo" style="border-color:var(--red);"><div class="rotulo">Gastos em Dinheiro</div><div class="valor" style="color:var(--red)">${moeda(totalGastosDinheiro)}</div><div class="destaque">saiu do caixa físico</div></div>
             <div class="card-resumo" style="border-color:var(--yellow);"><div class="rotulo">Dinheiro Físico Esperado</div><div class="valor" style="color:var(--yellow)">${moeda(dinheiroEsperado)}</div><div class="destaque">vendas + troco Pix − gastos em dinheiro</div></div>
         </div>
+        <p style="font-size:0.8rem; color:var(--muted); margin:18px 0 8px;"><i class="fas fa-percent"></i> Quanto foi perdido em taxas no período (Pix ${taxasConfig.pix}% | Débito ${taxasConfig.debito}% | Crédito ${taxasConfig.credito}% — <a href="#" id="linkAjustarTaxas" style="color:var(--primary);">ajustar taxas</a>)</p>
+        <div class="cards-resumo">
+            <div class="card-resumo" style="border-color:#00b1ea;"><div class="rotulo">Taxa Pix</div><div class="valor" style="color:var(--red)">- ${moeda(taxaPixValor)}</div><div class="destaque">sobre ${moeda(baseTaxaPix)} recebidos</div></div>
+            <div class="card-resumo" style="border-color:var(--primary);"><div class="rotulo">Taxa Cartão Débito</div><div class="valor" style="color:var(--red)">- ${moeda(taxaDebitoValor)}</div><div class="destaque">sobre ${moeda(baseTaxaDebito)} recebidos</div></div>
+            <div class="card-resumo" style="border-color:var(--berry);"><div class="rotulo">Taxa Cartão Crédito</div><div class="valor" style="color:var(--red)">- ${moeda(taxaCreditoValor)}</div><div class="destaque">sobre ${moeda(baseTaxaCredito)} recebidos</div></div>
+            <div class="card-resumo alerta-negativo"><div class="rotulo">Total Perdido em Taxas</div><div class="valor" style="color:var(--red)">- ${moeda(taxaTotalValor)}</div><div class="destaque">no período selecionado</div></div>
+        </div>
         <p style="font-size:0.8rem; color:var(--muted); margin:18px 0 8px;"><i class="fas fa-wallet"></i> Saldo real do caixa (atualiza sozinho a cada venda, gasto ou compra de estoque — de qualquer período)</p>
         <div class="cards-resumo">
             <div class="card-resumo" style="border-color:var(--primary);"><div class="rotulo">Saldo Dinheiro</div><div class="valor" style="color:var(--primary)">${moeda(saldo.dinheiro)}</div></div>
             <div class="card-resumo" style="border-color:#00b1ea;"><div class="rotulo"><i class="fas fa-qrcode"></i> Conta Mercado Pago</div><div class="valor" style="color:#00b1ea">${moeda(saldo.pix + saldo.cartao)}</div><div class="destaque">Pix: ${moeda(saldo.pix)} + Cartão: ${moeda(saldo.cartao)}</div></div>
             <div class="card-resumo" style="border-color:var(--primary);"><div class="rotulo">Saldo Caixa Total</div><div class="valor" style="color:var(--primary)">${moeda(saldo.total)}</div></div>
         </div>`;
+    document.getElementById("linkAjustarTaxas")?.addEventListener("click", e => { e.preventDefault(); document.getElementById("btnTaxas")?.click(); });
+    ultimasTaxas = { pix: taxaPixValor, debito: taxaDebitoValor, credito: taxaCreditoValor, total: taxaTotalValor };
 
     document.getElementById("salario").textContent = moeda(lucroOp * 0.40);
     document.getElementById("caixa").textContent = moeda(lucroOp * 0.35);
@@ -663,12 +931,17 @@ async function atualizarTela(pag, cat, dadosGraf, labels) {
 }
 
 const exportar = () => {
+    const rotuloExport = periodo === 'dia' ? `Dia ${dataReferencia.toLocaleDateString('pt-BR')}`
+        : periodo === 'mes' ? `Mês de ${dataReferencia.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`
+            : 'Todo o Período';
     const txt = `GESTÃO FINANCEIRA - NOVA ORIGEM AÇAÍ
-Período: ${periodo === 'dia' ? 'Hoje' : periodo === 'mes' ? 'Este Mês' : 'Todo o Período'}
+Período: ${rotuloExport}
 Vendas: ${moeda(totalVendas)} | Extras: ${moeda(totalReceitasExtras)} | Custos: ${moeda(totalCustos)}
 Gastos Empresa: ${moeda(totalGastosEmpresa)} | Gastos Pessoais: ${moeda(totalGastosPessoal)}
 Troco enviado via Pix: ${moeda(totalTrocosPix)} | Estoque Parado: ${moeda(totalEstoqueAtual)}
 Empresa te deve (empréstimo pessoal): ${moeda(saldoEmprestimoAtual)} — 4x de ${moeda(saldoEmprestimoAtual / 4)}
+A Receber de clientes: ${moeda(totalContasReceberAtual)}
+Taxas pagas — Pix: ${moeda(ultimasTaxas.pix)} | Débito: ${moeda(ultimasTaxas.debito)} | Crédito: ${moeda(ultimasTaxas.credito)} | Total: ${moeda(ultimasTaxas.total)}
 Saldo Final: ${moeda(totalVendas + totalReceitasExtras - totalCustos - totalGastosEmpresa)}`;
     navigator.clipboard.writeText(txt); alert("✅ Resumo copiado!");
 };
@@ -677,7 +950,9 @@ Saldo Final: ${moeda(totalVendas + totalReceitasExtras - totalCustos - totalGast
 // 🚀 INICIALIZAÇÃO GERAL
 // ==============================================
 document.addEventListener("DOMContentLoaded", async () => {
-    await carregarMeta(); carregarContas(); iniciarListenerEstoque(); iniciarListenerEmprestimos(); monitorarVendasCaixa();
+    await protegerPagina(["financeiro"]);
+
+    await carregarMeta(); await carregarTaxas(); carregarContas(); iniciarListenerEstoque(); iniciarListenerEmprestimos(); iniciarListenerContasReceber(); monitorarVendasCaixa();
 
     document.getElementById("btnAjustarCaixa").addEventListener("click", async () => {
         const saldoAtual = await saldoCaixa();
@@ -688,8 +963,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     document.getElementById("btnSalvarAjusteCaixa").addEventListener("click", ajustarCaixaManualmente);
     document.getElementById("btnRecalcularCaixa").addEventListener("click", recalcularCaixaAutomatico);
+    // Calendário: inicia mostrando a data de hoje, sem precisar mudar nada no aparelho
+    const inputData = document.getElementById("filtro-data");
+    inputData.value = formatarDataInput(dataReferencia);
     document.getElementById("filtro-periodo").addEventListener("change", e => { periodo = e.target.value; carregarDados(); });
     document.getElementById("filtro-natureza").addEventListener("change", e => { filtroNatureza = e.target.value; carregarDados(); });
+    inputData.addEventListener("change", e => {
+        if (!e.target.value) return;
+        const [ano, mes, dia] = e.target.value.split("-").map(Number);
+        dataReferencia = new Date(ano, mes - 1, dia);
+        // Escolher uma data no calendário só faz sentido pra "Dia" ou "Mês" —
+        // se estava em "Todo o Período", muda automaticamente pra "Dia".
+        if (periodo === "todos") { periodo = "dia"; document.getElementById("filtro-periodo").value = "dia"; }
+        carregarDados();
+    });
+    document.getElementById("btnHoje").addEventListener("click", () => {
+        dataReferencia = new Date();
+        inputData.value = formatarDataInput(dataReferencia);
+        carregarDados();
+    });
     document.getElementById("btnLancar").addEventListener("click", registrarGasto);
     document.getElementById("btnExportar").addEventListener("click", exportar);
     document.getElementById("btnFecharCaixa").addEventListener("click", async () => {
@@ -713,11 +1005,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnGerenciarEstoque").addEventListener("click", () => window.location.href = "estoque.html");
     document.getElementById("btnEmprestimos").addEventListener("click", () => document.getElementById("modalEmprestimos").classList.add("aberto"));
     document.getElementById("btnSalvarDevolucao").addEventListener("click", registrarDevolucao);
+    document.getElementById("btnContasReceber").addEventListener("click", () => document.getElementById("modalContasReceber").classList.add("aberto"));
+    document.getElementById("btnAddContaReceber").addEventListener("click", adicionarContaReceber);
+    document.getElementById("btnTaxas").addEventListener("click", () => {
+        document.getElementById("taxaPixInput").value = taxasConfig.pix;
+        document.getElementById("taxaDebitoInput").value = taxasConfig.debito;
+        document.getElementById("taxaCreditoInput").value = taxasConfig.credito;
+        document.getElementById("modalTaxas").classList.add("aberto");
+    });
+    document.getElementById("btnSalvarTaxas").addEventListener("click", salvarTaxas);
 
-    [document.getElementById("btnCancelar"), document.getElementById("btnCancelarRec"), document.getElementById("btnCancelarFechar"), document.getElementById("btnCancelarContas"), document.getElementById("btnCancelarMeta"), document.getElementById("btnCancelarTroco"), document.getElementById("btnCancelarEstoque"), document.getElementById("btnCancelarAjusteCaixa"), document.getElementById("btnCancelarEmprestimos")].forEach(b => b?.addEventListener("click", e => e.target.closest(".modal").classList.remove("aberto")));
+    [document.getElementById("btnCancelar"), document.getElementById("btnCancelarRec"), document.getElementById("btnCancelarFechar"), document.getElementById("btnCancelarContas"), document.getElementById("btnCancelarMeta"), document.getElementById("btnCancelarTroco"), document.getElementById("btnCancelarEstoque"), document.getElementById("btnCancelarAjusteCaixa"), document.getElementById("btnCancelarEmprestimos"), document.getElementById("btnCancelarContasReceber"), document.getElementById("btnCancelarTaxas")].forEach(b => b?.addEventListener("click", e => e.target.closest(".modal").classList.remove("aberto")));
 
     document.getElementById("btnSalvarEdicao").addEventListener("click", salvarEdicao);
     window.abrirEdicao = abrirEdicao; window.excluirGasto = excluirGasto;
+    document.getElementById("btnSalvarEditarPag").addEventListener("click", salvarEdicaoPagamento);
+    document.getElementById("btnCancelarEditarPag").addEventListener("click", () => document.getElementById("modalEditarPagamento").classList.remove("aberto"));
+    window.abrirEdicaoPagamento = abrirEdicaoPagamento;
+
+    // Menu "Mais ações" (dropdown) — agrupa os botões usados com menos frequência
+    const menuMaisLista = document.getElementById("menuMaisLista");
+    document.getElementById("btnMaisAcoes").addEventListener("click", e => { e.stopPropagation(); menuMaisLista.classList.toggle("aberto"); });
+    menuMaisLista.addEventListener("click", () => menuMaisLista.classList.remove("aberto"));
+    document.addEventListener("click", e => { if (!e.target.closest("#menuMais")) menuMaisLista.classList.remove("aberto"); });
 
     carregarDados();
 });
