@@ -1,4 +1,10 @@
 import { db } from "./firebase.js";
+import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+
+protegerPagina(["entregador"]).then(({ nome }) => {
+    renderizarUsuarioLogado(nome);
+    iniciarPainelEntregador();
+});
 
 console.log("DB:", db);
 import {
@@ -329,4 +335,6 @@ Esperamos você novamente! 🚀
 
 // ======================================
 
-iniciarPainelEntregador();
+protegerPagina(["entregador"]).then(() => {
+    iniciarPainelEntregador();
+});
