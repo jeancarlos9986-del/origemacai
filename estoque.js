@@ -1,4 +1,13 @@
 import { db } from "./firebase.js";
+import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+
+protegerPagina(["estoque"]).then(({ nome }) => {
+    renderizarUsuarioLogado(nome);
+    carregarSel();
+    atualizarTudo();
+    monitorar();
+    atualizarCamposMovimentacao();
+});
 import {
     collection, addDoc, getDocs, getDoc, updateDoc, deleteDoc, doc, setDoc, onSnapshot, query, where, runTransaction, orderBy, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -435,8 +444,8 @@ function tabela(itens) {
         const restantes = diasRestantes(i);
         const diasRestTxt = restantes === null ? "—"
             : restantes <= 3 ? `<span style="color:var(--red); font-weight:700;">${restantes}d</span>`
-            : restantes <= 7 ? `<span style="color:var(--yellow); font-weight:700;">${restantes}d</span>`
-            : `${restantes}d`;
+                : restantes <= 7 ? `<span style="color:var(--yellow); font-weight:700;">${restantes}d</span>`
+                    : `${restantes}d`;
 
         const parado = diasSemMovimento(i);
         const badgeParado = (parado !== null && parado >= DIAS_PARADO_LIMITE && q > 0)
@@ -627,7 +636,7 @@ document.getElementById("btn-salvar").addEventListener("click", async () => {
         alert(lancarGasto
             ? (formaPagamento === "aprazo" ? "✅ Cadastrado! Lançado como conta a pagar (a prazo)."
                 : formaPagamento === "pessoal" ? "✅ Cadastrado! Lançado como empréstimo pessoal no financeiro (não descontou do caixa da empresa)."
-                : "✅ Cadastrado e descontado do caixa (" + formaPagamento + ")!")
+                    : "✅ Cadastrado e descontado do caixa (" + formaPagamento + ")!")
             : "✅ Cadastrado (sem lançar gasto — só a contagem do estoque).");
         atualizarTudo();
         carregarSel();
@@ -738,7 +747,7 @@ document.getElementById("btn-mov").addEventListener("click", async () => {
         alert(tipo === "entrada" && valorCompra > 0
             ? (formaPagamento === "aprazo" ? "✅ Registrado! Lançado como conta a pagar (a prazo)."
                 : formaPagamento === "pessoal" ? "✅ Registrado! Lançado como empréstimo pessoal no financeiro (não descontou do caixa da empresa)."
-                : `✅ Registrado e descontado do caixa (${formaPagamento})!`)
+                    : `✅ Registrado e descontado do caixa (${formaPagamento})!`)
             : "✅ Registrado!");
         atualizarTudo();
     } catch (e) {
@@ -966,9 +975,11 @@ document.getElementById("edit-salvar")?.addEventListener("click", salvarEdicaoIt
 document.getElementById("edit-cancelar")?.addEventListener("click", fecharModalEdicao);
 
 document.addEventListener("DOMContentLoaded", () => {
-    carregarSel();
-    atualizarTudo();
-    monitorar();
-    atualizarCamposMovimentacao(); // estado inicial certo dos campos de preço/pagamento
+    protegerPagina(["estoque"]).then(() => {
+        carregarSel();
+        atualizarTudo();
+        monitorar();
+        atualizarCamposMovimentacao(); // estado inicial certo dos campos de preço/pagamento
+    });
 });
 
