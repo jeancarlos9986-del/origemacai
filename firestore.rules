@@ -1,0 +1,120 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------
+    // Helpers
+    // ------------------------------------------
+    function logado() {
+      return request.auth != null;
+    }
+
+    function meuUsuario() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function meuPerfil() {
+      return meuUsuario().perfil;
+    }
+
+    function contaAtiva() {
+      return logado() && meuUsuario().ativo != false;
+    }
+
+    function temPerfil(perfis) {
+      return contaAtiva() && (meuPerfil() == "admin" || meuPerfil() in perfis);
+    }
+
+    // ------------------------------------------
+    // usuarios — controla quem é quem.
+    // Ninguém escreve pelo app: só você, direto no Console
+    // (evita que alguém se autopromova a admin).
+    // ------------------------------------------
+    match /usuarios/{uid} {
+      allow read: if logado() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ------------------------------------------
+    // pedidos — clientes criam sem login (fluxo de compra atual).
+    // Leitura/edição só pra quem trabalha com pedidos.
+    // ------------------------------------------
+    match /pedidos/{pedidoId} {
+      allow create: if true;
+      allow read, update: if temPerfil(["cardapio", "cozinha", "entregador", "estoque", "financeiro"]);
+      allow delete: if temPerfil([]);
+    }
+
+    // ------------------------------------------
+    // cardápio — leitura pública (site do cliente precisa ler sem login),
+    // escrita só pra quem administra o cardápio.
+    // ------------------------------------------
+    match /cardapio_produtos/{itemId} {
+      allow read: if true;
+      allow write: if temPerfil(["cardapio"]);
+    }
+
+    match /cardapio_adicionais/{itemId} {
+      allow read: if true;
+      allow write: if temPerfil(["cardapio"]);
+    }
+
+    // ------------------------------------------
+    // estoque
+    // ------------------------------------------
+    match /estoque/{itemId} {
+      allow read, write: if temPerfil(["estoque", "financeiro"]);
+    }
+
+    match /movimentacoes/{itemId} {
+      allow read, write: if temPerfil(["estoque"]);
+    }
+
+    // ------------------------------------------
+    // financeiro — estoque.js também grava aqui (compras geram
+    // contas a pagar/gastos), por isso "estoque" também tem acesso.
+    // ------------------------------------------
+    match /contas_pagar/{itemId} {
+      allow read, write: if temPerfil(["financeiro", "estoque"]);
+    }
+
+    match /contas_receber/{itemId} {
+      allow read, write: if temPerfil(["financeiro"]);
+    }
+
+    match /emprestimos/{itemId} {
+      allow read, write: if temPerfil(["financeiro", "estoque"]);
+    }
+
+    match /gastos/{itemId} {
+      allow read, write: if temPerfil(["financeiro", "estoque"]);
+    }
+
+    match /fechamento_caixa/{itemId} {
+      allow read, write: if temPerfil(["financeiro"]);
+    }
+
+    match /receitas_extras/{itemId} {
+      allow read, write: if temPerfil(["financeiro"]);
+    }
+
+    match /trocos_pix/{itemId} {
+      allow read, write: if temPerfil(["financeiro"]);
+    }
+
+    match /configuracoes/{itemId} {
+      allow read: if temPerfil(["estoque", "financeiro", "cardapio"]);
+      allow write: if temPerfil(["estoque", "financeiro"]);
+    }
+
+    // ------------------------------------------
+    // Qualquer coisa fora do mapeado acima: bloqueado por padrão.
+    // Se aparecer erro de permissão numa coleção que esqueci de
+    // listar, me avisa o nome dela que eu adiciono aqui.
+    // ------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

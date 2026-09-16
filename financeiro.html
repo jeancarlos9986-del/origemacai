@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Financeira Completa - Nova Origem Açaí</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #08080c;
+            --bg-glow: rgba(139, 92, 246, .16);
+            --surface: #15151d;
+            --surface-2: #1c1c27;
+            --surface-3: #262633;
+            --primary: #8b5cf6;
+            --primary-dark: #6d28d9;
+            --primary-soft: rgba(139, 92, 246, .14);
+            --berry: #ec4899;
+            --berry-soft: rgba(236, 72, 153, .14);
+            --green: #10b981;
+            --green-soft: rgba(16, 185, 129, .12);
+            --red: #f43f5e;
+            --red-soft: rgba(244, 63, 94, .12);
+            --yellow: #f59e0b;
+            --yellow-soft: rgba(245, 158, 11, .12);
+            --text: #f5f5f7;
+            --muted: #9697a6;
+            --border: rgba(255, 255, 255, .08);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --font: 'Plus Jakarta Sans', sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        body {
+            font-family: var(--font);
+            background:
+                radial-gradient(circle at 15% 0%, var(--bg-glow), transparent 45%),
+                radial-gradient(circle at 100% 15%, rgba(236, 72, 153, .08), transparent 40%),
+                var(--bg);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        ::selection {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--surface-3);
+            border-radius: 10px;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* ===== Barra superior ===== */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            backdrop-filter: blur(14px);
+            background: rgba(8, 8, 12, .78);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 22px;
+        }
+
+        .topbar-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-resumo {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 8px 16px 10px;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            font-size: .78rem;
+            color: var(--muted);
+            border-top: 1px dashed var(--border);
+        }
+
+        .topbar-resumo strong {
+            color: var(--text);
+            font-family: var(--font-mono);
+            margin-left: 5px;
+        }
+
+        .topbar-resumo i {
+            color: var(--primary);
+            margin-right: 3px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            margin-right: auto;
+            white-space: nowrap;
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--primary), var(--berry));
+            font-size: .95rem;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, .35);
+        }
+
+        .brand small {
+            display: block;
+            font-weight: 600;
+            font-size: .68rem;
+            color: var(--muted);
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .nav-pills {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            padding-bottom: 2px;
+        }
+
+        .nav-pills::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 13px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: .82rem;
+            white-space: nowrap;
+            transition: .15s;
+        }
+
+        .nav-pill:hover {
+            color: var(--text);
+            border-color: var(--primary);
+        }
+
+        .nav-pill.ativo {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-color: transparent;
+            color: #fff;
+        }
+
+        .page-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .page-heading .ico {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            box-shadow: 0 8px 24px rgba(139, 92, 246, .3);
+            flex-shrink: 0;
+        }
+
+        .page-heading h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+        }
+
+        .page-heading p {
+            font-size: .78rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* ===== Alertas ===== */
+        .alertas {
+            background: var(--yellow-soft);
+            border: 1px solid var(--yellow);
+            padding: 13px 14px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 15px;
+            display: none;
+            font-size: .88rem;
+        }
+
+        .alertas.visivel {
+            display: block;
+        }
+
+        /* ===== Barra de ações ===== */
+        .topo-acoes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .filtros {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 1;
+            min-width: 220px;
+            background: var(--surface);
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .filtros i {
+            color: var(--muted);
+        }
+
+        select,
+        input {
+            padding: 10px 13px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text);
+            font-family: inherit;
+            cursor: pointer;
+            font-size: .9rem;
+        }
+
+        input {
+            cursor: text;
+        }
+
+        input::placeholder {
+            color: #6b6c7a;
+        }
+
+        select {
+            appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+            background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+            background-size: 5px 5px, 5px 5px;
+            background-repeat: no-repeat;
+            padding-right: 32px;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            cursor: pointer;
+            transition: .15s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: .88rem;
+            color: #fff;
+        }
+
+        .btn:hover {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primario {
+            background: var(--primary);
+        }
+
+        .btn-primario:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-sucesso {
+            background: var(--green);
+        }
+
+        .btn-aviso {
+            background: var(--yellow);
+            color: #1f1300;
+        }
+
+        .btn-perigo {
+            background: var(--red);
+            padding: 7px 11px;
+            font-size: .82rem;
+        }
+
+        .btn-editar {
+            background: var(--yellow);
+            color: #1f1300;
+            padding: 7px 11px;
+            font-size: .82rem;
+        }
+
+        /* ===== KPIs ===== */
+        .cards-resumo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-resumo {
+            background: var(--surface);
+            padding: 16px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            border-top: 2px dashed var(--primary);
+            text-align: center;
+            transition: .15s;
+        }
+
+        .card-resumo:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .card-resumo .valor {
+            font-family: var(--font-mono);
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin: 6px 0 2px;
+        }
+
+        .card-resumo .rotulo {
+            font-size: .78rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .card-resumo .destaque {
+            font-size: .74rem;
+            margin-top: 4px;
+            font-family: var(--font-mono);
+        }
+
+        .alerta-negativo {
+            border-color: var(--red);
+            border-top-color: var(--red);
+            background: var(--red-soft);
+        }
+
+        .progresso-meta {
+            height: 8px;
+            background: var(--surface-2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .barra-meta {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--berry));
+            width: 0%;
+            transition: .3s;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media(max-width:768px) {
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== Cards ===== */
+        .card {
+            background: var(--surface);
+            padding: 18px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--text);
+            font-weight: 800;
+            font-size: .95rem;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .card h3 i {
+            width: 30px;
+            height: 30px;
+            border-radius: 9px;
+            background: var(--primary-soft);
+            color: #d8b4fe;
+            display: grid;
+            place-items: center;
+            font-size: .8rem;
+            flex-shrink: 0;
+        }
+
+        .divisao {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .item-divisao {
+            flex: 1;
+            min-width: 140px;
+            background: var(--surface-2);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .item-divisao strong {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 1.15rem;
+            margin-top: 6px;
+            color: var(--primary);
+        }
+
+        .form-lancamento {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-top: 10px;
+        }
+
+        .form-lancamento input,
+        .form-lancamento select {
+            flex: 1;
+            min-width: 130px;
+        }
+
+        /* ===== Tabelas ===== */
+        .table-wrap {
+            position: relative;
+            overflow-x: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            margin-top: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+
+        th,
+        td {
+            padding: 11px 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--surface-2);
+            color: #d8b4fe;
+            font-weight: 800;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, .025);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .entrada {
+            color: var(--green);
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .saida {
+            color: var(--red);
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .acoes-col {
+            width: 100px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .grafico-container {
+            height: 200px;
+            margin-top: 10px;
+        }
+
+        .categorias-gastos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .cat-gasto {
+            background: var(--surface-2);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .tag-empresa,
+        .tag-pessoal,
+        .tag-troco {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: .65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            vertical-align: middle;
+        }
+
+        .tag-empresa {
+            background: var(--primary-soft);
+            color: #c4b5fd;
+        }
+
+        .tag-pessoal {
+            background: var(--berry-soft);
+            color: #f9a8d4;
+        }
+
+        .tag-troco {
+            background: var(--yellow-soft);
+            color: var(--yellow);
+        }
+
+        .linha-pessoal {
+            background: rgba(236, 72, 153, .05);
+        }
+
+        .linha-troco {
+            background: rgba(245, 158, 11, .05);
+        }
+
+        .linha-emprestimo {
+            background: rgba(236, 72, 153, .05);
+        }
+
+        .tag-emprestimo {
+            background: var(--berry-soft);
+            color: #d8b4fe;
+            font-size: .7rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+
+        .tag-devolucao {
+            background: var(--green-soft);
+            color: var(--green);
+            font-size: .7rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+
+        .lista-emprestimos {
+            max-height: 220px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        /* ===== Modal ===== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .68);
+            backdrop-filter: blur(2px);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 15px;
+        }
+
+        .modal.aberto {
+            display: flex;
+        }
+
+        .modal-conteudo {
+            background: var(--surface);
+            padding: 22px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+            max-height: 88vh;
+            overflow-y: auto;
+        }
+
+        .modal-conteudo h4 {
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--text);
+            font-weight: 800;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .botoes-modal {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+
+        .lista-contas,
+        .lista-fechamento,
+        .lista-estoque {
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .item-conta,
+        .item-fechamento {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 2px;
+            border-bottom: 1px solid var(--border);
+            font-size: .85rem;
+            gap: 8px;
+        }
+
+        .vencendo {
+            color: var(--yellow);
+            font-weight: 700;
+        }
+
+        .vencido {
+            color: var(--red);
+            font-weight: 700;
+        }
+
+        .aviso-caixa-fisico {
+            background: var(--yellow-soft);
+            border: 1px solid var(--yellow);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 12px;
+            font-size: .85rem;
+        }
+
+        .aviso-caixa-fisico p {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-family: var(--font-mono);
+        }
+
+        .aviso-caixa-fisico p span {
+            font-family: var(--font);
+        }
+
+        .topo-acoes .btn {
+            white-space: nowrap;
+        }
+
+        .menu-mais {
+            position: relative;
+        }
+
+        .menu-mais-lista {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            z-index: 30;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .45);
+            padding: 6px;
+            min-width: 200px;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .menu-mais-lista.aberto {
+            display: flex;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            padding: 9px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-family: inherit;
+            font-weight: 600;
+            font-size: .85rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .menu-item:hover {
+            background: var(--surface-3);
+        }
+
+        .menu-item i {
+            color: var(--primary);
+            width: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .menu-mais-lista {
+                left: 0;
+                right: 0;
+            }
+        }
+
+        /* ===== Responsivo ===== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 12px;
+            }
+
+            .topo-acoes {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .topo-acoes .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            th,
+            td {
+                padding: 10px 8px;
+                font-size: .8rem;
+            }
+
+            .page-heading h1 {
+                font-size: 1.02rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .modal-conteudo {
+                max-width: 100%;
+                border-radius: 18px 18px 0 0;
+                max-height: 92vh;
+            }
+
+            .form-lancamento input,
+            .form-lancamento select,
+            .form-lancamento button {
+                min-width: 100%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <div class="topbar-inner">
+            <a href="gerenciamento.html" class="brand">
+                <span class="brand-mark"><i class="fas fa-arrow-left"></i></span>
+                <span><small>Nova Origem Açaí</small>Painel</span>
+            </a>
+            <nav class="nav-pills">
+                <a href="estoque.html" class="nav-pill"><i class="fas fa-boxes"></i> Estoque</a>
+                <a href="financeiro.html" class="nav-pill ativo"><i class="fas fa-coins"></i> Financeiro</a>
+                <a href="cardapio.html" class="nav-pill"><i class="fas fa-utensils"></i> Cardápio</a>
+            </nav>
+        </div>
+        <div class="topbar-resumo" id="topbarResumo">
+            <span><i class="fas fa-wallet"></i> Caixa total <strong id="miniSaldoCaixa">R$ 0,00</strong></span>
+            <span><i class="fas fa-calendar-day"></i> Saldo <span id="miniRotuloPeriodo">hoje</span> <strong
+                    id="miniSaldoPeriodo">R$ 0,00</strong></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <span id="nome-usuario" style="font-size:0.9rem; color:#9ca3af;"></span>
+            <button id="btn-logout"
+                style="background:rgba(255,23,68,.15); color:#ff5252; border:1px solid rgba(255,23,68,.4); padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer;">Sair</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="page-heading">
+            <span class="ico"><i class="fas fa-coins"></i></span>
+            <div>
+                <h1>Gestão Financeira Completa</h1>
+                <p>Caixa, contas, metas e movimentações do dia a dia</p>
+            </div>
+        </div>
+
+        <div class="alertas" id="caixaAlertas"></div>
+        <div class="topo-acoes">
+            <div class="filtros">
+                <i class="fas fa-filter"></i>
+                <select id="filtro-periodo">
+                    <option value="dia">Dia</option>
+                    <option value="mes" selected>Mês</option>
+                    <option value="todos">Todo o Período</option>
+                </select>
+                <input type="date" id="filtro-data" title="Escolher o dia">
+                <button class="btn" id="btnHoje" type="button" title="Voltar para hoje"><i
+                        class="fas fa-calendar-day"></i> Hoje</button>
+                <select id="filtro-natureza">
+                    <option value="todos">Empresa + Pessoal</option>
+                    <option value="empresa">Só Empresa</option>
+                    <option value="pessoal">Só Pessoal</option>
+                </select>
+            </div>
+            <div id="rotuloPeriodo" style="width:100%; font-size:.78rem; color:var(--muted); padding:0 2px;"></div>
+            <button class="btn btn-primario" id="btnReceitaExtra"><i class="fas fa-plus-circle"></i> Receita
+                Extra</button>
+            <button class="btn btn-aviso" id="btnTrocoPix"><i class="fas fa-hand-holding-usd"></i> Troco via
+                Pix</button>
+            <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar Dia</button>
+            <div class="menu-mais" id="menuMais">
+                <button class="btn" id="btnMaisAcoes"><i class="fas fa-ellipsis-v"></i> Mais ações</button>
+                <div class="menu-mais-lista" id="menuMaisLista">
+                    <button class="menu-item" id="btnEstoque"><i class="fas fa-boxes"></i> Estoque</button>
+                    <button class="menu-item" id="btnContas"><i class="fas fa-file-invoice-dollar"></i> Contas a
+                        Pagar</button>
+                    <button class="menu-item" id="btnContasReceber"><i class="fas fa-money-bill-wave"></i> Contas a
+                        Receber</button>
+                    <button class="menu-item" id="btnEmprestimos"><i class="fas fa-hand-holding-usd"></i>
+                        Empréstimo</button>
+                    <button class="menu-item" id="btnMeta"><i class="fas fa-bullseye"></i> Meta</button>
+                    <button class="menu-item" id="btnAjustarCaixa"><i class="fas fa-sliders-h"></i> Ajustar
+                        Caixa</button>
+                    <button class="menu-item" id="btnTaxas"><i class="fas fa-percent"></i> Taxas Pix/Cartão</button>
+                    <button class="menu-item" id="btnExportar"><i class="fas fa-download"></i> Exportar</button>
+                </div>
+            </div>
+        </div>
+        <div class="cards-resumo" id="cards-principais"></div>
+        <div id="resumo-extra"></div>
+        <div class="grid-3">
+            <div class="card">
+                <h3><i class="fas fa-chart-pie"></i> Divisão do Lucro</h3>
+                <div class="divisao">
+                    <div class="item-divisao"><i class="fas fa-user-tie" style="color:var(--yellow);"></i>
+                        <div>Salário (40%)</div><strong id="salario">R$ 0,00</strong>
+                    </div>
+                    <div class="item-divisao"><i class="fas fa-building" style="color:var(--primary);"></i>
+                        <div>Caixa (35%)</div><strong id="caixa">R$ 0,00</strong>
+                    </div>
+                    <div class="item-divisao"><i class="fas fa-shield-alt" style="color:var(--green);"></i>
+                        <div>Reserva (25%)</div><strong id="reserva">R$ 0,00</strong>
+                    </div>
+                </div>
+                <div class="grafico-container"><canvas id="graficoDivisao"></canvas></div>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-tags"></i> Gastos por Categoria (Empresa)</h3>
+                <div class="categorias-gastos" id="categoriasGastos"></div>
+                <div class="grafico-container"><canvas id="graficoVendas"></canvas></div>
+            </div>
+            <div class="card">
+                <h3><i class="fas fa-bullseye"></i> Meta do Período</h3>
+                <div style="text-align:center; margin-bottom:10px;">
+                    <div id="textoMeta">Defina sua meta</div>
+                    <div class="progresso-meta">
+                        <div class="barra-meta" id="barraMeta"></div>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--muted);">
+                    <span>Alcançado</span><span id="valorMeta">R$ 0,00 / R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+        <div class="card" id="cardEvolucaoMes">
+            <h3><i class="fas fa-chart-line"></i> Evolução do Saldo no Mês</h3>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">Saldo acumulado (vendas + extras −
+                gastos) dia a dia, dentro do mês selecionado no calendário acima.</p>
+            <div class="grafico-container"><canvas id="graficoEvolucaoMes"></canvas></div>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-receipt"></i> Registrar Gasto</h3>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;"><i class="fas fa-info-circle"></i>
+                Compra de insumo/estoque? Cadastre na tela de Estoque — lá já desconta automaticamente. Use aqui só para
+                gastos fora do estoque.</p>
+            <div class="form-lancamento">
+                <input type="text" id="descricao" placeholder="Ex: Energia, aluguel..." required>
+                <input type="number" id="valor-gasto" placeholder="Valor R$" min="0.01" step="0.01" required>
+                <select id="natureza-gasto">
+                    <option value="empresa">Empresa</option>
+                    <option value="pessoal">Pessoal</option>
+                </select>
+                <select id="tipo-gasto">
+                    <option value="insumo">Insumos / Estoque</option>
+                    <option value="fixo">Custo Fixo</option>
+                    <option value="taxa">Taxas / Pagamentos</option>
+                    <option value="outros">Outros</option>
+                </select>
+                <select id="forma-pagamento">
+                    <option value="dinheiro">Dinheiro em Papel</option>
+                    <option value="pix">Pix da Empresa</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="pessoal">Dinheiro Pessoal</option>
+                </select>
+                <button class="btn btn-primario" id="btnLancar"><i class="fas fa-plus"></i> Adicionar</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3><i class="fas fa-list-alt"></i> Extrato Completo</h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Descrição</th>
+                            <th style="text-align:right">Entrada</th>
+                            <th style="text-align:right">Saída</th>
+                            <th style="text-align:right">Saldo</th>
+                            <th class="acoes-col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-extrato">
+                        <tr>
+                            <td colspan="7" style="text-align:center; color:var(--muted)">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- MODAIS -->
+    <div class="modal" id="modalEditar">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-edit"></i> Editar Lançamento</h4>
+            <input type="hidden" id="editar-id">
+            <input type="text" id="editar-desc" placeholder="Descrição" style="width:100%; margin-bottom:10px;">
+            <input type="number" id="editar-valor" placeholder="Valor" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <select id="editar-natureza" style="width:100%; margin-bottom:10px;">
+                <option value="empresa">Empresa</option>
+                <option value="pessoal">Pessoal</option>
+            </select>
+            <select id="editar-tipo" style="width:100%; margin-bottom:10px;">
+                <option value="insumo">Insumos</option>
+                <option value="fixo">Fixo</option>
+                <option value="taxa">Taxas</option>
+                <option value="outros">Outros</option>
+            </select>
+            <select id="editar-forma" style="width:100%; margin-bottom:10px;">
+                <option value="dinheiro">💵 Dinheiro em Papel</option>
+                <option value="pix">⚡ Pix da Empresa</option>
+                <option value="cartao">💳 Cartão</option>
+                <option value="pessoal">👤 Dinheiro Pessoal</option>
+            </select>
+            <div class="botoes-modal"><button class="btn" id="btnCancelar">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarEdicao">Salvar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalEditarPagamento">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-credit-card"></i> Editar Forma de Pagamento</h4>
+            <input type="hidden" id="editarPag-id">
+            <input type="hidden" id="editarPag-valor">
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Use isso quando a venda foi lançada
+                com a forma errada (ex: caiu no Pix mas ficou registrada como Dinheiro). O saldo do caixa é corrigido
+                automaticamente.</p>
+            <select id="editarPag-forma" style="width:100%; margin-bottom:10px;">
+                <option value="dinheiro">💵 Dinheiro</option>
+                <option value="pix">⚡ Pix</option>
+                <option value="cartao_debito">💳 Cartão Débito</option>
+                <option value="cartao_credito">💳 Cartão Crédito</option>
+            </select>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarEditarPag">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarEditarPag">Salvar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalReceita">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-plus-circle"></i> Receita Extra</h4>
+            <input type="text" id="descRec" placeholder="Ex: Venda de copo avulso"
+                style="width:100%; margin-bottom:10px;">
+            <input type="number" id="valorRec" placeholder="Valor R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <select id="formaRec" style="width:100%; margin-bottom:10px;">
+                <option value="dinheiro">💵 Caiu em Dinheiro</option>
+                <option value="pix">⚡ Caiu no Pix</option>
+                <option value="cartao_debito">💳 Caiu no Cartão Débito</option>
+                <option value="cartao_credito">💳 Caiu no Cartão Crédito</option>
+            </select>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarRec">Cancelar</button><button
+                    class="btn btn-sucesso" id="btnSalvarRec">Registrar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalTroco">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-hand-holding-usd"></i> Troco Devolvido via Pix</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Use quando cliente paga em dinheiro e
+                você devolve o troco por Pix — não altera lucro, só ajuda a conferir o caixa.</p>
+            <input type="text" id="descTroco" placeholder="Ex: Venda R$18,90 (nota de R$100), troco R$81,10"
+                style="width:100%; margin-bottom:10px;">
+            <input type="number" id="valorTroco" placeholder="Valor do troco R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarTroco">Cancelar</button><button
+                    class="btn btn-aviso" id="btnSalvarTroco">Registrar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalEstoque">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-boxes"></i> Estoque Parado</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Dados vêm direto da tela de Estoque.
+            </p>
+            <div class="lista-estoque" id="listaEstoque"></div>
+            <div style="display:flex; justify-content:space-between; margin-top:10px; font-weight:700;"><span>Total
+                    parado:</span><span id="totalEstoqueModal" style="color:var(--yellow)">R$ 0,00</span></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarEstoque">Fechar</button><button
+                    class="btn btn-primario" id="btnGerenciarEstoque"><i class="fas fa-external-link-alt"></i> Gerenciar
+                    Estoque</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalFechar">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-cash-register"></i> Fechar Caixa do Dia</h4>
+            <p style="margin-bottom:10px; font-size:0.9rem;">Saldo calculado: <strong id="saldoCalc">R$ 0,00</strong>
+            </p>
+            <div class="aviso-caixa-fisico">
+                <p><span>Dinheiro em vendas</span><strong id="dinheiroVendasFechar">R$ 0,00</strong></p>
+                <p><span>(+) Troco devolvido via Pix</span><strong id="trocoPixFechar">R$ 0,00</strong></p>
+                <p><span>(-) Gastos pagos em dinheiro</span><strong id="gastosDinheiroFechar">R$ 0,00</strong></p>
+                <p><span>= Dinheiro esperado</span><strong id="dinheiroEsperadoFechar">R$ 0,00</strong></p>
+            </div>
+            <input type="number" id="saldoReal" placeholder="Valor real em espécie R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="lista-fechamento" id="listaFechamento"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarFechar">Cancelar</button><button
+                    class="btn btn-sucesso" id="btnConfirmarFechar">Confirmar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalContas">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-file-invoice-dollar"></i> Contas a Pagar</h4>
+            <div class="form-lancamento" style="margin-bottom:10px;">
+                <input type="text" id="nomeConta" placeholder="Ex: Aluguel">
+                <input type="number" id="valorConta" placeholder="Valor" step="0.01">
+                <input type="date" id="dataVenc">
+                <select id="formaConta">
+                    <option value="dinheiro">💵 Vou pagar em Dinheiro</option>
+                    <option value="pix">⚡ Vou pagar no Pix</option>
+                    <option value="cartao">💳 Vou pagar no Cartão</option>
+                </select>
+                <button class="btn btn-primario" id="btnAddConta">Adicionar</button>
+            </div>
+            <div class="lista-contas" id="listaContas"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarContas">Fechar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalContasReceber">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-money-bill-wave"></i> Contas a Receber</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Cadastre aqui o que os clientes ainda
+                te devem. Quando o cliente pagar, clique em "Recebido" para o valor entrar automaticamente no caixa.</p>
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px; border-radius:10px; margin-bottom:12px; border:1px solid var(--green);">
+                <span>Total a receber:</span>
+                <strong id="totalContasReceberModal" style="color:var(--green); font-size:1.1rem;">R$ 0,00</strong>
+            </div>
+            <div class="form-lancamento" style="margin-bottom:10px;">
+                <input type="text" id="nomeClienteReceber" placeholder="Nome do cliente">
+                <input type="number" id="valorContaReceber" placeholder="Valor" step="0.01" min="0.01">
+                <select id="formaContaReceber">
+                    <option value="dinheiro">💵 Vai pagar em Dinheiro</option>
+                    <option value="pix">⚡ Vai pagar no Pix</option>
+                    <option value="cartao_debito">💳 Vai pagar no Cartão Débito</option>
+                    <option value="cartao_credito">💳 Vai pagar no Cartão Crédito</option>
+                </select>
+                <button class="btn btn-primario" id="btnAddContaReceber">Adicionar</button>
+            </div>
+            <div class="lista-contas" id="listaContasReceber"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarContasReceber">Fechar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalAjustarCaixa">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-sliders-h"></i> Ajustar Saldo do Caixa</h4>
+            <button id="btnRecalcularCaixa" class="btn btn-primario"
+                style="width:100%; margin-bottom:14px; background:#00b1ea;">
+                <i class="fas fa-sync-alt"></i> Recalcular automaticamente (usar histórico real)
+            </button>
+            <p style="font-size:0.75rem; color:var(--muted); margin-bottom:10px;">Ou, se preferir, digite manualmente
+                o valor real que tem HOJE, separado por tipo:</p>
+            <input type="number" id="saldo-dinheiro" placeholder="Dinheiro em Papel R$" step="0.01"
+                style="width:100%; margin-bottom:8px;">
+            <input type="number" id="saldo-pix" placeholder="Saldo Pix Empresa R$" step="0.01"
+                style="width:100%; margin-bottom:8px;">
+            <input type="number" id="saldo-cartao" placeholder="Valor a Receber Cartão R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarAjusteCaixa">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarAjusteCaixa">Salvar Manual</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalEmprestimos">
+        <div class="modal-conteudo" style="max-width:560px;">
+            <h4><i class="fas fa-hand-holding-usd"></i> Empréstimo Pessoal</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Toda vez que você registra um gasto
+                (aqui ou no Estoque) com forma de pagamento "Dinheiro Pessoal", isso entra aqui automaticamente como
+                um empréstimo seu pra empresa. A empresa te paga de volta em 4 parcelas iguais — use "Registrar
+                Devolução" a cada parcela paga.</p>
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px; border-radius:10px; margin-bottom:12px;">
+                <span>Empresa te deve hoje:</span>
+                <strong id="saldoEmprestimoModal" style="color:#d8b4fe; font-size:1.1rem;">R$ 0,00</strong>
+            </div>
+            <!-- 🆕 O empréstimo sempre é pago de volta em 4 parcelas: mostra o valor
+                 total pego e quanto é cada uma das 4 parcelas. -->
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px; border-radius:10px; margin-bottom:12px; border:1px solid #9333ea;">
+                <span><i class="fas fa-layer-group"></i> Parcelado em 4x de:</span>
+                <strong id="valorParcelaEmprestimo" style="color:#d8b4fe; font-size:1.1rem;">R$ 0,00</strong>
+            </div>
+            <div class="form-lancamento" style="margin-bottom:10px;">
+                <input type="text" id="descDevolucao" placeholder="Ex: Recebi de volta em dinheiro">
+                <input type="number" id="valorDevolucao" placeholder="Valor R$" min="0.01" step="0.01">
+                <select id="formaDevolucao">
+                    <option value="dinheiro">Dinheiro em Papel</option>
+                    <option value="pix">Pix da Empresa</option>
+                    <option value="cartao">Cartão</option>
+                </select>
+                <button class="btn btn-sucesso" id="btnSalvarDevolucao"><i class="fas fa-check"></i> Registrar
+                    Devolução</button>
+            </div>
+            <div class="lista-emprestimos" id="listaEmprestimos"></div>
+            <div class="botoes-modal"><button class="btn" id="btnCancelarEmprestimos">Fechar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalMeta">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-bullseye"></i> Definir Meta</h4>
+            <select id="tipoMeta" style="width:100%; margin-bottom:10px;">
+                <option value="dia">Meta do Dia</option>
+                <option value="mes">Meta do Mês</option>
+            </select>
+            <input type="number" id="valorMetaDef" placeholder="Valor da meta R$" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarMeta">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarMeta">Salvar</button></div>
+        </div>
+    </div>
+    <div class="modal" id="modalTaxas">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-percent"></i> Taxas de Pix e Cartão</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">Taxa cobrada pela maquininha/conta em
+                cada modalidade. Usada só para calcular quanto você perde em taxas — não altera o saldo do caixa
+                automaticamente.</p>
+            <label style="font-size:0.78rem; color:var(--muted); display:block; margin-bottom:4px;">Taxa Pix (%)</label>
+            <input type="number" id="taxaPixInput" placeholder="Ex: 0.49" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <label style="font-size:0.78rem; color:var(--muted); display:block; margin-bottom:4px;">Taxa Cartão Débito
+                (%)</label>
+            <input type="number" id="taxaDebitoInput" placeholder="Ex: 1.18" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <label style="font-size:0.78rem; color:var(--muted); display:block; margin-bottom:4px;">Taxa Cartão Crédito
+                (%)</label>
+            <input type="number" id="taxaCreditoInput" placeholder="Ex: 2.82" step="0.01"
+                style="width:100%; margin-bottom:10px;">
+            <div class="botoes-modal"><button class="btn" id="btnCancelarTaxas">Cancelar</button><button
+                    class="btn btn-primario" id="btnSalvarTaxas">Salvar</button></div>
+        </div>
+    </div>
+    <script type="module" src="./financeiro.js"></script>
+</body>
+
+</html>

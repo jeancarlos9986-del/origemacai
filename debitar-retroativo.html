@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Baixa Retroativa - 07/08/2026</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family: system-ui, sans-serif; }
+    body { background:#0b0b0f; color:#fff; padding:20px; min-height:100vh; }
+    .container { max-width:700px; margin:0 auto; }
+    h1 { font-size:1.3rem; margin-bottom:10px; }
+    p { color:#9ca3af; margin-bottom:20px; line-height:1.5; }
+    button { background:#7c3aed; color:#fff; border:none; padding:14px 20px; border-radius:12px; font-weight:700; cursor:pointer; font-size:1rem; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    #log { background:#17171f; border-radius:12px; padding:16px; margin-top:20px; white-space:pre-wrap; font-family:monospace; font-size:0.85rem; min-height:100px; max-height:60vh; overflow-y:auto; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>⚠️ Baixa Retroativa de Estoque — Pedidos de 07/08/2026</h1>
+    <p>
+        Esse processo vai buscar os pedidos de 07/08/2026 que ainda não tiveram
+        baixa real de estoque e debitar os insumos correspondentes.
+        Pedidos que já foram debitados corretamente <strong>não</strong> serão duplicados.
+        Rode apenas uma vez.
+    </p>
+    <button id="btn-rodar">Processar baixa retroativa</button>
+    <div id="log">Aguardando...</div>
+</div>
+
+<script type="module">
+    import { debitarRetroativo } from "./debitar-retroativo.js";
+
+    const btn = document.getElementById("btn-rodar");
+    const logEl = document.getElementById("log");
+
+    function log(msg) {
+        logEl.textContent += (logEl.textContent === "Aguardando..." ? "" : "\n") + msg;
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    btn.addEventListener("click", async () => {
+        if (!confirm("Tem certeza? Isso vai debitar do estoque os pedidos de 07/08/2026 ainda não processados.")) return;
+        btn.disabled = true;
+        logEl.textContent = "";
+        try {
+            await debitarRetroativo(log);
+        } catch (e) {
+            log("❌ Erro geral: " + e.message);
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

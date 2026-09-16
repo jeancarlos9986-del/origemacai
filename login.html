@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Nova Origem Açaí</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background: #0b0b0f;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            /* ✅ Alterado para empurrar rodapé pra baixo */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .box {
+            background: #17171f;
+            border-radius: 20px;
+            padding: 32px;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .box img {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            display: block;
+            margin: 0 auto 16px;
+            object-fit: cover;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.3rem;
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1f2937;
+            color: #fff;
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            background: #050005;
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+
+        }
+
+        button:hover {
+            background-color: #8E24AA;
+        }
+
+        button:disabled {
+            opacity: .6;
+            cursor: default;
+        }
+
+        #erro {
+            color: #ff5252;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            padding: 12px;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="box">
+        <img src="./logonovonova.png.jpeg" alt="Nova Origem">
+        <h1>Nova Origem Açaí</h1>
+        <form id="form-login">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" required autocomplete="username">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" required autocomplete="current-password">
+            <button type="submit" id="btn-entrar">Entrar</button>
+        </form>
+        <p id="erro"></p>
+    </div>
+
+
+    <footer>
+        &copy; 2026 Jean Reis.
+    </footer>
+
+    <script type="module" src="./login.js"></script>
+</body>
+
+</html>
