@@ -2222,6 +2222,7 @@
             position: static;
             margin: 4px auto 0;
         }
+
         /* =========================================================
            🆕 DIÁLOGOS PRÓPRIOS (substituem alert() e confirm())
            =========================================================
@@ -3000,19 +3001,7 @@
                 var campos = document.getElementById("camposLiberados");
                 if (campos) campos.classList.remove("hidden");
 
-                // Mostra um caminho alternativo pelo WhatsApp
-                var aviso = document.createElement("div");
-                aviso.style.cssText = "position:fixed; left:12px; right:12px; bottom:12px; z-index:2147483647;" +
-                    "background:#7c3aed; color:#fff; padding:14px 16px; border-radius:16px;" +
-                    "font-family:system-ui,sans-serif; font-size:.9rem; line-height:1.45;" +
-                    "box-shadow:0 10px 30px rgba(0,0,0,.45);";
-                aviso.innerHTML =
-                    '<strong>Tivemos uma instabilidade no site.</strong><br>' +
-                    'Recarregue a página ou faça seu pedido pelo WhatsApp que a gente resolve rapidinho.' +
-                    '<div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
-                    '<a href="https://wa.me/5534997741051" style="background:#fff; color:#7c3aed; padding:8px 14px; border-radius:999px; text-decoration:none; font-weight:800;">Pedir pelo WhatsApp</a>' +
-                    '<button onclick="location.reload()" style="background:rgba(255,255,255,.2); color:#fff; border:0; padding:8px 14px; border-radius:999px; font-weight:800;">Recarregar</button>' +
-                    '</div>';
+
                 document.body.appendChild(aviso);
             }
 
@@ -3029,6 +3018,44 @@
     </script>
 
     <script type="module">
+        // =========================================================
+        // 🛟 ARMAZENAMENTO SEGURO (localStorage/sessionStorage)
+        // =========================================================
+        // Alguns navegadores do iPhone (Instagram/Facebook/TikTok, Navegação
+        // Privada, Modo de Bloqueio, "Impedir Rastreamento entre Sites" em certas
+        // combinações) BLOQUEIAM localStorage/sessionStorage e lançam um erro só de
+        // TENTAR acessar — antes de qualquer clique do cliente. Como a primeira
+        // linha executada por este script já lia o carrinho salvo em localStorage,
+        // esse erro travava o script no carregamento e disparava a rede de
+        // segurança na hora, mesmo sem nenhuma instabilidade real ter ocorrido.
+        // Esses wrappers tentam usar o armazenamento normal e, se falhar, caem
+        // para uma memória temporária (dura só a sessão da aba, mas não quebra o site).
+        const memoriaFallback = {};
+        const safeStorage = {
+            get(chave) {
+                try { return localStorage.getItem(chave); }
+                catch (e) { return memoriaFallback[chave] ?? null; }
+            },
+            set(chave, valor) {
+                try { localStorage.setItem(chave, valor); }
+                catch (e) { memoriaFallback[chave] = valor; }
+            },
+            remove(chave) {
+                try { localStorage.removeItem(chave); }
+                catch (e) { delete memoriaFallback[chave]; }
+            }
+        };
+        const safeSession = {
+            get(chave) {
+                try { return sessionStorage.getItem(chave); }
+                catch (e) { return memoriaFallback["s:" + chave] ?? null; }
+            },
+            set(chave, valor) {
+                try { sessionStorage.setItem(chave, valor); }
+                catch (e) { memoriaFallback["s:" + chave] = valor; }
+            }
+        };
+
         // =========================================================
         // 🆕 DIÁLOGOS PRÓPRIOS — substituem alert() e confirm()
         // =========================================================
@@ -3309,6 +3336,10 @@
         let clienteFidelidadeAtual = null;
 
         // 🆕 "SENTIMOS SUA FALTA": cupom automático para cliente fiel que some por um tempo
+        // 🔒 DESATIVADO A PEDIDO DO DONO (estava descontando pedidos sem aviso claro
+        // o suficiente, causando cobrança a menor sem o lojista perceber o motivo).
+        // O código fica pronto, sem precisar reconstruir depois. Para reativar: troque para true.
+        const WINBACK_ATIVO = false;
         const WINBACK_DIAS_MINIMO = 20; // dias sem pedir para considerar "sumiu"
         const WINBACK_DESCONTO = 5;     // valor do cupom aplicado automaticamente (R$)
         let cupomVoltaValor = 0;        // preenchido dinamicamente ao reconhecer o cliente
@@ -3561,7 +3592,7 @@
                 const ultimaData = dados.ultimoPedido?.data;
                 const diasSemPedir = ultimaData ? Math.floor((Date.now() - ultimaData) / 86400000) : null;
 
-                if (diasSemPedir !== null && diasSemPedir >= WINBACK_DIAS_MINIMO) {
+                if (WINBACK_ATIVO && diasSemPedir !== null && diasSemPedir >= WINBACK_DIAS_MINIMO) {
                     cupomVoltaValor = WINBACK_DESCONTO;
                     document.getElementById("bannerVoltaTexto").innerHTML =
                         `Faz ${diasSemPedir} dias que você não pede com a gente — ganhe <strong>${money(WINBACK_DESCONTO)} de desconto</strong> neste pedido! Já aplicamos no seu total. 🎉`;
@@ -3723,7 +3754,7 @@
                 }, { merge: true });
 
                 // 🆕 Lembra o telefone neste aparelho para mostrar o progresso de fidelidade na home
-                localStorage.setItem("ultimoFoneNovaOrigem", foneNormalizado);
+                safeStorage.set("ultimoFoneNovaOrigem", foneNormalizado);
 
                 return { pontos, brindesDisponiveis, ganhouBrindeAgora, brindeConsumido };
 
@@ -3760,7 +3791,7 @@
         // volta pra 1 depois de usada.
         let quantidadeParaAdicionar = 1;
 
-        let cart = JSON.parse(localStorage.getItem("cartNovaOrigem")) || [];
+        let cart = JSON.parse(safeStorage.get("cartNovaOrigem")) || [];
         let idPagamentoAtual = null;
         // 🆕 SEGURANÇA: o token do Mercado Pago NÃO fica mais aqui no navegador.
         // Ele agora mora só no servidor (Render), que é quem fala com o Mercado Pago.
@@ -3983,7 +4014,7 @@
 
         function iniciarAcompanhamento(id, abrirModalAutomaticamente = false) {
             if (!id) return;
-            localStorage.setItem("pedidoAtivoId", id);
+            safeStorage.set("pedidoAtivoId", id);
             if (unsubscribeTracking) unsubscribeTracking();
             let modalJaAberto = false;
             let ultimoStatusNotificado = null; // 🆕 evita notificar no carregamento inicial
@@ -4043,7 +4074,7 @@
         function pararAcompanhamento() {
             if (unsubscribeTracking) unsubscribeTracking();
             unsubscribeTracking = null;
-            localStorage.removeItem("pedidoAtivoId");
+            safeStorage.remove("pedidoAtivoId");
             document.getElementById("trackBar").style.display = "none";
             ajustarPosicaoBarras();
             document.getElementById("trackModal").style.display = "none";
@@ -4254,7 +4285,7 @@
 
         function saveCart() {
 
-            localStorage.setItem(
+            safeStorage.set(
 
                 "cartNovaOrigem",
 
@@ -4272,20 +4303,20 @@
         function salvarPedidoNoHistorico(itens, entrega, endereco, pagamento) {
             if (!itens || !itens.length) return;
             try {
-                let historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_PEDIDOS)) || [];
+                let historico = JSON.parse(safeStorage.get(CHAVE_HISTORICO_PEDIDOS)) || [];
                 historico.unshift({
                     itens: JSON.parse(JSON.stringify(itens)).filter(i => !i.brinde),
                     entrega, endereco, pagamento,
                     data: Date.now()
                 });
                 historico = historico.slice(0, MAX_PEDIDOS_HISTORICO);
-                localStorage.setItem(CHAVE_HISTORICO_PEDIDOS, JSON.stringify(historico));
+                safeStorage.set(CHAVE_HISTORICO_PEDIDOS, JSON.stringify(historico));
             } catch (e) { console.error("Erro ao salvar histórico de pedidos", e); }
         }
 
         function obterUltimoPedidoHistorico() {
             try {
-                const historico = JSON.parse(localStorage.getItem(CHAVE_HISTORICO_PEDIDOS)) || [];
+                const historico = JSON.parse(safeStorage.get(CHAVE_HISTORICO_PEDIDOS)) || [];
                 return historico[0] || null;
             } catch { return null; }
         }
@@ -4316,7 +4347,7 @@
                 });
             }
 
-            if (estaEmModoStandalone() || localStorage.getItem(CHAVE_INSTALL_DISPENSADO)) return;
+            if (estaEmModoStandalone() || safeStorage.get(CHAVE_INSTALL_DISPENSADO)) return;
 
             // Android/Chrome: o navegador avisa quando o site pode ser instalado
             window.addEventListener("beforeinstallprompt", (e) => {
@@ -4344,7 +4375,7 @@
 
         document.getElementById("installBannerFechar")?.addEventListener("click", () => {
             document.getElementById("installBanner").classList.add("hidden");
-            localStorage.setItem(CHAVE_INSTALL_DISPENSADO, "1");
+            safeStorage.set(CHAVE_INSTALL_DISPENSADO, "1");
         });
         document.getElementById("installBannerFechar")?.addEventListener("keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.target.click(); }
@@ -5852,7 +5883,11 @@
                 const code =
                     document.getElementById("pixCode").value;
 
-                await navigator.clipboard.writeText(code);
+                try {
+                    await navigator.clipboard.writeText(code);
+                } catch (e) {
+                    console.warn("Não foi possível copiar automaticamente:", e);
+                }
 
                 avisar("Cole a chave no app do seu banco para pagar.", { titulo: "PIX copiado!", icone: "📋" });
 
@@ -6439,7 +6474,7 @@
         async function atualizarFidelidadeMiniHome() {
             if (!FIDELIDADE_ATIVA) return; // 🔒 programa de fidelidade desativado
             const box = document.getElementById("fidelidadeMiniHome");
-            const foneSalvo = localStorage.getItem("ultimoFoneNovaOrigem");
+            const foneSalvo = safeStorage.get("ultimoFoneNovaOrigem");
             if (!box || !foneSalvo) return;
 
             try {
@@ -6560,10 +6595,10 @@
         // 🆕 Mensagem de boas-vindas: aparece uma vez por sessão do navegador
         function fecharBoasVindas() {
             document.getElementById("boasVindasBanner").classList.add("hidden");
-            sessionStorage.setItem("boasVindasFechada", "1");
+            safeSession.set("boasVindasFechada", "1");
         }
         window.fecharBoasVindas = fecharBoasVindas;
-        if (!sessionStorage.getItem("boasVindasFechada")) {
+        if (!safeSession.get("boasVindasFechada")) {
             document.getElementById("boasVindasBanner").classList.remove("hidden");
         }
 
@@ -6582,7 +6617,7 @@
         if (pedidoNaUrl) {
             iniciarAcompanhamento(pedidoNaUrl, true);
         } else {
-            const pedidoAtivoSalvo = localStorage.getItem("pedidoAtivoId");
+            const pedidoAtivoSalvo = safeStorage.get("pedidoAtivoId");
             if (pedidoAtivoSalvo) iniciarAcompanhamento(pedidoAtivoSalvo);
         }
 
