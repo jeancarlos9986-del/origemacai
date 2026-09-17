@@ -244,6 +244,16 @@
             display: block;
         }
 
+        .alertas.alerta-erro {
+            background: var(--red-soft);
+            border-color: var(--red);
+            color: var(--text);
+        }
+
+        .alertas.alerta-erro i {
+            color: var(--red);
+        }
+
         /* ===== Barra de ações ===== */
         .topo-acoes {
             display: flex;
@@ -251,6 +261,13 @@
             flex-wrap: wrap;
             align-items: center;
             margin-bottom: 18px;
+        }
+
+        .topo-acoes-botoes {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .filtros {
@@ -368,18 +385,20 @@
         }
 
         .card-resumo {
-            background: var(--surface);
+            background: linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 55%);
             padding: 16px;
             border-radius: var(--radius);
             border: 1px solid var(--border);
             border-top: 2px dashed var(--primary);
             text-align: center;
-            transition: .15s;
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+            box-shadow: 0 1px 0 rgba(255, 255, 255, .02) inset;
         }
 
         .card-resumo:hover {
             transform: translateY(-3px);
             border-color: var(--primary);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .35);
         }
 
         .card-resumo .valor {
@@ -387,12 +406,16 @@
             font-size: 1.35rem;
             font-weight: 700;
             margin: 6px 0 2px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -.2px;
         }
 
         .card-resumo .rotulo {
-            font-size: .78rem;
+            font-size: .74rem;
             color: var(--muted);
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
         }
 
         .card-resumo .destaque {
@@ -447,10 +470,11 @@
         /* ===== Cards ===== */
         .card {
             background: var(--surface);
-            padding: 18px;
+            padding: 20px;
             border-radius: var(--radius);
             border: 1px solid var(--border);
             margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
         }
 
         .card h3 {
@@ -569,6 +593,36 @@
             font-family: var(--font-mono);
         }
 
+        .linha-carregando {
+            padding: 14px 10px !important;
+        }
+
+        .skeleton-linha {
+            height: 14px;
+            border-radius: 6px;
+            margin: 8px 0;
+            width: 100%;
+            background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+            background-size: 400% 100%;
+            animation: skeleton-pulso 1.4s ease infinite;
+        }
+
+        @keyframes skeleton-pulso {
+            0% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0 50%;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .skeleton-linha {
+                animation: none;
+            }
+        }
+
         .acoes-col {
             width: 100px;
             text-align: center;
@@ -676,6 +730,29 @@
 
         .modal.aberto {
             display: flex;
+            animation: fade-in .15s ease;
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .modal-conteudo {
@@ -688,6 +765,17 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
             max-height: 88vh;
             overflow-y: auto;
+            animation: slide-up .18s ease;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .modal.aberto {
+                animation: none;
+            }
+
+            .modal-conteudo {
+                animation: none;
+            }
         }
 
         .modal-conteudo h4 {
@@ -828,7 +916,17 @@
                 align-items: stretch;
             }
 
-            .topo-acoes .btn {
+            .topo-acoes-botoes {
+                width: 100%;
+            }
+
+            .topo-acoes-botoes .btn,
+            .topo-acoes-botoes .menu-mais {
+                flex: 1;
+                min-width: 130px;
+            }
+
+            .topo-acoes-botoes .btn {
                 width: 100%;
                 justify-content: center;
             }
@@ -924,26 +1022,30 @@
                 </select>
             </div>
             <div id="rotuloPeriodo" style="width:100%; font-size:.78rem; color:var(--muted); padding:0 2px;"></div>
-            <button class="btn btn-primario" id="btnReceitaExtra"><i class="fas fa-plus-circle"></i> Receita
-                Extra</button>
-            <button class="btn btn-aviso" id="btnTrocoPix"><i class="fas fa-hand-holding-usd"></i> Troco via
-                Pix</button>
-            <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar Dia</button>
-            <div class="menu-mais" id="menuMais">
-                <button class="btn" id="btnMaisAcoes"><i class="fas fa-ellipsis-v"></i> Mais ações</button>
-                <div class="menu-mais-lista" id="menuMaisLista">
-                    <button class="menu-item" id="btnEstoque"><i class="fas fa-boxes"></i> Estoque</button>
-                    <button class="menu-item" id="btnContas"><i class="fas fa-file-invoice-dollar"></i> Contas a
-                        Pagar</button>
-                    <button class="menu-item" id="btnContasReceber"><i class="fas fa-money-bill-wave"></i> Contas a
-                        Receber</button>
-                    <button class="menu-item" id="btnEmprestimos"><i class="fas fa-hand-holding-usd"></i>
-                        Empréstimo</button>
-                    <button class="menu-item" id="btnMeta"><i class="fas fa-bullseye"></i> Meta</button>
-                    <button class="menu-item" id="btnAjustarCaixa"><i class="fas fa-sliders-h"></i> Ajustar
-                        Caixa</button>
-                    <button class="menu-item" id="btnTaxas"><i class="fas fa-percent"></i> Taxas Pix/Cartão</button>
-                    <button class="menu-item" id="btnExportar"><i class="fas fa-download"></i> Exportar</button>
+            <div class="topo-acoes-botoes">
+                <button class="btn btn-primario" id="btnReceitaExtra"><i class="fas fa-plus-circle"></i> Receita
+                    Extra</button>
+                <button class="btn btn-aviso" id="btnTrocoPix"><i class="fas fa-hand-holding-usd"></i> Troco via
+                    Pix</button>
+                <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar
+                    Dia</button>
+                <div class="menu-mais" id="menuMais">
+                    <button class="btn" id="btnMaisAcoes"><i class="fas fa-ellipsis-v"></i> Mais ações</button>
+                    <div class="menu-mais-lista" id="menuMaisLista">
+                        <button class="menu-item" id="btnEstoque"><i class="fas fa-boxes"></i> Estoque</button>
+                        <button class="menu-item" id="btnContas"><i class="fas fa-file-invoice-dollar"></i> Contas a
+                            Pagar</button>
+                        <button class="menu-item" id="btnContasReceber"><i class="fas fa-money-bill-wave"></i> Contas
+                            a Receber</button>
+                        <button class="menu-item" id="btnEmprestimos"><i class="fas fa-hand-holding-usd"></i>
+                            Empréstimo</button>
+                        <button class="menu-item" id="btnMeta"><i class="fas fa-bullseye"></i> Meta</button>
+                        <button class="menu-item" id="btnAjustarCaixa"><i class="fas fa-sliders-h"></i> Ajustar
+                            Caixa</button>
+                        <button class="menu-item" id="btnTaxas"><i class="fas fa-percent"></i> Taxas
+                            Pix/Cartão</button>
+                        <button class="menu-item" id="btnExportar"><i class="fas fa-download"></i> Exportar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1033,7 +1135,11 @@
                     </thead>
                     <tbody id="lista-extrato">
                         <tr>
-                            <td colspan="7" style="text-align:center; color:var(--muted)">Carregando...</td>
+                            <td colspan="7" class="linha-carregando">
+                                <div class="skeleton-linha"></div>
+                                <div class="skeleton-linha" style="width:70%"></div>
+                                <div class="skeleton-linha" style="width:85%"></div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
