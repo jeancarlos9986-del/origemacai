@@ -56,7 +56,7 @@ let filtroAtivo = "todos";
 let primeiraCarga = true;
 let somAtivado = false;
 
-const audioNovoPedido = new Audio("./alerta.mp3.way");
+const audioNovoPedido = new Audio("./alerta.mp3");
 audioNovoPedido.volume = 0.8;
 
 // ======================================
