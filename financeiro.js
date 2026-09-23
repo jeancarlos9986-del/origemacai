@@ -1,10 +1,17 @@
 import { db } from "./firebase.js";
 import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
-const { nome } = await protegerPagina(["financeiro"]);
-renderizarUsuarioLogado(nome);
 import {
     collection, onSnapshot, addDoc, query, where, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, increment, orderBy, limit, runTransaction, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// CORRIGIDO: antes usava "await" direto no topo do arquivo (fora de
+// qualquer funcao), o que travava a execucao de TODO o resto do script
+// (inclusive o registro do listener de DOMContentLoaded la embaixo) caso
+// protegerPagina demorasse ou nao resolvesse rapidamente. Agora segue o
+// mesmo padrao nao-bloqueante usado em cozinha.js, estoque.js e entregador.js.
+protegerPagina(["financeiro"]).then(({ nome }) => {
+    renderizarUsuarioLogado(nome);
+});
 
 let totalVendas = 0, totalCustos = 0, totalGastosEmpresa = 0, totalGastosPessoal = 0, totalReceitasExtras = 0, totalTrocosPix = 0, totalGastosDinheiro = 0, qtdVendas = 0;
 let periodo = "mes", filtroNatureza = "todos", unsubscribeGastos = null, graficoDivisao, graficoVendas, graficoEvolucao;
@@ -33,6 +40,25 @@ const CUSTOS = {
 
 const moeda = v => `R$ ${Number(v || 0).toFixed(2)}`;
 const escapeHTML = t => { const d = document.createElement("div"); d.textContent = t ?? ""; return d.innerHTML; };
+
+// ==============================================
+// 🚨 AVISO DE ERRO VISÍVEL NA TELA
+// ==============================================
+// 🐛 CORRIGIDO: antes, vários erros do Firebase (permissão negada, índice
+// faltando, sem internet, etc.) eram "engolidos" silenciosamente por blocos
+// catch vazios — o resultado era a tela inteira mostrando "R$ 0,00" em tudo,
+// sem NENHUM aviso de que algo deu errado. Agora todo erro real aparece aqui
+// em cima (faixa vermelha) e também no console, com a mensagem original do
+// Firebase, pra dar pra saber exatamente o que resolver.
+function mostrarErro(contexto, erro) {
+    console.error(`[Financeiro] Erro em ${contexto}:`, erro);
+    const el = document.getElementById("caixaAlertas");
+    if (!el) return;
+    const codigo = erro?.code ? ` (${erro.code})` : "";
+    const msg = erro?.message || String(erro);
+    el.classList.add("visivel", "alerta-erro");
+    el.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <strong>Erro ao carregar "${contexto}"${codigo}:</strong> ${escapeHTML(msg)} — recarregue a página; se persistir, confira sua conexão e as permissões do Firebase.`;
+}
 const calcularCustoPedido = itens => {
     let total = 0, qtd = 0; if (!itens) return 0;
     itens.forEach(i => {
@@ -51,8 +77,14 @@ const calcularCustoPedido = itens => {
 const saldoCaixa = async () => {
     try {
         const s = await getDoc(doc(db, "configuracoes", "caixa_empresa"));
+        console.log("[DIAGNÓSTICO] Documento configuracoes/caixa_empresa existe?", s.exists(), "| dados:", s.exists() ? s.data() : null);
+        window.__diagCaixa = `\nSALDO DO CAIXA\nDocumento "configuracoes/caixa_empresa" existe? ${s.exists() ? "Sim" : "NÃO — nunca foi criado"}\n${s.exists() ? "Dados: " + JSON.stringify(s.data()) : ""}\n`;
         return s.exists() ? s.data() : { dinheiro: 0, pix: 0, cartao: 0, total: 0 };
-    } catch { return { dinheiro: 0, pix: 0, cartao: 0, total: 0 }; }
+    } catch (e) {
+        mostrarErro("Saldo do Caixa", e);
+        window.__diagCaixa = `\nSALDO DO CAIXA\nErro ao ler: ${e.message}\n`;
+        return { dinheiro: 0, pix: 0, cartao: 0, total: 0 };
+    }
 };
 
 const ajustarSaldo = async (valor, forma = "dinheiro") => {
@@ -80,7 +112,7 @@ async function carregarTaxas() {
     try {
         const snap = await getDoc(doc(db, "configuracoes", "taxas"));
         if (snap.exists()) taxasConfig = { ...taxasConfig, ...snap.data() };
-    } catch { }
+    } catch (e) { mostrarErro("Taxas de Pix/Cartão", e); }
 }
 async function salvarTaxas() {
     taxasConfig.pix = parseFloat(document.getElementById("taxaPixInput").value) || 0;
@@ -159,7 +191,7 @@ function monitorarVendasCaixa() {
         for (const id of pendentes) {
             try { await creditarVendaNoCaixa(id); } catch (e) { console.error("Erro ao creditar venda", id, e); }
         }
-    });
+    }, e => mostrarErro("Monitor de Vendas", e));
 }
 
 // ==============================================
@@ -262,7 +294,7 @@ async function recalcularCaixaAutomatico() {
 // 📊 META E RECEITAS EXTRAS
 // ==============================================
 async function carregarMeta() {
-    try { const m = await getDoc(doc(db, "configuracoes", "meta")); if (m.exists()) metaAtual = m.data(); } catch { }
+    try { const m = await getDoc(doc(db, "configuracoes", "meta")); if (m.exists()) metaAtual = m.data(); } catch (e) { mostrarErro("Meta", e); }
 }
 async function salvarMeta() {
     metaAtual.tipo = document.getElementById("tipoMeta").value;
@@ -332,7 +364,7 @@ function iniciarListenerEstoque() {
         totalEstoqueAtual = Math.round(total * 100) / 100;
         atualizarCardEstoque();
         renderListaEstoque(itens);
-    });
+    }, e => mostrarErro("Estoque", e));
 }
 
 // ==============================================
@@ -386,7 +418,7 @@ function iniciarListenerEmprestimos() {
         saldoEmprestimoAtual = Math.round(total * 100) / 100;
         atualizarCardEmprestimo();
         renderListaEmprestimos(itens);
-    });
+    }, e => mostrarErro("Empréstimos", e));
 }
 
 // Criado automaticamente quando um gasto de empresa é pago com "Dinheiro Pessoal"
@@ -441,7 +473,10 @@ window.excluirEmprestimo = async (id, tipo, valor, forma) => {
 // marcar como paga, o registro é mantido (só marca pago:true) — o débito usa
 // a forma certa.
 async function carregarContas() {
-    const snap = await getDocs(query(collection(db, "contas_pagar"), orderBy("dataVenc", "asc")));
+    let snap;
+    try {
+        snap = await getDocs(query(collection(db, "contas_pagar"), orderBy("dataVenc", "asc")));
+    } catch (e) { mostrarErro("Contas a Pagar", e); return; }
     const lista = document.getElementById("listaContas"), hoje = new Date();
     lista.innerHTML = ""; let alerta = false;
     snap.forEach(doc => {
@@ -456,8 +491,11 @@ async function carregarContas() {
             <span>${venc.toLocaleDateString('pt-BR')} <button class="btn btn-sucesso" style="padding:4px 8px; font-size:0.75rem;" onclick="marcarPago('${doc.id}',${c.valor},'${forma}')">Pago</button></span>
         </div>`;
     });
-    document.getElementById("caixaAlertas").className = `alertas ${alerta ? 'visivel' : ''}`;
-    document.getElementById("caixaAlertas").innerHTML = alerta ? "<i class='fas fa-exclamation-triangle'></i> Atenção: contas vencidas ou próximas!" : "";
+    // Não sobrescreve um erro real já exibido na mesma faixa (ver mostrarErro)
+    const alertaEl = document.getElementById("caixaAlertas");
+    if (alertaEl.classList.contains("alerta-erro")) return;
+    alertaEl.className = `alertas ${alerta ? 'visivel' : ''}`;
+    alertaEl.innerHTML = alerta ? "<i class='fas fa-exclamation-triangle'></i> Atenção: contas vencidas ou próximas!" : "";
 }
 async function adicionarConta() {
     const n = document.getElementById("nomeConta").value.trim(), v = parseFloat(document.getElementById("valorConta").value), d = document.getElementById("dataVenc").value;
@@ -518,7 +556,7 @@ function iniciarListenerContasReceber() {
         totalContasReceberAtual = Math.round(total * 100) / 100;
         atualizarCardContasReceber();
         renderListaContasReceber(itens);
-    });
+    }, e => mostrarErro("Contas a Receber", e));
 }
 
 async function adicionarContaReceber() {
@@ -657,7 +695,7 @@ async function salvarEdicao() {
 async function carregarDados() {
     totalVendas = totalCustos = totalGastosEmpresa = totalGastosPessoal = totalReceitasExtras = totalTrocosPix = totalGastosDinheiro = qtdVendas = 0;
     const pagamentos = { dinheiro: 0, pix: 0, cartao: 0, debito: 0, credito: 0 }, categorias = { insumo: 0, fixo: 0, taxa: 0, outros: 0 };
-    const lista = document.getElementById("lista-extrato"); lista.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted)">Carregando...</td></tr>`;
+    const lista = document.getElementById("lista-extrato"); lista.innerHTML = `<tr><td colspan="7" class="linha-carregando"><div class="skeleton-linha"></div><div class="skeleton-linha" style="width:70%"></div><div class="skeleton-linha" style="width:85%"></div></td></tr>`;
     if (unsubscribeGastos) unsubscribeGastos = null;
 
     // 🔧 Usa a data ESCOLHIDA no calendário (dataReferencia) como base — não o
@@ -682,7 +720,46 @@ async function carregarDados() {
     // Saldo líquido POR DIA DO MÊS (índice = dia, ex.: netPorDia[15] = dia 15) —
     // só é usado quando periodo === "mes", pra montar o gráfico de evolução.
     const netPorDia = new Array(32).fill(0);
-    const pedidos = await getDocs(query(collection(db, "pedidos"), where("status", "==", "concluido"), where("criadoEm", ">=", inicio.getTime()), where("criadoEm", "<=", fim.getTime())));
+    // 🐛 CORRIGIDO: antes, se essa busca falhasse (regra de permissão, índice
+    // do Firestore faltando, sem internet), o erro subia sem tratamento e a
+    // função inteira parava no meio — a tela ficava com tudo zerado e SEM
+    // nenhum aviso. Agora qualquer falha aqui aparece na faixa vermelha do
+    // topo e no console, em vez de sumir silenciosamente.
+    // 🔍 DIAGNÓSTICO TEMPORÁRIO — mostra numa janela de alerta (sem precisar do
+    // DevTools) o período exato sendo consultado, pra comparar com as datas
+    // reais salvas no Firestore.
+    console.log("[DIAGNÓSTICO] Período:", periodo, "| Início:", inicio, "| Fim:", fim, "| inicio.getTime():", inicio.getTime(), "| fim.getTime():", fim.getTime());
+    let diagnostico = `PERÍODO CONSULTADO\nTipo: ${periodo}\nInício: ${inicio.toLocaleString('pt-BR')}\nFim: ${fim.toLocaleString('pt-BR')}\n`;
+
+    let pedidos;
+    try {
+        pedidos = await getDocs(query(collection(db, "pedidos"), where("status", "==", "concluido"), where("criadoEm", ">=", inicio.getTime()), where("criadoEm", "<=", fim.getTime())));
+    } catch (e) {
+        mostrarErro("Vendas (pedidos)", e);
+        lista.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red)">Não foi possível carregar as vendas. Veja o aviso acima.</td></tr>`;
+        return;
+    }
+    console.log("[DIAGNÓSTICO] Pedidos encontrados com status='concluido' no período:", pedidos.size);
+    diagnostico += `\nPEDIDOS (vendas)\nEncontrados com status='concluido' NO PERÍODO acima: ${pedidos.size}\n`;
+    if (pedidos.size === 0) {
+        // Também busca SEM filtro de data, só pra ver se existe QUALQUER pedido
+        // concluído no sistema — ajuda a saber se o problema é o período ou o status.
+        try {
+            const todosPedidos = await getDocs(query(collection(db, "pedidos"), where("status", "==", "concluido")));
+            console.log("[DIAGNÓSTICO] Total de pedidos com status='concluido' (SEM filtro de data, todo o histórico):", todosPedidos.size);
+            diagnostico += `Total com status='concluido' em TODO o histórico (sem filtro de data): ${todosPedidos.size}\n`;
+            if (todosPedidos.size > 0) {
+                const exemplo = todosPedidos.docs[0].data();
+                console.log("[DIAGNÓSTICO] Exemplo de um pedido concluído (pra conferir o campo criadoEm):", exemplo);
+                diagnostico += `Exemplo de um pedido encontrado — campo criadoEm: ${JSON.stringify(exemplo.criadoEm)} (tipo: ${typeof exemplo.criadoEm})\nCampo status: "${exemplo.status}"\nCampo total: ${exemplo.total}\n`;
+            } else {
+                const qualquerPedido = await getDocs(query(collection(db, "pedidos"), limit(3)));
+                console.log("[DIAGNÓSTICO] Nenhum pedido com status='concluido' encontrado. Exemplos de pedidos (qualquer status), pra ver o valor real do campo 'status':", qualquerPedido.docs.map(d => d.data()));
+                diagnostico += `Nenhum pedido com status='concluido' em todo o histórico.\nTotal de pedidos (qualquer status) na coleção, exemplos: ${qualquerPedido.size}\n`;
+                qualquerPedido.docs.forEach((d, i) => { diagnostico += `  Exemplo ${i + 1} — campo status: "${d.data().status}"\n`; });
+            }
+        } catch (e) { console.log("[DIAGNÓSTICO] Erro na busca sem filtro de data:", e); diagnostico += `Erro ao investigar mais a fundo: ${e.message}\n`; }
+    }
     pedidos.forEach(doc => {
         const p = doc.data(), val = Number(p.total || 0), custo = calcularCustoPedido(p.itens || []);
         totalVendas += val; totalCustos += custo; qtdVendas++;
@@ -699,7 +776,10 @@ async function carregarDados() {
         htmlVendas += `<tr><td>${dt.toLocaleDateString('pt-BR')}</td><td>${escapeHTML(nomeCliente)}${p.fone ? `<br><span style="color:var(--muted); font-size:.72rem;">${escapeHTML(p.fone)}</span>` : ""}</td><td>Venda #${String(p.numero || "").slice(-4)} - ${escapeHTML(p.pagamento)}</td><td class="entrada" style="text-align:right">+ ${moeda(val)}</td><td style="text-align:right">-</td><td class="entrada" style="text-align:right">${moeda(val - custo)}</td><td class="acoes-col"><button class="btn btn-editar" title="Editar forma de pagamento" onclick="abrirEdicaoPagamento('${doc.id}',${val},'${escapeHTML(p.pagamento)}')"><i class="fas fa-credit-card"></i></button></td></tr>`;
     });
 
-    const receitas = await getDocs(query(collection(db, "receitas_extras"), where("data", ">=", inicio), where("data", "<=", fim)));
+    let receitas;
+    try {
+        receitas = await getDocs(query(collection(db, "receitas_extras"), where("data", ">=", inicio), where("data", "<=", fim)));
+    } catch (e) { mostrarErro("Receitas Extras", e); receitas = { forEach: () => { } }; }
     const receitasForma = { pix: 0, debito: 0, credito: 0 };
     let htmlReceitas = ""; receitas.forEach(doc => {
         const r = doc.data(), dtR = new Date(r.data.toDate()), f = r.formaPagamento || "dinheiro";
@@ -711,11 +791,15 @@ async function carregarDados() {
     });
     window.excluirRec = async (id, val, forma) => { await deleteDoc(doc(db, "receitas_extras", id)); await ajustarSaldo(-val, forma || "dinheiro"); carregarDados(); };
 
-    const trocos = await getDocs(query(collection(db, "trocos_pix"), where("data", ">=", inicio), where("data", "<=", fim)));
+    let trocos;
+    try {
+        trocos = await getDocs(query(collection(db, "trocos_pix"), where("data", ">=", inicio), where("data", "<=", fim)));
+    } catch (e) { mostrarErro("Troco via Pix", e); trocos = { forEach: () => { } }; }
     let htmlTrocos = ""; trocos.forEach(doc => { const tr = doc.data(); totalTrocosPix += Number(tr.valor); htmlTrocos += `<tr class="linha-troco"><td>${new Date(tr.data.toDate()).toLocaleDateString('pt-BR')}</td><td>-</td><td>${escapeHTML(tr.descricao)} <span class="tag-troco">ajuste</span></td><td style="text-align:right">-</td><td style="text-align:right; color:var(--yellow); font-weight:700;">- ${moeda(tr.valor)} (Pix)</td><td style="text-align:right; color:var(--muted);">retido no caixa físico</td><td class="acoes-col"><button class="btn btn-perigo" onclick="excluirTroco('${doc.id}',${tr.valor})"><i class="fas fa-trash"></i></button></td></tr>`; });
 
     const netPorDiaBase = netPorDia.slice();
     unsubscribeGastos = onSnapshot(query(collection(db, "gastos"), where("data", ">=", inicio), where("data", "<=", fim)), snap => {
+        console.log("[DIAGNÓSTICO] Gastos encontrados no período:", snap.size);
         totalGastosEmpresa = 0; totalGastosPessoal = 0; totalGastosDinheiro = 0;
         const linhas = [];
         // Como este listener roda de novo a cada mudança, zera a parte de gastos
@@ -742,7 +826,19 @@ async function carregarDados() {
         });
         lista.innerHTML = htmlVendas + htmlReceitas + htmlTrocos + htmlGastos || `<tr><td colspan="7" style="text-align:center">Sem lançamentos.</td></tr>`;
         ultimoPag = pagamentos; ultimoCat = categorias; ultimoGraf = dadosGraf; ultimoLabels = diasSem;
-        atualizarTela(pagamentos, categorias, dadosGraf, diasSem, netPorDia, fim.getDate(), receitasForma);
+        diagnostico += `\nGASTOS\nEncontrados no período: ${snap.size}\n`;
+        atualizarTela(pagamentos, categorias, dadosGraf, diasSem, netPorDia, fim.getDate(), receitasForma).then(() => {
+            if (!window.__diagMostrado) {
+                window.__diagMostrado = true;
+                setTimeout(() => alert("🔍 DIAGNÓSTICO (pode fechar esta janela depois de ler / tirar print):\n" + diagnostico + (window.__diagCaixa || "")), 300);
+            }
+        });
+    }, e => {
+        // 🐛 CORRIGIDO: onSnapshot sem callback de erro falha silenciosamente
+        // quando o Firestore recusa a leitura (regra de permissão, etc.) —
+        // a tabela ficava presa em "Carregando..." pra sempre, sem aviso.
+        mostrarErro("Gastos", e);
+        lista.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--red)">Não foi possível carregar os gastos. Veja o aviso acima.</td></tr>`;
     });
 }
 
@@ -949,8 +1045,12 @@ Saldo Final: ${moeda(totalVendas + totalReceitasExtras - totalCustos - totalGast
 // ==============================================
 // 🚀 INICIALIZAÇÃO GERAL
 // ==============================================
-document.addEventListener("DOMContentLoaded", async () => {
-    await protegerPagina(["financeiro"]);
+document.addEventListener("DOMContentLoaded", () => {
+    // CORRIGIDO: mesmo problema do topo do arquivo -- "await" aqui
+    // bloqueava TODO o resto do listener (todos os addEventListener de botoes
+    // e o carregarDados() final) se protegerPagina demorasse. Agora tudo roda
+    // dentro do .then(), sem travar o listener em si.
+    protegerPagina(["financeiro"]).then(async () => {
 
     await carregarMeta(); await carregarTaxas(); carregarContas(); iniciarListenerEstoque(); iniciarListenerEmprestimos(); iniciarListenerContasReceber(); monitorarVendasCaixa();
 
@@ -1029,5 +1129,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     menuMaisLista.addEventListener("click", () => menuMaisLista.classList.remove("aberto"));
     document.addEventListener("click", e => { if (!e.target.closest("#menuMais")) menuMaisLista.classList.remove("aberto"); });
 
-    carregarDados();
+        carregarDados();
+    });
 });
