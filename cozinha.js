@@ -3,7 +3,10 @@ import {
     onSnapshot,
     doc,
     updateDoc,
-    deleteDoc
+    deleteDoc,
+    query,
+    orderBy,
+    limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 // 🆕 Baixa de estoque: antes só acontecia se a tela de Estoque estivesse
 // aberta em algum navegador. Agora disparamos direto daqui, no momento em
@@ -78,6 +81,49 @@ function formatarData(timestamp) {
     return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
+// 🔧 Escapa texto vindo do cliente (nome, endereço, observação do item etc.)
+// antes de colocar no innerHTML. Antes esses campos iam direto pro HTML —
+// um texto digitado no site (ex: campo de observação) podia quebrar o
+// layout do card ou, no limite, injetar HTML/script na tela da cozinha.
+function escaparHtml(texto) {
+    if (texto === null || texto === undefined) return "";
+    return String(texto)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// 🔧 Guarda uma "assinatura" do que foi renderizado da última vez, pra
+// evitar reconstruir o painel inteiro (innerHTML = "") quando nada que
+// aparece na tela realmente mudou — ex: uma escrita no Firestore que não
+// afeta nenhum campo exibido, ou snapshots repetidos chegando em sequência.
+// Isso evita a "piscada" visual e preserva o scroll dentro da lista de
+// itens de um pedido que estava sendo lido no momento.
+let ultimaAssinaturaRenderizada = null;
+
+// 🆕 Mostra quantos pedidos existem em cada status direto no botão do
+// filtro (ex: "Novos (3)") — dá pra saber o volume sem clicar em cada aba.
+function atualizarContadoresFiltro() {
+    const contagens = {
+        todos: pedidos.filter(p => p.status !== "concluido" && p.status !== "aguardando_pagamento").length,
+        novo: pedidos.filter(p => p.status === "novo").length,
+        preparo: pedidos.filter(p => p.status === "preparo").length,
+        pronto: pedidos.filter(p => p.status === "pronto").length
+    };
+    botoesFiltro.forEach(btn => {
+        const chave = btn.dataset.filtro;
+        // Guarda o texto original (sem contador) na primeira passada, pra
+        // não ir empilhando "(3) (5) (2)..." nas próximas atualizações.
+        if (!btn.dataset.rotuloBase) {
+            btn.dataset.rotuloBase = btn.textContent.trim();
+        }
+        const total = contagens[chave] ?? 0;
+        btn.textContent = total > 0 ? `${btn.dataset.rotuloBase} (${total})` : btn.dataset.rotuloBase;
+    });
+}
+
 // ======================================
 // FILTRO
 // ======================================
@@ -94,8 +140,6 @@ botoesFiltro.forEach(btn => {
 // RENDERIZAÇÃO PRINCIPAL
 // ======================================
 function renderizarPedidos() {
-    painelPedidos.innerHTML = "";
-
     // Filtrar pedidos
     let pedidosFiltrados = pedidos.filter(p => {
         if (filtroAtivo === "todos") return p.status !== "concluido" && p.status !== "aguardando_pagamento";
@@ -108,6 +152,19 @@ function renderizarPedidos() {
         if (a.status !== "novo" && b.status === "novo") return 1;
         return (b.criadoEm || 0) - (a.criadoEm || 0);
     });
+
+    // 🔧 Se o que precisa aparecer na tela é idêntico ao último render, não
+    // reconstrói nada — só os campos usados no card entram na assinatura.
+    const assinaturaAtual = JSON.stringify(pedidosFiltrados.map(p => ([
+        p.id, p.status, p.numero, p.criadoEm, p.nome, p.fone,
+        p.entrega, p.pagamento, p.endereco, p.total, p.itens
+    ])));
+    if (assinaturaAtual === ultimaAssinaturaRenderizada) {
+        return;
+    }
+    ultimaAssinaturaRenderizada = assinaturaAtual;
+
+    painelPedidos.innerHTML = "";
 
     if (pedidosFiltrados.length === 0) {
         semPedidos.style.display = "block";
@@ -142,18 +199,18 @@ function renderizarPedidos() {
             </div>
 
             <div class="cliente-box">
-                <div><strong>Nome:</strong> <span>${pedido.nome || "Não informado"}</span></div>
-                <div><strong>Contato:</strong> <span>${pedido.fone || "-"}</span></div>
+                <div><strong>Nome:</strong> <span>${escaparHtml(pedido.nome) || "Não informado"}</span></div>
+                <div><strong>Contato:</strong> <span>${escaparHtml(pedido.fone) || "-"}</span></div>
                 <div><strong>Tipo:</strong> <span>${pedido.entrega === 'entrega' ? '🏍️ Entrega' : '🏠 Retirada'}</span></div>
-                <div><strong>Pagamento:</strong> <span class="info-pagamento">${pedido.pagamento || "-"}</span></div>
-                ${pedido.endereco ? `<div><strong>Endereço:</strong> <span>${pedido.endereco}</span></div>` : ""}
+                <div><strong>Pagamento:</strong> <span class="info-pagamento">${escaparHtml(pedido.pagamento) || "-"}</span></div>
+                ${pedido.endereco ? `<div><strong>Endereço:</strong> <span>${escaparHtml(pedido.endereco)}</span></div>` : ""}
             </div>
 
             <div class="link-acompanhamento">
                 <button class="btn-copiar-link" data-id="${pedido.id}">
                     <i class="fa-solid fa-link"></i> Copiar Link
                 </button>
-                <button class="btn-whatsapp-link" data-id="${pedido.id}" data-fone="${pedido.fone || ""}" data-nome="${pedido.nome || ""}">
+                <button class="btn-whatsapp-link" data-id="${pedido.id}" data-fone="${escaparHtml(pedido.fone)}" data-nome="${escaparHtml(pedido.nome)}">
                     <i class="fa-brands fa-whatsapp"></i> Enviar por WhatsApp
                 </button>
             </div>
@@ -161,10 +218,10 @@ function renderizarPedidos() {
             <div class="pedido-itens">
                 ${pedido.itens && pedido.itens.length > 0 ? pedido.itens.map(item => `
                     <div class="pedido-item">
-                        <strong>${item.nome || "Item"}</strong>
-                        ${item.gratis?.length ? `<div class="item-gratis">✅ Grátis: ${item.gratis.join(", ")}</div>` : ""}
-                        ${item.extras?.length ? `<div class="item-extra">➕ Adicionais: ${item.extras.join(", ")}</div>` : ""}
-                        ${item.obs ? `<div class="item-obs">📝 Obs: ${item.obs}</div>` : ""}
+                        <strong>${escaparHtml(item.nome) || "Item"}</strong>
+                        ${item.gratis?.length ? `<div class="item-gratis">✅ Grátis: ${escaparHtml(item.gratis.join(", "))}</div>` : ""}
+                        ${item.extras?.length ? `<div class="item-extra">➕ Adicionais: ${escaparHtml(item.extras.join(", "))}</div>` : ""}
+                        ${item.obs ? `<div class="item-obs">📝 Obs: ${escaparHtml(item.obs)}</div>` : ""}
                         <div class="valor-item">R$ ${(item.preco || 0).toFixed(2)}</div>
                     </div>
                 `).join("") : "<p style='text-align:center; color:#9ca3af;'>Nenhum item encontrado</p>"}
@@ -249,35 +306,64 @@ function adicionarEventosBotoes() {
     // Preparar
     document.querySelectorAll(".btn-preparo").forEach(btn => {
         btn.addEventListener("click", async () => {
-            await atualizarStatus(btn.dataset.id, "preparo");
+            // 🔧 Trava o botão enquanto a atualização está em andamento pra
+            // evitar dois cliques rápidos (ex: internet lenta) disparando
+            // duas atualizações/baixas de estoque pro mesmo pedido.
+            if (btn.disabled) return;
+            btn.disabled = true;
+            try {
+                await atualizarStatus(btn.dataset.id, "preparo");
+            } finally {
+                btn.disabled = false;
+            }
         });
     });
 
     // Marcar como Pronto
     document.querySelectorAll(".btn-pronto").forEach(btn => {
         btn.addEventListener("click", async () => {
-            await atualizarStatus(btn.dataset.id, "pronto");
+            if (btn.disabled) return;
+            btn.disabled = true;
+            try {
+                await atualizarStatus(btn.dataset.id, "pronto");
+            } finally {
+                btn.disabled = false;
+            }
         });
     });
 
     // Saiu para Entrega
     document.querySelectorAll(".btn-entrega").forEach(btn => {
         btn.addEventListener("click", async () => {
-            await atualizarStatus(btn.dataset.id, "em_rota");
+            if (btn.disabled) return;
+            btn.disabled = true;
+            try {
+                await atualizarStatus(btn.dataset.id, "em_rota");
+            } finally {
+                btn.disabled = false;
+            }
         });
     });
 
     // Concluir / Retirada
     document.querySelectorAll(".btn-concluir").forEach(btn => {
         btn.addEventListener("click", async () => {
-            await atualizarStatus(btn.dataset.id, "concluido");
+            if (btn.disabled) return;
+            btn.disabled = true;
+            try {
+                await atualizarStatus(btn.dataset.id, "concluido");
+            } finally {
+                btn.disabled = false;
+            }
         });
     });
 
     // Remover/Excluir
     document.querySelectorAll(".btn-remover").forEach(btn => {
         btn.addEventListener("click", async () => {
+            if (btn.disabled) return;
             if (confirm("Tem certeza que deseja remover esse pedido?")) {
+                btn.disabled = true;
                 const pedidoId = btn.dataset.id;
                 try {
                     // 🆕 Se o estoque já tinha sido debitado pra esse pedido (passou por
@@ -298,6 +384,8 @@ function adicionarEventosBotoes() {
                 } catch (e) {
                     console.error("Erro ao remover pedido:", e);
                     alert("Erro ao remover pedido! Tente novamente.");
+                } finally {
+                    btn.disabled = false;
                 }
             }
         });
@@ -335,12 +423,26 @@ async function atualizarStatus(id, novoStatus) {
 // ======================================
 const avisoConexao = document.getElementById("avisoConexao");
 
-protegerPagina(["cozinha"]).then(() => {
-    iniciarListenerPedidos();
-});
+// 🔧 Removida a segunda chamada de protegerPagina(["cozinha"]).then(...) que
+// existia aqui — ela chamava iniciarListenerPedidos() de novo, registrando
+// um segundo onSnapshot na mesma coleção "pedidos" (já registrado lá no
+// topo do arquivo). Isso fazia cada mudança no Firestore renderizar o
+// painel duas vezes e tocar som/notificação em dobro para o mesmo pedido.
+// A chamada do topo do arquivo já é suficiente.
 
 function iniciarListenerPedidos() {
-    onSnapshot(collection(db, "pedidos"), (snapshot) => {
+    // 🆕 Antes buscava a coleção "pedidos" inteira, sem limite — conforme o
+    // histórico cresce isso aumenta leituras/custo no Firestore e deixa o
+    // carregamento mais pesado. Agora traz só os 200 pedidos mais recentes
+    // (ordenados por criadoEm). Não muda nenhum campo/documento, só reduz
+    // o volume trazido — 100% compatível com o resto do sistema.
+    const consultaPedidos = query(
+        collection(db, "pedidos"),
+        orderBy("criadoEm", "desc"),
+        limit(200)
+    );
+
+    onSnapshot(consultaPedidos, (snapshot) => {
         // Conexão ok — esconde aviso caso estivesse visível
         if (avisoConexao) avisoConexao.style.display = "none";
 
@@ -384,6 +486,7 @@ function iniciarListenerPedidos() {
         pedidosConhecidos = new Set(pedidos.map(p => p.id));
         primeiraCarga = false;
 
+        atualizarContadoresFiltro();
         renderizarPedidos();
     }, (erro) => {
         // ✅ Novo: se a conexão com o Firestore cair, avisa visualmente
@@ -411,9 +514,13 @@ document.getElementById("ativarSom").addEventListener("click", () => {
     }
 });
 
+// 🔧 Antes recarregava o áudio (audioNovoPedido.load()) a CADA clique na
+// página, inclusive nos botões de ação dos pedidos. O objetivo real aqui é
+// só "destravar" o áudio pra funcionar depois (política dos navegadores
+// exige uma interação do usuário) — então basta fazer isso uma vez.
 document.body.addEventListener("click", () => {
     audioNovoPedido.load();
-});
+}, { once: true });
 
 // ======================================
 // 🆕 NOTIFICAÇÕES (sem servidor — só permissão do navegador)
