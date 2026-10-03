@@ -64,6 +64,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 app.use(bodyParser.json());
+require('./marketingApi')(app, admin, db, fetch);
 
 // ✅ SUAS CHAVES
 const MP_TOKEN = process.env.MP_TOKEN || "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
