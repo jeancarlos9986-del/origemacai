@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing do dia — Nova Origem Açaí</title>
+<style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #0f0f0f; color: #f5f5f5; }
+    .hidden { display: none !important; }
+    main { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
+    h1 { font-size: 1.3rem; margin: 0 0 4px; }
+    .sub { color: #9ca3af; font-size: .88rem; margin: 0 0 22px; line-height: 1.5; }
+    h2 { font-size: 1rem; margin: 0 0 10px; }
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+    .contexto { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+    .contexto dt { color: #9ca3af; font-size: .78rem; margin-bottom: 2px; }
+    .contexto dd { margin: 0; font-weight: 600; font-size: .95rem; }
+    .cidade { display: flex; gap: 8px; margin-top: 14px; }
+    input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; font-size: .9rem; }
+    button { padding: 10px 16px; border-radius: 10px; border: none; background: #7c3aed; color: #fff; font-weight: 700; font-size: .9rem; cursor: pointer; }
+    button.sec { background: #262626; border: 1px solid #333; color: #d1d5db; font-weight: 600; font-size: .8rem; padding: 7px 12px; }
+    button:disabled { opacity: .55; cursor: wait; }
+    button:focus-visible, input:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+    #gerarBtn { width: 100%; padding: 14px; font-size: 1rem; margin-bottom: 14px; }
+    #status { color: #9ca3af; font-size: .85rem; margin: 0 0 14px; min-height: 1.2em; }
+    #status.erro { color: #f87171; }
+    .topo-card { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .topo-card h2 { margin: 0; }
+    .texto { white-space: pre-wrap; line-height: 1.55; font-size: .93rem; margin: 0; }
+    .momento { border-top: 1px solid #2a2a2a; padding-top: 12px; margin-top: 12px; }
+    .momento:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+    .momento b { display: block; font-size: .82rem; color: #a78bfa; margin-bottom: 4px; }
+    .foto { color: #9ca3af; font-size: .85rem; margin-top: 6px; }
+    .linha { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    button.sec.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; font-size: .9rem; margin: 4px 0 8px; }
+    #arteBox input { width: 100%; margin: 4px 0; }
+    #arteCanvas { width: 100%; height: auto; border-radius: 12px; margin-top: 10px; background: #111; }
+    #resFeed:focus { outline: 1px dashed #7c3aed; outline-offset: 4px; }
+    #tempManual { flex: 0 0 120px; }
+    .aviso { color: #fbbf24; font-size: .8rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+<main id="app" class="hidden">
+    <h1>Marketing do dia</h1>
+    <p class="sub">A IA olha a promoção ativa, o dia da semana e o clima, e monta o plano de posts de hoje.</p>
+
+    <section class="card">
+        <h2>Contexto de hoje</h2>
+        <dl class="contexto">
+            <div><dt>Dia</dt><dd id="ctxDia">—</dd></div>
+            <div><dt>Temperatura</dt><dd id="ctxTemp">—</dd></div>
+            <div><dt>Promoção</dt><dd id="ctxPromo">—</dd></div>
+        </dl>
+        <div class="cidade">
+            <input id="cidadeInput" type="text" placeholder="Cidade da loja (para buscar o clima)" aria-label="Cidade da loja">
+            <input id="tempManual" type="number" placeholder="ou °C" aria-label="Temperatura em graus (opcional)">
+            <button id="cidadeBtn" class="sec" type="button">Buscar clima</button>
+        </div>
+    </section>
+
+    <button id="gerarBtn" type="button">Gerar plano de hoje</button>
+    <p id="status" role="status"></p>
+
+    <div id="resultado" class="hidden">
+        <section class="card">
+            <div class="topo-card"><h2>Tema do dia</h2><div class="linha" style="margin:0"><button class="sec" id="copiarTudoBtn" type="button">Copiar tudo</button><button class="sec" id="outraBtn" type="button">Gerar outra versão</button></div></div>
+            <p id="resTema" class="texto"></p>
+        </section>
+        <section class="card">
+            <div class="topo-card"><h2>Legenda do feed</h2><button class="sec" data-copiar="resFeed" type="button">Copiar</button></div>
+            <p id="resFeed" class="texto" contenteditable="true" spellcheck="true"></p>
+            <p class="foto">Você pode editar a legenda tocando nela.</p>
+            <p id="resFoto" class="foto"></p>
+        </section>
+        <section class="card">
+            <div class="topo-card"><h2>Roteiro de stories</h2></div>
+            <div id="resStories"></div>
+        </section>
+        <section class="card" id="arteBox">
+            <div class="topo-card"><h2>Arte do dia</h2><button id="baixarBtn" type="button">Baixar imagem</button></div>
+            <div class="linha" id="formatoBtns">
+                <button class="sec on" type="button" data-formato="feed">Feed</button>
+                <button class="sec" type="button" data-formato="story">Story</button>
+            </div>
+            <div class="linha" id="tplBtns"></div>
+            <select id="prodArte" aria-label="Foto do produto"></select>
+            <input id="arteTitulo" type="text" maxlength="40" placeholder="Título da arte" aria-label="Título da arte">
+            <input id="arteSub" type="text" maxlength="60" placeholder="Subtítulo (opcional)" aria-label="Subtítulo da arte">
+            <canvas id="arteCanvas"></canvas>
+            <p id="arteMsg" class="aviso hidden"></p>
+        </section>
+        <p id="avisoTeste" class="aviso hidden">Modo de teste: este plano é de exemplo e ainda não veio da IA.</p>
+    </div>
+</main>
+<script type="module" src="./marketing.js"></script>
+</body>
+</html>
