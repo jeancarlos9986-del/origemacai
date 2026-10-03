@@ -6,7 +6,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 const API_URL = "https://origemacai.onrender.com";
 // Enquanto a rota /marketing/plano não existir no Render, deixe true (plano de exemplo).
 // Quando o backend estiver pronto, troque para false.
-const MODO_TESTE = true;
+const MODO_TESTE = false;
 
 const DIAS = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
 const $ = (id) => document.getElementById(id);
