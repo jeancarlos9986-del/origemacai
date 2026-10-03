@@ -101,6 +101,12 @@
         color: #9ca3af; font-size: .75rem; cursor: pointer;
     }
 #tab-loja .dia-btn.ativo { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+#tab-loja .promo-tab {
+        padding: 7px 11px; border-radius: 8px; border: 1px solid #333; background: #111;
+        color: #9ca3af; font-size: .78rem; cursor: pointer;
+    }
+#tab-loja .promo-tab.sel { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+#tab-loja .promo-tab.acao { border-style: dashed; color: #d1d5db; }
 #tab-loja button.salvar {
         width: 100%; padding: 13px; border-radius: 12px; border: none;
         background: #7c3aed; color: #fff; font-weight: 700; font-size: .9rem;
@@ -572,9 +578,10 @@
     </div>
 
     <div class="card">
+        <div class="dias" id="promoTabs" style="margin:0 0 14px;"></div>
         <div class="switch-row">
             <div>
-                <h2>🔥 Promoção ativa</h2>
+                <h2>🔥 Promoção (cada aba é uma promoção)</h2>
                 <p class="desc">Liga um banner no site e altera o preço (ou a quantidade de adicionais grátis) de um produto específico.</p>
             </div>
             <label class="switch">
@@ -827,6 +834,92 @@
     const configRef = doc(db, "configuracoes", "loja");
 
     let diasSelecionados = [];
+    let promos = [{}];   // 🆕 lista de promoções (uma por aba)
+    let promoIdx = 0;
+    const _el = (id) => document.getElementById(id);
+
+    function formParaPromo() {
+        const tipo = _el("tipoSelect").value;
+        return {
+            ativa: _el("togglePromo").checked,
+            produtoNome: _el("produtoSelect").value,
+            tipo,
+            precoPromocional: (tipo === "preco" || tipo === "copoFixo") ? Number(_el("precoInput").value || 0) : null,
+            limiteGratisPromocional: tipo === "limiteGratis" ? Number(_el("limiteGratisInput").value || 0) : null,
+            ingredientesFixos: tipo === "copoFixo" ? lerIngredientesFixos() : [],
+            etiqueta: _el("etiquetaInput").value.trim(),
+            diasSemana: [...diasSelecionados]
+        };
+    }
+
+    function promoParaForm(p) {
+        p = p || {};
+        _el("togglePromo").checked = !!p.ativa;
+        _el("promoBox").classList.toggle("hidden", !p.ativa);
+        if (p.produtoNome) _el("produtoSelect").value = p.produtoNome; else _el("produtoSelect").selectedIndex = 0;
+        _el("tipoSelect").value = p.tipo || "preco";
+        _el("precoInput").value = p.precoPromocional ?? "";
+        _el("limiteGratisInput").value = p.limiteGratisPromocional ?? "";
+        _el("etiquetaInput").value = p.etiqueta || "";
+        atualizarCamposTipo();
+        const lista = Array.isArray(p.ingredientesFixos) ? p.ingredientesFixos : [];
+        if (gratisCarregados) preencherIngredientesFixos(lista);
+        else ingredientesFixosPendentes = (p.tipo === "copoFixo") ? lista : null;
+        diasSelecionados = [...(p.diasSemana || [])];
+        document.querySelectorAll(".dia-btn").forEach(btn => {
+            btn.classList.toggle("ativo", diasSelecionados.includes(Number(btn.dataset.dia)));
+        });
+    }
+
+    function desenharAbasPromo() {
+        const nomeCurto = (p) => (p.produtoNome || "Nova").replace(/^Copo\s*/i, "").slice(0, 18);
+        _el("promoTabs").innerHTML = promos.map((p, i) =>
+            `<button type="button" class="promo-tab ${i === promoIdx ? "sel" : ""}" data-i="${i}">${i + 1}. ${nomeCurto(p)}${p.ativa ? "" : " (off)"}</button>`
+        ).join("") +
+            `<button type="button" class="promo-tab acao" data-acao="nova">+ Promoção</button>` +
+            `<button type="button" class="promo-tab acao" data-acao="remover">🗑 Remover esta</button>`;
+    }
+
+    function guardarPromoAtual() { promos[promoIdx] = formParaPromo(); }
+
+    _el("promoTabs").addEventListener("click", (e) => {
+        const b = e.target.closest(".promo-tab");
+        if (!b) return;
+        guardarPromoAtual();
+        if (b.dataset.acao === "nova") {
+            promos.push({ ativa: true });
+            promoIdx = promos.length - 1;
+        } else if (b.dataset.acao === "remover") {
+            if (!confirm("Remover esta promoção?")) return;
+            promos.splice(promoIdx, 1);
+            if (!promos.length) promos.push({});
+            promoIdx = Math.min(promoIdx, promos.length - 1);
+        } else {
+            promoIdx = Number(b.dataset.i);
+        }
+        desenharAbasPromo();
+        promoParaForm(promos[promoIdx]);
+    });
+
+    _el("produtoSelect").addEventListener("change", () => { guardarPromoAtual(); desenharAbasPromo(); });
+    _el("togglePromo").addEventListener("change", () => { guardarPromoAtual(); desenharAbasPromo(); });
+
+    function validarPromos() {
+        const ativas = promos.filter(p => p.ativa);
+        for (const p of ativas) {
+            if (p.tipo === "copoFixo" && !(p.ingredientesFixos || []).length)
+                return "⚠️ Escolha pelo menos 1 adicional grátis pra montar a receita do copo do dia.";
+            if ((p.tipo === "preco" || p.tipo === "copoFixo") && !(p.precoPromocional > 0))
+                return `⚠️ Informe o preço promocional de "${p.produtoNome}".`;
+        }
+        const vistos = new Set();
+        for (const p of ativas) {
+            if (p.tipo === "copoFixo") continue;
+            if (vistos.has(p.produtoNome)) return `⚠️ Duas promoções ativas para "${p.produtoNome}". Deixe só uma.`;
+            vistos.add(p.produtoNome);
+        }
+        return "";
+    }
 
     async function carregarConfig() {
         try {
@@ -837,28 +930,12 @@
             document.getElementById("motivoInput").value = dados.motivoFechamento || "";
             document.getElementById("motivoBox").classList.toggle("hidden", !dados.fechadaManual);
 
-            const promo = dados.promocao || {};
-            document.getElementById("togglePromo").checked = !!promo.ativa;
-            document.getElementById("promoBox").classList.toggle("hidden", !promo.ativa);
-            if (promo.produtoNome) document.getElementById("produtoSelect").value = promo.produtoNome;
-            document.getElementById("tipoSelect").value = promo.tipo || "preco";
-            document.getElementById("precoInput").value = promo.precoPromocional ?? "";
-            document.getElementById("limiteGratisInput").value = promo.limiteGratisPromocional ?? "";
-            document.getElementById("etiquetaInput").value = promo.etiqueta || "";
-            atualizarCamposTipo();
-
-            // 🍧 Receita do copo do dia: se os adicionais ainda não carregaram
-            // (primeira vez que essa aba abre), guarda pra preencher depois que
-            // carregarAdicionaisGratis() terminar.
-            if (promo.tipo === "copoFixo" && Array.isArray(promo.ingredientesFixos)) {
-                if (gratisCarregados) preencherIngredientesFixos(promo.ingredientesFixos);
-                else ingredientesFixosPendentes = promo.ingredientesFixos;
-            }
-
-            diasSelecionados = promo.diasSemana || [];
-            document.querySelectorAll(".dia-btn").forEach(btn => {
-                btn.classList.toggle("ativo", diasSelecionados.includes(Number(btn.dataset.dia)));
-            });
+            promos = (Array.isArray(dados.promocoes) && dados.promocoes.length)
+                ? dados.promocoes
+                : (dados.promocao ? [dados.promocao] : [{}]);
+            promoIdx = 0;
+            desenharAbasPromo();
+            promoParaForm(promos[0]);
         } catch (e) {
             console.error(e);
             document.getElementById("statusMsg").innerText = "Não foi possível carregar as configurações atuais (conexão).";
@@ -963,10 +1040,11 @@
         const btn = document.getElementById("salvarBtn");
         const statusMsg = document.getElementById("statusMsg");
 
-        const promoAtivaCheck = document.getElementById("togglePromo").checked;
-        const tipoCheck = document.getElementById("tipoSelect").value;
-        if (promoAtivaCheck && tipoCheck === "copoFixo" && lerIngredientesFixos().length === 0) {
-            statusMsg.innerText = "⚠️ Escolha pelo menos 1 adicional grátis pra montar a receita do copo do dia.";
+        guardarPromoAtual();
+        const erroPromo = validarPromos();
+        if (erroPromo) {
+            statusMsg.style.color = "#fbbf24";
+            statusMsg.innerText = erroPromo;
             return;
         }
 
@@ -980,16 +1058,9 @@
         const payload = {
             fechadaManual,
             motivoFechamento: document.getElementById("motivoInput").value.trim(),
-            promocao: {
-                ativa: promoAtiva,
-                produtoNome: document.getElementById("produtoSelect").value,
-                tipo,
-                precoPromocional: (tipo === "preco" || tipo === "copoFixo") ? Number(document.getElementById("precoInput").value || 0) : null,
-                limiteGratisPromocional: tipo === "limiteGratis" ? Number(document.getElementById("limiteGratisInput").value || 0) : null,
-                ingredientesFixos: tipo === "copoFixo" ? lerIngredientesFixos() : [],
-                etiqueta: document.getElementById("etiquetaInput").value.trim(),
-                diasSemana: diasSelecionados
-            },
+            promocoes: promos,
+            // espelho da primeira promoção ativa, por compatibilidade com telas antigas
+            promocao: promos.find(p => p.ativa) || promos[0] || { ativa: false },
             atualizadoEm: Date.now()
         };
 
