@@ -7,28 +7,32 @@
 
     <title>Nova Origem Açaí | Cardápio Digital</title>
 
-    <link rel="icon" type="image/png" href="./logonovonova.jpeg" />
+    <link rel="icon" type="image/png" href="./logonovonova.png.jpeg" />
 
     <!-- 🆕 PWA: instalável na tela inicial -->
     <link rel="manifest" href="./manifest.json" />
     <meta name="theme-color" content="#7c3aed" />
-    <link rel="apple-touch-icon" href="./logonovonova.jpeg" />
+    <link rel="apple-touch-icon" href="./logonovonova.png.jpeg" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Nova Origem" />
 
     <!-- 🆕 Preview bonito ao compartilhar o link (WhatsApp, Instagram, etc.) -->
-    <!-- ⚠️ Troque "https://SEU-DOMINIO-AQUI" pelo domínio real onde o site está publicado -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Nova Origem Açaí | Cardápio Digital" />
     <meta property="og:description"
         content="Monte seu açaí do seu jeito e peça em poucos toques. Entrega e retirada, pagamento por Pix, cartão ou dinheiro." />
-    <meta property="og:image" content="https://SEU-DOMINIO-AQUI/logonovonova.jpeg" />
-    <meta property="og:url" content="https://SEU-DOMINIO-AQUI/site.html" />
+    <meta property="og:image" content="https://jeancarlos9986-del.github.io/origemacai/preview-link.jpg?v=1" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Copo de açaí da Nova Origem Açaí" />
+    <meta property="og:site_name" content="Nova Origem Açaí" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://jeancarlos9986-del.github.io/origemacai/site.html" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Nova Origem Açaí | Cardápio Digital" />
     <meta name="twitter:description" content="Monte seu açaí do seu jeito e peça em poucos toques." />
-    <meta name="twitter:image" content="https://SEU-DOMINIO-AQUI/logonovonova.jpeg" />
+    <meta name="twitter:image" content="https://jeancarlos9986-del.github.io/origemacai/preview-link.jpg?v=1" />
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -808,6 +812,22 @@
             text-decoration: line-through;
             margin-bottom: 2px;
         }
+
+        /* 🆕 Faixa de destaque das promoções no início do site */
+        #promoDestaque { margin: 12px 16px 0; }
+        #promoDestaque h2 { font-size: .95rem; margin: 0 0 8px; color: #fff; }
+        #promoDestaque .promo-lista { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+        .promo-chip {
+            flex: 0 0 auto; min-width: 150px; max-width: 230px; text-align: left; cursor: pointer;
+            border: none; border-radius: 14px; padding: 10px 14px; color: #fff; font-family: inherit;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+        }
+        .promo-chip b { display: block; font-size: .85rem; margin-bottom: 2px; }
+        .promo-chip span { font-size: .78rem; font-weight: 600; }
+        .promo-chip s { opacity: .8; margin-right: 4px; }
+        .promo-chip:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .card.promo-destacado { animation: promoPulso 1.2s ease-in-out 2; }
+        @keyframes promoPulso { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } 50% { box-shadow: 0 0 0 6px rgba(245,158,11,.55); } }
 
         .promo-badge {
             display: inline-block;
@@ -2536,6 +2556,12 @@
 
     <!-- MAIN -->
     <main class="container">
+        <!-- 🆕 DESTAQUE DAS PROMOÇÕES (montado por renderPromoDestaque) -->
+        <div id="promoDestaque" class="hidden" style="margin:0 0 12px;">
+            <h2>🔥 Promoções de hoje</h2>
+            <div class="promo-lista" id="promoLista"></div>
+        </div>
+
         <!-- SEARCH -->
         <div class="search-wrapper">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
@@ -3256,6 +3282,13 @@
         escutarProdutos(db, produtos => {
             PRODUCTS = produtos;
             catalogoCarregado = true;
+            // 🆕 Corrige nomes desatualizados no carrinho salvo (localStorage)
+            // sempre que o catálogo atualizar — evita que um carrinho aberto
+            // antes de uma renomeação no painel finalize o pedido com o nome
+            // antigo (o que já causou baixa de estoque com receita errada).
+            if (typeof sincronizarCarrinhoComCatalogo === "function") {
+                sincronizarCarrinhoComCatalogo();
+            }
             // 🆕 Sempre que o catálogo recarrega do zero, reaplica a promoção ativa
             // (preço, limite grátis ou o card virtual do "copo do dia") — sem isso,
             // um novo snapshot de produtos apagaria a promoção em andamento.
@@ -4283,6 +4316,44 @@
 
         }
 
+        // 🆕 SINCRONIZAÇÃO DO CARRINHO SALVO COM O CATÁLOGO ATUAL
+        // O carrinho fica salvo no localStorage do aparelho do cliente
+        // (chave "cartNovaOrigem") e pode ficar aberto por dias antes de o
+        // pedido ser finalizado. Se o produto foi renomeado ou teve o preço
+        // alterado no painel nesse meio tempo, o item do carrinho ficava
+        // "congelado" com o nome/preço antigos — e isso já causou baixa de
+        // estoque errada (o nome antigo não batia com nenhuma receita
+        // cadastrada). Essa função roda toda vez que o catálogo chega/atualiza
+        // (escutarProdutos) e corrige, pelo "id" salvo no item, qualquer nome
+        // ou preço desatualizado, mantendo os adicionais/observações do
+        // cliente intactos. Itens salvos ANTES dessa correção (sem "id") não
+        // têm como ser corrigidos automaticamente — ficam como estão.
+        function sincronizarCarrinhoComCatalogo() {
+            if (!Array.isArray(cart) || cart.length === 0) return;
+            let mudou = false;
+            cart.forEach(item => {
+                if (!item || !item.id) return; // item antigo, sem id salvo — não dá pra corrigir
+                const produtoAtual = PRODUCTS.find(p => p.id === item.id);
+                if (!produtoAtual) return; // produto pode ter sido excluído do cardápio; deixa como está
+                if (item.nome !== produtoAtual.nome) {
+                    console.log(`🔄 Item do carrinho desatualizado: "${item.nome}" → "${produtoAtual.nome}" (id ${item.id})`);
+                    item.nome = produtoAtual.nome;
+                    mudou = true;
+                }
+                // 🆕 Preço NÃO é re-sincronizado de propósito: o preço salvo no
+                // item já inclui extras pagos somados (item.preco = preço do
+                // produto + extrasValue no momento da personalização), e não dá
+                // pra separar os dois aqui sem risco de zerar o valor dos
+                // extras. O nome é o que causava a baixa de estoque errada —
+                // preço desatualizado é só uma questão comercial, tratável à
+                // parte se você notar diferença no checkout.
+            });
+            if (mudou) {
+                saveCart();
+                if (typeof updateCart === "function") updateCart();
+            }
+        }
+
         function saveCart() {
 
             safeStorage.set(
@@ -4424,7 +4495,7 @@
         // 🆕 Config remota da loja (fechamento manual + promoção), editável pelo admin.html
         // sem precisar mexer em código. Ver configuracoes/loja no Firestore.
         let configLoja = {};
-        let promoAplicada = null; // guarda o que foi alterado no PRODUCTS, pra poder desfazer se a promo for desativada
+        let promosAplicadas = []; // guarda o que foi alterado no PRODUCTS, pra poder desfazer se a promo for desativada
         const ID_COPO_DO_DIA = "promo-copo-do-dia"; // id do card virtual do "copo do dia" (não existe no Firestore)
 
         function estaAberto() {
@@ -4558,7 +4629,7 @@
             // 🆕 Card de um produto normal (copo pronto, mega, trufado, shake, etc.)
             function cardHtmlProduto(product) {
                 return `
-            <div class="card ${product.esgotado ? "esgotado" : (product.acabando ? "acabando" : "")}">
+            <div class="card ${product.esgotado ? "esgotado" : (product.acabando ? "acabando" : "")}" data-pid="${product.id}">
    <div class="card-image">
     ${product.imagens.length > 1 ? `
         <div class="photo-badge">
@@ -4635,7 +4706,7 @@
                     .join(" ou ");
                 const ids = ordenado.map(p => p.id).join(",");
                 return `
-            <div class="card ${semNenhumDisponivel ? "esgotado" : ""}">
+            <div class="card ${semNenhumDisponivel ? "esgotado" : ""}" data-combo="1">
    <div class="card-image">
     <div class="destaque-badge" style="background:linear-gradient(135deg,#7c3aed,#9333ea);">✨ Personalize</div>
     ${semNenhumDisponivel ? `
@@ -4652,7 +4723,7 @@
                     <h3>Monte do seu jeito</h3>
                     <p>Escolha entre ${descricao} e capriche nos adicionais.</p>
                     <div class="card-footer">
-                        <span class="price">A partir de ${money(precoMin)}</span>
+                        <span class="price">${ordenado.some(p => p.emPromocao) ? `<span class="promo-badge">🔥 Promoção</span> ` : ""}A partir de ${money(precoMin)}</span>
                         <button class="btn comboMontarBtn ${semNenhumDisponivel ? "disabled" : ""}"
                             data-ids="${ids}"
                             ${semNenhumDisponivel ? "disabled aria-disabled=\"true\"" : ""}>
@@ -5208,7 +5279,10 @@
             const item = cart[index];
             if (!item) return;
 
-            const product = PRODUCTS.find(p => p.nome === item.nome);
+            // 🆕 Prioriza o id salvo no item (mais confiável); cai pro nome
+            // só pra itens antigos no carrinho, salvos antes dessa correção.
+            const product = (item.id && PRODUCTS.find(p => p.id === item.id))
+                || PRODUCTS.find(p => p.nome === item.nome);
             if (!product) {
                 avisar("Esse item saiu do cardápio e não pode mais ser editado. Remova do carrinho e escolha um parecido.", { titulo: "Item indisponível", icone: "🚫" });
                 return;
@@ -5246,6 +5320,7 @@
 
             for (let i = 0; i < quantidade; i++) {
                 cart.push({
+                    id: product.id, // 🆕 guarda o id do produto pra re-sincronizar nome/preço depois
                     nome: product.nome,
                     preco: product.preco,
                     gratis: [],
@@ -6013,6 +6088,8 @@
 
                 const novoItem = {
 
+                    id: currentProduct.id, // 🆕 guarda o id do produto pra re-sincronizar nome/preço depois
+
                     nome: currentProduct.nome,
 
                     preco: currentProduct.preco + extrasValue,
@@ -6510,71 +6587,118 @@
         // vier vazio, vale todo dia — é assim que o "copo do dia" roda automaticamente
         // todo dia sem precisar o admin mexer em nada.
         function aplicarConfigLoja() {
-            // desfaz qualquer alteração da promoção anterior antes de aplicar a atual
-            // (promoAplicada.campos guarda os valores originais de 1+ campos do produto)
-            if (promoAplicada) {
-                const produtoAntigo = PRODUCTS.find(p => p.nome === promoAplicada.produtoNome);
-                if (produtoAntigo) {
-                    Object.entries(promoAplicada.campos).forEach(([campo, valor]) => {
-                        produtoAntigo[campo] = valor;
-                    });
-                }
-                promoAplicada = null;
-            }
-            // 🆕 Remove o card virtual do "copo do dia" de uma aplicação anterior
-            // (ele nunca existe no Firestore, é só recriado aqui a cada aplicação)
-            PRODUCTS = PRODUCTS.filter(p => p.id !== ID_COPO_DO_DIA);
+            // desfaz as alterações da aplicação anterior
+            promosAplicadas.forEach(a => {
+                const prod = PRODUCTS.find(p => p.nome === a.produtoNome);
+                if (prod) Object.entries(a.campos).forEach(([campo, valor]) => { prod[campo] = valor; });
+            });
+            promosAplicadas = [];
+            // Remove os cards virtuais do "copo do dia" da aplicação anterior
+            PRODUCTS = PRODUCTS.filter(p => !String(p.id).startsWith(ID_COPO_DO_DIA));
 
             const banner = document.getElementById("promoBanner");
-            const promo = configLoja.promocao;
             const hoje = new Date().getDay();
-            const diasOk = !promo || !promo.diasSemana || promo.diasSemana.length === 0 || promo.diasSemana.includes(hoje);
+            // 🆕 Aceita várias promoções (configLoja.promocoes); cai na antiga (promocao) se não houver lista
+            const lista = Array.isArray(configLoja.promocoes) ? configLoja.promocoes
+                : (configLoja.promocao ? [configLoja.promocao] : []);
+            const ativas = lista.filter(p => p && p.ativa &&
+                (!p.diasSemana || p.diasSemana.length === 0 || p.diasSemana.includes(hoje)));
 
-            if (promo && promo.ativa && diasOk) {
-                const produtoBase = PRODUCTS.find(p => p.nome === promo.produtoNome);
-                if (produtoBase) {
-                    if (promo.tipo === "preco" && typeof promo.precoPromocional === "number") {
-                        promoAplicada = { produtoNome: produtoBase.nome, campos: { preco: produtoBase.preco } };
-                        produtoBase.preco = promo.precoPromocional;
-                    } else if (promo.tipo === "limiteGratis" && typeof promo.limiteGratisPromocional === "number") {
-                        promoAplicada = { produtoNome: produtoBase.nome, campos: { limiteGratis: produtoBase.limiteGratis } };
-                        produtoBase.limiteGratis = promo.limiteGratisPromocional;
-                    } else if (promo.tipo === "copoFixo" && typeof promo.precoPromocional === "number"
-                        && Array.isArray(promo.ingredientesFixos) && promo.ingredientesFixos.length) {
-                        // 🆕 Copo do dia: NÃO mexe no produto original (continua com preço
-                        // cheio e customizável, do jeito que sempre foi) — em vez disso cria
-                        // um card independente ("clone"), com id fixo próprio, preço
-                        // promocional e a receita de adicionais grátis travada. Assim as
-                        // duas opções ficam disponíveis ao mesmo tempo pro cliente.
-                        const clone = {
-                            ...produtoBase,
-                            id: ID_COPO_DO_DIA,
-                            nome: `${produtoBase.nome} — Copo do Dia`,
+            const usados = new Set();
+            const clones = [];
+            ativas.forEach((promo, n) => {
+                const base = PRODUCTS.find(p => p.nome === promo.produtoNome);
+                if (!base) return;
+                if (promo.tipo === "copoFixo") {
+                    if (typeof promo.precoPromocional === "number" && Array.isArray(promo.ingredientesFixos) && promo.ingredientesFixos.length) {
+                        // Copo do dia: card independente, o produto original não muda
+                        clones.push({
+                            ...base,
+                            id: `${ID_COPO_DO_DIA}-${n}`,
+                            nome: `${base.nome} — Copo do Dia`,
                             preco: promo.precoPromocional,
+                            emPromocao: false,
                             gratisPadrao: [...promo.ingredientesFixos],
                             limiteGratis: promo.ingredientesFixos.length,
                             receitaFixaTravada: true,
                             destaque: false,
                             tamanhoMontar: ""
-                        };
-                        PRODUCTS = [clone, ...PRODUCTS];
+                        });
                     }
+                    return;
                 }
-                if (banner && promo.etiqueta) {
+                if (usados.has(base.nome)) return; // só uma promoção por produto
+                if (promo.tipo === "preco" && typeof promo.precoPromocional === "number") {
+                    usados.add(base.nome);
+                    promosAplicadas.push({ produtoNome: base.nome, campos: { preco: base.preco, emPromocao: base.emPromocao, precoOriginal: base.precoOriginal } });
+                    const original = base.emPromocao ? base.precoOriginal : base.preco;
+                    base.precoOriginal = original;
+                    base.emPromocao = promo.precoPromocional < original;
+                    base.preco = promo.precoPromocional;
+                } else if (promo.tipo === "limiteGratis" && typeof promo.limiteGratisPromocional === "number") {
+                    usados.add(base.nome);
+                    promosAplicadas.push({ produtoNome: base.nome, campos: { limiteGratis: base.limiteGratis, promoGratisTexto: base.promoGratisTexto } });
+                    base.limiteGratis = promo.limiteGratisPromocional;
+                    base.promoGratisTexto = `${promo.limiteGratisPromocional} adicionais grátis`;
+                }
+            });
+            if (clones.length) PRODUCTS = [...clones, ...PRODUCTS];
+
+            // Banner: junta os textos de todas as promoções ativas
+            const etiquetas = ativas.map(p => p.etiqueta).filter(Boolean);
+            if (banner) {
+                if (etiquetas.length) {
                     banner.classList.remove("hidden");
-                    banner.querySelector("span").innerText = promo.etiqueta;
-                } else if (banner) {
+                    banner.querySelector("span").innerText = etiquetas.join("  •  ");
+                } else {
                     banner.classList.add("hidden");
                 }
-            } else if (banner) {
-                banner.classList.add("hidden");
             }
+
+            renderPromoDestaque();
 
             // Re-renderiza o cardápio pra refletir preço/limite atualizados
             if (typeof grid !== "undefined" && grid) {
                 renderProducts(document.getElementById("search")?.value || "");
             }
         }
+
+        // 🆕 Faixa de destaque no início do site: um botão por produto em promoção
+        // (preço promocional do painel OU do cardápio, copo do dia, adicionais grátis).
+        function renderPromoDestaque() {
+            const box = document.getElementById("promoDestaque");
+            const lista = document.getElementById("promoLista");
+            if (!box || !lista) return;
+            const itens = PRODUCTS.filter(p => !p.esgotado && (p.emPromocao || p.receitaFixaTravada || p.promoGratisTexto));
+            if (!itens.length) { box.classList.add("hidden"); lista.innerHTML = ""; return; }
+            lista.innerHTML = itens.map(p => {
+                const detalhe = p.receitaFixaTravada ? `🍧 Copo do dia · ${money(p.preco)}`
+                    : p.emPromocao ? `<s>${money(p.precoOriginal)}</s> ${money(p.preco)}`
+                    : `🎁 ${p.promoGratisTexto}`;
+                return `<button type="button" class="promo-chip" data-pid="${p.id}"><b>${p.nome}</b><span>${detalhe}</span></button>`;
+            }).join("");
+            box.classList.remove("hidden");
+        }
+
+        // Clicar numa promoção: abre a categoria certa e rola até o card
+        document.getElementById("promoLista")?.addEventListener("click", (e) => {
+            const chip = e.target.closest(".promo-chip");
+            if (!chip) return;
+            const prod = PRODUCTS.find(p => String(p.id) === chip.dataset.pid);
+            if (!prod) return;
+            const aba = document.querySelector(`.tab[data-cat="${prod.cat}"]`);
+            if (aba && !aba.classList.contains("active")) aba.click();
+            search.value = "";
+            renderProducts("");
+            const alvo = (prod.tamanhoMontar && !prod.receitaFixaTravada)
+                ? document.querySelector("#grid .card[data-combo]")
+                : document.querySelector(`#grid .card[data-pid="${CSS.escape(String(prod.id))}"]`);
+            if (alvo) {
+                alvo.scrollIntoView({ behavior: "smooth", block: "center" });
+                alvo.classList.add("promo-destacado");
+                setTimeout(() => alvo.classList.remove("promo-destacado"), 2600);
+            }
+        });
 
         // 🆕 Escuta em tempo real o documento configuracoes/loja (editado pelo admin.html):
         // assim que o admin fechar a loja ou ligar/desligar uma promoção, o site reflete
