@@ -11,6 +11,10 @@ const PERFIS_PERMITIDOS = ['admin', 'marketing'];
 const INTERVALO_MIN_MS = 15 * 1000; // espera mínima entre dois pedidos do mesmo usuário
 const LIMITE_POR_DIA = 20;          // teto de planos por usuário por dia (controla o custo)
 
+// Horário de funcionamento (igual ao HORARIO_FUNCIONAMENTO do site.html). Confira e ajuste se mudar.
+const HORA_ABRE = 14;
+const HORA_FECHA = 22;
+
 const DIAS = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const uso = new Map(); // uid -> { ultimo, dia, qtd }  (zera quando o servidor reinicia)
 
@@ -19,12 +23,17 @@ Seu trabalho: montar o plano de conteúdo do dia para Instagram (1 post de feed 
 Regras:
 - Português do Brasil, tom próximo e acolhedor, como quem fala com vizinho. Nada de exagero nem de gíria forçada.
 - Use só as informações recebidas. Nunca invente preço, desconto, produto ou horário que não estejam no contexto.
+- Cada oferta tem o seu próprio preço. Cite os preços exatamente como vieram e nunca aplique o preço de um produto a outro.
+- A loja é só delivery, sem salão nem balcão: não sugira fotos do interior da loja, da fachada ou de clientes sentados.
+- A loja só funciona no horário informado. Não sugira conteúdo que dê a entender que ela está atendendo fora desse horário. Nomeie os momentos dos stories de acordo com o horário (por exemplo: "Antes de abrir", "Tarde", "Noite").
 - Se houver promoção ativa, ela é o centro do dia. Se não houver, escolha um tema ligado ao dia da semana e ao clima.
 - Cidade pequena: vale incentivar indicação para amigos e vizinhos e citar a cidade, sem prometer nada.
 - Legenda do feed com no máximo 4 linhas e no máximo 3 emojis, sem hashtags em excesso.
 - Cada ideia de story deve ser algo que o dono consegue fotografar ou gravar com o celular em poucos minutos.
+- Também crie o texto da arte (imagem) do dia: "titulo" curto e chamativo com no máximo 30 caracteres e sem emoji; "subtitulo" com no máximo 50 caracteres (pode ficar vazio); "chamada" com no máximo 24 caracteres (por exemplo "Peça pelo site"). Se houver preço de oferta, não o escreva no título nem no subtítulo, porque o selo de preço é desenhado à parte.
+- "produto" deve ser o nome exato de um produto das ofertas ativas, ou vazio se não houver oferta.
 Responda SOMENTE com JSON válido, sem texto antes ou depois, neste formato:
-{"tema":"...","legendaFeed":"...","sugestaoFoto":"...","stories":[{"momento":"Manhã","ideia":"..."},{"momento":"Tarde","ideia":"..."},{"momento":"Noite","ideia":"..."}]}`;
+{"tema":"...","legendaFeed":"...","sugestaoFoto":"...","produto":"...","arte":{"titulo":"...","subtitulo":"...","chamada":"..."},"stories":[{"momento":"Manhã","ideia":"..."},{"momento":"Tarde","ideia":"..."},{"momento":"Noite","ideia":"..."}]}`;
 
 function texto(v, max) {
     return typeof v === 'string' ? v.trim().slice(0, max) : '';
@@ -33,16 +42,42 @@ function texto(v, max) {
 function montarContexto(corpo) {
     const dia = DIAS.includes(corpo.dia) ? corpo.dia : DIAS[new Date().getDay()];
     const temp = Number.isFinite(corpo.temperatura) ? Math.round(corpo.temperatura) : null;
-    const p = corpo.promocao && typeof corpo.promocao === 'object' ? corpo.promocao : null;
+    const reais = (n) => `R$ ${Number(n).toFixed(2).replace('.', ',')}`;
 
     const linhas = [`Dia da semana: ${dia}.`];
+    linhas.push(`Horário de funcionamento: das ${HORA_ABRE}h às ${HORA_FECHA}h, todos os dias.`);
     linhas.push(temp === null ? 'Temperatura: não informada.' : `Temperatura agora: ${temp}°C.`);
+
+    const ofertas = [];
+
+    // Promoção do painel (um produto, com preço, adicionais grátis ou copo do dia)
+    const p = corpo.promocao && typeof corpo.promocao === 'object' ? corpo.promocao : null;
     if (p) {
-        linhas.push(`Promoção ativa: ${texto(p.etiqueta, 80) || texto(p.produtoNome, 80)}.`);
-        if (texto(p.produtoNome, 80)) linhas.push(`Produto da promoção: ${texto(p.produtoNome, 80)}.`);
-        if (Number.isFinite(p.precoPromocional)) linhas.push(`Preço promocional: R$ ${p.precoPromocional.toFixed(2).replace('.', ',')}.`);
+        const nome = texto(p.produtoNome, 80);
+        if (p.tipo === 'preco' && Number.isFinite(p.precoPromocional)) {
+            ofertas.push(`${nome} por ${reais(p.precoPromocional)}`);
+        } else if (p.tipo === 'copoFixo' && Number.isFinite(p.precoPromocional)) {
+            ofertas.push(`Copo do dia (${nome}, receita pronta) por ${reais(p.precoPromocional)}`);
+        } else if (p.tipo === 'limiteGratis' && Number.isFinite(p.limiteGratisPromocional)) {
+            ofertas.push(`${nome} com até ${p.limiteGratisPromocional} adicionais grátis (sem mudança de preço)`);
+        } else if (nome) {
+            ofertas.push(`${nome} em promoção (sem detalhe de preço)`);
+        }
+        if (texto(p.etiqueta, 120)) linhas.push(`Texto do banner do site: ${texto(p.etiqueta, 120)}.`);
+    }
+
+    // Ofertas do cardápio (preço promocional por produto)
+    (Array.isArray(corpo.ofertas) ? corpo.ofertas : []).slice(0, 6).forEach((o) => {
+        if (o && texto(o.nome, 80) && Number.isFinite(o.precoPromocional) && Number.isFinite(o.precoOriginal)) {
+            ofertas.push(`${texto(o.nome, 80)} de ${reais(o.precoOriginal)} por ${reais(o.precoPromocional)}`);
+        }
+    });
+
+    if (ofertas.length) {
+        linhas.push('Ofertas ativas hoje (cada preço vale só para o produto citado):');
+        ofertas.forEach((o) => linhas.push(`- ${o}`));
     } else {
-        linhas.push('Promoção ativa: nenhuma hoje.');
+        linhas.push('Ofertas ativas hoje: nenhuma.');
     }
     return linhas.join('\n');
 }
@@ -58,6 +93,12 @@ function extrairJson(textoIA) {
         tema: String(plano.tema),
         legendaFeed: String(plano.legendaFeed),
         sugestaoFoto: String(plano.sugestaoFoto || ''),
+        produto: String(plano.produto || '').slice(0, 80),
+        arte: {
+            titulo: String((plano.arte && plano.arte.titulo) || plano.tema).slice(0, 40),
+            subtitulo: String((plano.arte && plano.arte.subtitulo) || '').slice(0, 60),
+            chamada: String((plano.arte && plano.arte.chamada) || 'Peça pelo site').slice(0, 30)
+        },
         stories: plano.stories.slice(0, 5).map(s => ({ momento: String(s.momento || ''), ideia: String(s.ideia || '') }))
     };
 }
