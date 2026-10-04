@@ -6,51 +6,171 @@
 <title>Marketing do dia — Nova Origem Açaí</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Permanent+Marker&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+    :root {
+        --fundo: #07030f;
+        --card: rgba(22, 9, 48, .88);
+        --card-borda: rgba(168, 85, 247, .32);
+        --campo: #0d0520;
+        --campo-borda: rgba(168, 85, 247, .38);
+        --roxo: #7c3aed;
+        --roxo-claro: #a855f7;
+        --roxo-escuro: #2e1065;
+        --amarelo: #fde047;
+        --texto: #f5f3ff;
+        --suave: #b9a8e0;
+        --erro: #f87171;
+        --pincel: "Permanent Marker", "Poppins", Impact, sans-serif;
+        --script: "Kaushan Script", "Brush Script MT", cursive;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #0f0f0f; color: #f5f5f5; }
+    body {
+        margin: 0; min-height: 100vh;
+        font-family: "Poppins", "Segoe UI", Roboto, Arial, sans-serif; font-weight: 500;
+        color: var(--texto); background-color: var(--fundo);
+        background-image:
+            radial-gradient(ellipse 80% 38% at 50% 0%, rgba(124, 58, 237, .42), transparent 70%),
+            radial-gradient(ellipse 50% 30% at 100% 70%, rgba(124, 58, 237, .20), transparent 70%),
+            radial-gradient(ellipse 40% 25% at 0% 40%, rgba(168, 85, 247, .12), transparent 70%);
+        background-attachment: fixed;
+    }
     .hidden { display: none !important; }
-    main { max-width: 760px; margin: 0 auto; padding: 20px 16px 60px; }
-    h1 { font-size: 1.3rem; margin: 0 0 4px; }
-    .sub { color: #9ca3af; font-size: .88rem; margin: 0 0 22px; line-height: 1.5; }
-    h2 { font-size: 1rem; margin: 0 0 10px; }
-    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-    .contexto { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
-    .contexto dt { color: #9ca3af; font-size: .78rem; margin-bottom: 2px; }
-    .contexto dd { margin: 0; font-weight: 600; font-size: .95rem; }
+    main { max-width: 760px; margin: 0 auto; padding: 22px 16px 70px; }
+
+    /* ----- cabeçalho ----- */
+    .topo { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+    .logo {
+        flex: 0 0 auto; width: 78px; height: 78px; border-radius: 50%; object-fit: cover;
+        background: #12062b; border: 3px solid var(--roxo-claro);
+        box-shadow: 0 0 28px rgba(168, 85, 247, .6);
+    }
+    .topo-texto { min-width: 0; }
+    h1 { margin: 0; font-weight: 400; line-height: 1; }
+    h1 span {
+        display: inline-block; font-family: var(--pincel); font-size: 1.65rem; color: #fff; letter-spacing: .01em;
+        padding: 10px 26px 11px 20px; text-shadow: 2px 3px 0 rgba(0, 0, 0, .4);
+        background: linear-gradient(100deg, var(--roxo), #6d28d9);
+        transform: rotate(-1.2deg);
+        clip-path: polygon(0 12%, 3% 0, 18% 6%, 40% 0, 63% 5%, 86% 0, 100% 9%, 98% 30%, 100% 52%, 97% 76%, 100% 94%, 80% 100%, 55% 94%, 30% 100%, 8% 95%, 2% 100%, 4% 72%, 0 50%, 3% 28%);
+    }
+    .sub { margin: 14px 0 22px; color: var(--suave); font-size: .86rem; line-height: 1.55; font-weight: 500; }
+    .sub b { font-family: var(--script); font-weight: 400; color: var(--amarelo); font-size: 1.1rem; }
+
+    /* ----- cartões ----- */
+    h2 { position: relative; display: inline-block; margin: 0 0 12px; padding-bottom: 7px; font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: .01em; }
+    h2::after {
+        content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 5px; border-radius: 4px 9px 4px 8px;
+        background: var(--amarelo); transform: rotate(-.8deg); opacity: .95;
+    }
+    .card {
+        background: var(--card); border: 1px solid var(--card-borda); border-radius: 20px;
+        padding: 18px; margin-bottom: 16px;
+        box-shadow: 0 10px 34px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .05);
+    }
+    .topo-card { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+    .topo-card h2 { margin: 0 0 8px; }
+
+    /* ----- contexto de hoje ----- */
+    .contexto { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 4px 0 0; }
+    .contexto > div { background: rgba(124, 58, 237, .13); border: 1px solid rgba(168, 85, 247, .22); border-radius: 14px; padding: 11px 13px; }
+    .contexto dt { color: var(--suave); font-size: .72rem; font-weight: 600; margin-bottom: 3px; }
+    .contexto dd { margin: 0; font-weight: 700; font-size: .93rem; line-height: 1.35; overflow-wrap: anywhere; }
+    .contexto #ctxPromo { color: var(--amarelo); }
     .cidade { display: flex; gap: 8px; margin-top: 14px; }
-    input { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; font-size: .9rem; }
-    button { padding: 10px 16px; border-radius: 10px; border: none; background: #7c3aed; color: #fff; font-weight: 700; font-size: .9rem; cursor: pointer; }
-    button.sec { background: #262626; border: 1px solid #333; color: #d1d5db; font-weight: 600; font-size: .8rem; padding: 7px 12px; }
-    button:disabled { opacity: .55; cursor: wait; }
-    button:focus-visible, input:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
-    #gerarBtn { width: 100%; padding: 14px; font-size: 1rem; margin-bottom: 14px; }
-    #status { color: #9ca3af; font-size: .85rem; margin: 0 0 14px; min-height: 1.2em; }
-    #status.erro { color: #f87171; }
-    .topo-card { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .topo-card h2 { margin: 0; }
-    .texto { white-space: pre-wrap; line-height: 1.55; font-size: .93rem; margin: 0; }
-    .momento { border-top: 1px solid #2a2a2a; padding-top: 12px; margin-top: 12px; }
-    .momento:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
-    .momento b { display: block; font-size: .82rem; color: #a78bfa; margin-bottom: 4px; }
-    .foto { color: #9ca3af; font-size: .85rem; margin-top: 6px; }
-    .linha { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
-    button.sec.on { background: #7c3aed; border-color: #7c3aed; color: #fff; }
-    select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #333; background: #111; color: #fff; font-size: .9rem; margin: 4px 0 8px; }
-    #arteBox input { width: 100%; margin: 4px 0; }
-    #arteCanvas { width: 100%; height: auto; border-radius: 12px; margin-top: 10px; background: #111; }
-    #resFeed:focus { outline: 1px dashed #7c3aed; outline-offset: 4px; }
+
+    /* ----- campos ----- */
+    input, select {
+        font-family: inherit; font-weight: 500;
+        min-width: 0; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--campo-borda);
+        background: var(--campo); color: #fff; font-size: .9rem;
+    }
+    input { flex: 1; }
+    input::placeholder { color: #7f6ea8; }
+    select { width: 100%; margin: 4px 0 8px; }
+    #arteBox input { width: 100%; margin: 5px 0; }
     #tempManual { flex: 0 0 120px; }
-    .ctl { display: block; font-size: .78rem; color: #9ca3af; margin-top: 8px; }
-    input[type=range] { padding: 0; accent-color: #7c3aed; }
-    .aviso { color: #fbbf24; font-size: .8rem; margin-top: 10px; }
+    input[type=range] { padding: 0; accent-color: var(--roxo-claro); }
+    .ctl { display: block; font-size: .76rem; font-weight: 600; color: var(--suave); margin-top: 10px; }
+
+    /* ----- botões ----- */
+    button {
+        font-family: inherit; padding: 11px 18px; border-radius: 12px; border: none;
+        background: linear-gradient(135deg, var(--roxo-claro), var(--roxo)); color: #fff;
+        font-weight: 800; font-size: .9rem; cursor: pointer;
+        box-shadow: 0 4px 16px rgba(124, 58, 237, .45);
+        transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    }
+    button:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+    button:active:not(:disabled) { transform: translateY(0); }
+    button.sec {
+        background: rgba(124, 58, 237, .14); border: 1px solid var(--campo-borda); color: #e4d9ff;
+        font-weight: 600; font-size: .8rem; padding: 8px 13px; box-shadow: none;
+    }
+    button.sec:hover:not(:disabled) { background: rgba(124, 58, 237, .28); }
+    button.sec.on { background: var(--amarelo); border-color: var(--amarelo); color: var(--roxo-escuro); font-weight: 800; }
+    button:disabled { opacity: .55; cursor: wait; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+    input:focus, select:focus { border-color: var(--roxo-claro); }
+
+    /* botão principal: pincelada amarela, igual ao selo de preço das artes */
+    #gerarBtn {
+        display: block; width: 100%; margin: 20px 0 14px; padding: 20px 14px 21px;
+        font-family: var(--pincel); font-weight: 400; font-size: 1.45rem; letter-spacing: .02em;
+        color: var(--roxo-escuro);
+        background: var(--amarelo); box-shadow: none; border-radius: 0;
+        clip-path: polygon(0 10%, 2% 0, 20% 5%, 45% 0, 70% 6%, 92% 0, 100% 8%, 98% 35%, 100% 62%, 98% 88%, 100% 100%, 78% 95%, 50% 100%, 24% 94%, 4% 100%, 0 90%, 2% 62%, 0 36%);
+        transition: transform .12s ease;
+    }
+    #gerarBtn:hover:not(:disabled) { transform: rotate(-.4deg) scale(1.01); filter: brightness(1.04); }
+    #gerarBtn:focus-visible { outline: none; background: #fff3a3; }
+    #baixarBtn { padding: 10px 16px; }
+
+    #status { color: var(--suave); font-size: .85rem; margin: 0 0 14px; min-height: 1.2em; }
+    #status.erro { color: var(--erro); font-weight: 600; }
+
+    /* ----- resultado ----- */
+    .texto { white-space: pre-wrap; line-height: 1.6; font-size: .93rem; margin: 0; }
+    #resTema { font-weight: 700; font-size: 1.02rem; }
+    #resFeed { background: rgba(124, 58, 237, .1); border: 1px solid rgba(168, 85, 247, .2); border-radius: 14px; padding: 13px 14px; }
+    #resFeed:focus { outline: 2px dashed var(--roxo-claro); outline-offset: 3px; }
+    .foto { color: var(--suave); font-size: .82rem; margin-top: 8px; line-height: 1.5; }
+    .linha { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+
+    .momento { border-top: 1px dashed rgba(168, 85, 247, .3); padding-top: 13px; margin-top: 13px; }
+    .momento:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+    .momento b { display: block; font-family: var(--script); font-weight: 400; font-size: 1.2rem; color: var(--amarelo); margin-bottom: 3px; }
+
+    /* ----- arte ----- */
+    #arteCanvas {
+        display: block; width: 100%; height: auto; margin-top: 14px; border-radius: 16px; background: #0d0520;
+        border: 2px solid rgba(168, 85, 247, .55); box-shadow: 0 0 34px rgba(124, 58, 237, .4);
+    }
+
+    .aviso { color: var(--amarelo); font-size: .8rem; margin-top: 10px; line-height: 1.5; }
+
+    @media (max-width: 480px) {
+        .logo { width: 64px; height: 64px; }
+        h1 span { font-size: 1.35rem; padding: 9px 20px 10px 16px; }
+        .cidade { flex-wrap: wrap; }
+        .cidade input#cidadeInput { flex: 1 1 100%; }
+        #gerarBtn { font-size: 1.25rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        button, #gerarBtn { transition: none; }
+        button:hover:not(:disabled), #gerarBtn:hover:not(:disabled) { transform: none; }
+    }
 </style>
 </head>
 <body>
 <main id="app" class="hidden">
-    <h1>Marketing do dia</h1>
-    <p class="sub">A IA olha a promoção ativa, o dia da semana e o clima, e monta o plano de posts de hoje.</p>
+    <header class="topo">
+        <img class="logo" src="./logonovonova.png.jpeg" alt="Nova Origem Açaí" onerror="this.style.display='none'">
+        <div class="topo-texto">
+            <h1><span>Marketing do dia</span></h1>
+        </div>
+    </header>
+    <p class="sub">A IA olha a promoção ativa, o dia da semana e o clima, e monta o plano de posts de hoje. <b>Vem que tem!</b></p>
 
     <section class="card">
         <h2>Contexto de hoje</h2>
