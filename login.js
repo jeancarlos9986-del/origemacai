@@ -15,7 +15,8 @@ const PAGINA_POR_PERFIL = {
     cozinha: "./cozinha.html",
     estoque: "./estoque.html",
     financeiro: "./financeiro.html",
-    entregador: "./entregador.html"
+    entregador: "./entregador.html",
+    marketing: "./marketing.html"
 };
 
 const form = document.getElementById("form-login");
