@@ -178,14 +178,24 @@ function mostrar(p) {
 const arte = { template: "roxo", formato: "feed", logo: null };
 const norm = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 const msgArte = (t) => { $("arteMsg").textContent = t || ""; $("arteMsg").classList.toggle("hidden", !t); };
+const reais = (n) => "R$ " + Number(n).toFixed(2).replace(".", ",");
+const fontesProntas = Promise.all(["600", "700", "800", "900"].map((w) => document.fonts.load(`${w} 40px "Poppins"`))).catch(() => {});
 
-function precoDoProduto(p) {
-    const promo = contexto.promocoes.find((x) => x.tipo === "preco" && norm(x.produtoNome) === norm(p.nome) && x.precoPromocional > 0);
-    if (promo)
-        return { preco: promo.precoPromocional, original: p.preco };
-    if (p.precoPromocional > 0 && p.precoPromocional < p.preco) return { preco: p.precoPromocional, original: p.preco };
-    return { preco: null, original: null };
+// Selo de destaque do produto: preço promocional, adicionais grátis ou copo do dia
+function seloDoProduto(p) {
+    const doPainel = (tipo) => contexto.promocoes.find((x) => x.tipo === tipo && norm(x.produtoNome) === norm(p.nome));
+    const pr = doPainel("preco");
+    if (pr && pr.precoPromocional > 0) return { topo: "de " + reais(p.preco), riscado: true, grande: reais(pr.precoPromocional) };
+    const gr = doPainel("limiteGratis");
+    if (gr && gr.limiteGratisPromocional > 0) return { topo: "Adicionais", grande: `${gr.limiteGratisPromocional} grátis` };
+    const cf = doPainel("copoFixo");
+    if (cf && cf.precoPromocional > 0) return { topo: "Copo do dia", grande: reais(cf.precoPromocional) };
+    if (p.precoPromocional > 0 && p.precoPromocional < p.preco) return { topo: "de " + reais(p.preco), riscado: true, grande: reais(p.precoPromocional) };
+    return null;
 }
+
+const ajusteAtual = () => ({ zoom: Number($("ajZoom").value) / 100, x: Number($("ajX").value) / 100, y: Number($("ajY").value) / 100 });
+const zerarAjuste = () => { $("ajZoom").value = 100; $("ajX").value = 0; $("ajY").value = 0; };
 
 function prepararArte(plano) {
     if (!catalogo.length) { $("arteBox").classList.add("hidden"); return; }
@@ -193,14 +203,19 @@ function prepararArte(plano) {
     const porNome = (n) => n && catalogo.find((p) => norm(p.nome) === norm(n));
     const escolhido = porNome(plano.produto) || porNome(contexto.promocoes[0] && contexto.promocoes[0].produtoNome)
         || porNome(contexto.ofertas[0] && contexto.ofertas[0].nome) || catalogo[0];
-    $("prodArte").innerHTML = "";
-    catalogo.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.nome; $("prodArte").appendChild(o); });
+    ["prodArte", "prodArte2"].forEach((id) => {
+        $(id).innerHTML = "";
+        catalogo.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.nome; $(id).appendChild(o); });
+    });
     $("prodArte").value = catalogo.indexOf(escolhido);
+    const outro = catalogo.find((p) => p !== escolhido && seloDoProduto(p)) || catalogo.find((p) => p !== escolhido) || escolhido;
+    $("prodArte2").value = catalogo.indexOf(outro);
     const a = plano.arte || {};
     $("arteTitulo").value = a.titulo || plano.tema || "";
     $("arteSub").value = a.subtitulo || "";
-    arte.chamada = a.chamada || "Peça pelo site";
-    arte.template = precoDoProduto(escolhido).preco ? "promo" : "roxo";
+    $("arteChamada").value = a.chamada || "Peça pelo site";
+    zerarAjuste();
+    arte.template = seloDoProduto(escolhido) ? "promo" : "roxo";
     pintarBotoesArte();
     renderizarArte();
 }
@@ -213,37 +228,78 @@ function pintarBotoesArte() {
         $("tplBtns").appendChild(b);
     });
     document.querySelectorAll("#formatoBtns button").forEach((b) => b.classList.toggle("on", b.dataset.formato === arte.formato));
+    $("prod2Box").classList.toggle("hidden", arte.template !== "dupla");
+}
+
+async function montarParams(formato) {
+    await fontesProntas;
+    const prod = catalogo[Number($("prodArte").value)];
+    if (!prod) return null;
+    const carregar = async (p) => { try { return await carregarImagem(p.foto); } catch (e) { return null; } };
+    const foto = await carregar(prod);
+    if (!foto) msgArte("Não consegui carregar a foto deste produto. Escolha outro na lista.");
+    if (!arte.logo) { try { arte.logo = await carregarImagem(LOGO_URL); } catch (e) { arte.logo = null; } }
+    const aj = ajusteAtual();
+    const params = {
+        template: arte.template, formato, foto, logo: arte.logo, ajuste: aj, selo: seloDoProduto(prod),
+        titulo: $("arteTitulo").value || "Nova Origem Açaí", subtitulo: $("arteSub").value,
+        chamada: $("arteChamada").value || "Peça pelo site"
+    };
+    if (arte.template === "dupla") {
+        const prod2 = catalogo[Number($("prodArte2").value)];
+        params.fotos = [
+            { foto, selo: params.selo, nome: prod.nome, ajuste: aj },
+            { foto: await carregar(prod2), selo: seloDoProduto(prod2), nome: prod2.nome, ajuste: { zoom: 1, x: 0, y: 0 } }
+        ];
+    }
+    return params;
 }
 
 let renderId = 0;
 async function renderizarArte() {
     const meu = ++renderId;
-    const prod = catalogo[Number($("prodArte").value)];
-    if (!prod) return;
     msgArte("");
-    let foto = null;
-    try { foto = await carregarImagem(prod.foto); } catch (e) { msgArte("Não consegui carregar a foto deste produto. Escolha outro na lista."); }
-    if (!arte.logo) { try { arte.logo = await carregarImagem(LOGO_URL); } catch (e) { arte.logo = null; } }
-    if (meu !== renderId) return;
-    const { preco, original } = precoDoProduto(prod);
-    desenharArte($("arteCanvas"), {
-        template: arte.template, formato: arte.formato, foto, logo: arte.logo,
-        titulo: $("arteTitulo").value || "Nova Origem Açaí", subtitulo: $("arteSub").value,
-        chamada: arte.chamada, preco, precoOriginal: original
-    });
+    const params = await montarParams(arte.formato);
+    if (!params || meu !== renderId) return;
+    desenharArte($("arteCanvas"), params);
 }
 
-function baixarArte() {
+const nomeArquivo = (f) => `nova-origem-${contexto.dia}-${arte.template}-${f}.png`;
+const paraBlob = (cv) => new Promise((ok, erro) => {
+    try { cv.toBlob((b) => (b ? ok(b) : erro(new Error("vazio"))), "image/png"); } catch (e) { erro(e); }
+});
+function salvarBlob(blob, nome) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = nome; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const SEM_EXPORTAR = "Esta foto não permite baixar a arte. Escolha outro produto na lista.";
+
+async function baixarArte() {
+    try { salvarBlob(await paraBlob($("arteCanvas")), nomeArquivo(arte.formato)); } catch (e) { msgArte(SEM_EXPORTAR); }
+}
+
+async function baixarAmbos() {
     try {
-        $("arteCanvas").toBlob((blob) => {
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `nova-origem-${contexto.dia}-${arte.template}-${arte.formato}.png`;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        }, "image/png");
+        for (const f of ["feed", "story"]) {
+            const params = await montarParams(f);
+            if (!params) return;
+            const cv = document.createElement("canvas");
+            desenharArte(cv, params);
+            salvarBlob(await paraBlob(cv), nomeArquivo(f));
+            await new Promise((r) => setTimeout(r, 500));
+        }
+    } catch (e) { msgArte(SEM_EXPORTAR); }
+}
+
+async function compartilharArte() {
+    try {
+        const blob = await paraBlob($("arteCanvas"));
+        const dados = { files: [new File([blob], nomeArquivo(arte.formato), { type: "image/png" })], text: $("resFeed").textContent };
+        if (navigator.canShare && navigator.canShare(dados)) await navigator.share(dados);
+        else salvarBlob(blob, nomeArquivo(arte.formato));
     } catch (e) {
-        msgArte("Esta foto não permite baixar a arte. Escolha outro produto na lista.");
+        if (e.name !== "AbortError") msgArte("Não foi possível compartilhar. Use Baixar imagem.");
     }
 }
 
@@ -264,7 +320,13 @@ protegerPagina(["marketing"]).then(async () => {
     $("tplBtns").addEventListener("click", (e) => { const t = e.target.dataset.tpl; if (t) { arte.template = t; pintarBotoesArte(); renderizarArte(); } });
     $("formatoBtns").addEventListener("click", (e) => { const f = e.target.dataset.formato; if (f) { arte.formato = f; pintarBotoesArte(); renderizarArte(); } });
     let espera;
-    ["prodArte", "arteTitulo", "arteSub"].forEach((id) => $(id).addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(renderizarArte, 250); }));
+    const redesenhar = () => { clearTimeout(espera); espera = setTimeout(renderizarArte, 250); };
+    ["prodArte", "prodArte2", "arteTitulo", "arteSub", "arteChamada", "ajZoom", "ajX", "ajY"].forEach((id) => $(id).addEventListener("input", redesenhar));
+    $("prodArte").addEventListener("change", zerarAjuste);
+    $("ajReset").addEventListener("click", () => { zerarAjuste(); renderizarArte(); });
+    $("baixarAmbosBtn").addEventListener("click", baixarAmbos);
+    $("compartilharBtn").addEventListener("click", compartilharArte);
+    if (navigator.share) $("compartilharBtn").classList.remove("hidden");
     $("tempManual").addEventListener("input", (e) => { contexto.temperatura = e.target.value === "" ? null : Number(e.target.value); pintarContexto(); });
     $("outraBtn").addEventListener("click", () => gerarPlano({ outra: true, temaAnterior: ultimoPlano ? ultimoPlano.tema : "" }));
     $("copiarTudoBtn").addEventListener("click", (e) => {
