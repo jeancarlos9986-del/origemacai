@@ -175,15 +175,11 @@ function mostrar(p) {
 }
 
 // ===== ARTE DO DIA (canvas) =====
-const arte = { template: "disponivel", formato: "feed", logo: null };
+const arte = { template: "roxo", formato: "feed", logo: null };
 const norm = (t) => (t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 const msgArte = (t) => { $("arteMsg").textContent = t || ""; $("arteMsg").classList.toggle("hidden", !t); };
 const reais = (n) => "R$ " + Number(n).toFixed(2).replace(".", ",");
-const fontesProntas = Promise.all([
-    ...["600", "700", "800", "900"].map((w) => document.fonts.load(`${w} 40px "Poppins"`)),
-    document.fonts.load('40px "Permanent Marker"', "AÇÍÃ0123456789"),
-    document.fonts.load('40px "Kaushan Script"', "Vem que tem")
-]).catch(() => {});
+const fontesProntas = Promise.all(["600", "700", "800", "900"].map((w) => document.fonts.load(`${w} 40px "Poppins"`))).catch(() => {});
 
 // Selo de destaque do produto: preço promocional, adicionais grátis ou copo do dia
 function seloDoProduto(p) {
@@ -219,7 +215,7 @@ function prepararArte(plano) {
     $("arteSub").value = a.subtitulo || "";
     $("arteChamada").value = a.chamada || "Peça pelo site";
     zerarAjuste();
-    arte.template = seloDoProduto(escolhido) ? "promo" : "disponivel";
+    arte.template = seloDoProduto(escolhido) ? "promo" : "roxo";
     pintarBotoesArte();
     renderizarArte();
 }
