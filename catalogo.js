@@ -122,6 +122,10 @@ function mapearProduto(id, data) {
             ? data.extrasFixos.map(String).map(s => s.trim()).filter(Boolean)
             : (String(data.extraFixo || "").trim() ? [String(data.extraFixo).trim()] : []),
         gratisPadrao: Array.isArray(data.gratisPadrao) ? data.gratisPadrao.map(String) : [],
+        // 🆕 extrasGratis: adicionais PAGOS que viram GRÁTIS só neste produto (ex.: Petisqueira:
+        // ["Paçoca","Ovomaltine"]). No site eles saem da lista de pagos e aparecem junto dos grátis,
+        // dividindo a mesma cota "limiteGratis". Passou da cota? Cobra o preço normal do adicional.
+        extrasGratis: Array.isArray(data.extrasGratis) ? data.extrasGratis.map(String).map(x => x.trim()).filter(Boolean) : [],
         ordem: Number.isFinite(ordemNum) ? ordemNum : ORDEM_PADRAO,
         status,
         esgotado: status === STATUS.ESGOTADO,
@@ -152,6 +156,9 @@ export async function salvarProduto(db, dados, id = null) {
             : [],
         gratisPadrao: Array.isArray(dados.gratisPadrao)
             ? dados.gratisPadrao.map(s => String(s).trim()).filter(Boolean)
+            : [],
+        extrasGratis: Array.isArray(dados.extrasGratis)
+            ? dados.extrasGratis.map(s => String(s).trim()).filter(Boolean)
             : [],
         status: dados.status || STATUS.DISPONIVEL,
         atualizadoEm: new Date()

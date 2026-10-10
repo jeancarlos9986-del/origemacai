@@ -145,6 +145,7 @@ escutarProdutos(db, produtos => {
             document.getElementById("prod-queridinho").checked = !!p.queridinho;
             document.getElementById("prod-extra-fixo").value = Array.isArray(p.extrasFixos) ? p.extrasFixos.join(", ") : "";
             document.getElementById("prod-gratis-padrao").value = Array.isArray(p.gratisPadrao) ? p.gratisPadrao.join(", ") : "";
+            document.getElementById("prod-extras-gratis").value = Array.isArray(p.extrasGratis) ? p.extrasGratis.join(", ") : "";
             document.getElementById("prod-customizavel").checked = p.customizavel;
             document.getElementById("prod-cancelar-edicao").style.display = "";
             document.getElementById("prod-salvar").textContent = "Salvar Alterações";
@@ -181,6 +182,7 @@ function limparFormProduto() {
     document.getElementById("prod-queridinho").checked = false;
     document.getElementById("prod-extra-fixo").value = "";
     document.getElementById("prod-gratis-padrao").value = "";
+    document.getElementById("prod-extras-gratis").value = "";
     document.getElementById("prod-customizavel").checked = true;
     document.getElementById("prod-cancelar-edicao").style.display = "none";
     document.getElementById("prod-salvar").textContent = "Salvar Produto";
@@ -258,6 +260,8 @@ document.getElementById("prod-salvar").addEventListener("click", async () => {
         extrasFixos: document.getElementById("prod-extra-fixo").value
             .split(",").map(s => s.trim()).filter(Boolean),
         gratisPadrao: document.getElementById("prod-gratis-padrao").value
+            .split(",").map(s => s.trim()).filter(Boolean),
+        extrasGratis: document.getElementById("prod-extras-gratis").value
             .split(",").map(s => s.trim()).filter(Boolean),
         customizavel: document.getElementById("prod-customizavel").checked
     };

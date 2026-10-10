@@ -458,6 +458,17 @@
                             "Limite de adicionais grátis" definido acima.
                         </p>
                     </div>
+                    <div style="flex:2; min-width:260px;">
+                        <label>Adicionais pagos que viram GRÁTIS só neste produto (opcional)</label>
+                        <input type="text" id="prod-extras-gratis"
+                            placeholder="Ex: Paçoca, Ovomaltine, Choco Ball, Disquete/Confete, Amendoim">
+                        <p style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+                            Nomes separados por vírgula, <b>iguais aos cadastrados</b> na aba Adicionais (tipo Pago).
+                            Só neste produto eles saem da lista de pagos e aparecem junto dos grátis, dividindo o
+                            mesmo "Limite de adicionais grátis". Se o cliente passar do limite, o excedente é
+                            cobrado pelo preço normal do adicional. Nos outros produtos nada muda.
+                        </p>
+                    </div>
                     <input type="hidden" id="prod-editando-id">
                     <button id="prod-salvar">Salvar Produto</button>
                     <button id="prod-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar
@@ -516,6 +527,7 @@
     </div>
 
     <script type="module" src="./cardapioAdmin.js"></script>
+<script type="module" src="./menu-telas.js"></script>
 </body>
 
 </html>
