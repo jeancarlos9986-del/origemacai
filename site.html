@@ -2573,6 +2573,9 @@
             <button class="tab active" data-cat="Copos">
                 <i class="fa-solid fa-cup-straw"></i> Copos de Açaí
             </button>
+            <button class="tab" data-cat="Batatas">
+                <i class="fa-solid fa-utensils"></i> Batata Recheada
+            </button>
         </div>
 
         <!-- GRID -->
@@ -5073,12 +5076,28 @@
         // como "popular" no painel administrativo (ex.: Nutella, Ovomaltine). Não precisa
         // mexer em código pra trocar quais adicionais aparecem aqui — basta marcar/desmarcar
         // "popular" em cada adicional no cardapio.html.
+        // 🆕 Produtos com "extrasGratis" (ex.: Petisqueira) tratam alguns adicionais PAGOS como
+        // GRÁTIS só nele: saem da lista de pagos e entram na lista de grátis (dividindo a mesma
+        // cota). O preço real do adicional continua valendo para o que passar da cota.
+        function nomesExtrasGratis(prod) {
+            return Array.isArray(prod && prod.extrasGratis) ? prod.extrasGratis : [];
+        }
+        function listaGratisDoProduto(prod) {
+            const viram = nomesExtrasGratis(prod);
+            if (!viram.length) return GRATIS;
+            return [...GRATIS, ...EXTRAS.filter(e => viram.includes(e.nome))];
+        }
+        function listaExtrasPagosDoProduto(prod) {
+            const viram = nomesExtrasGratis(prod);
+            return viram.length ? EXTRAS.filter(e => !viram.includes(e.nome)) : EXTRAS;
+        }
+
         function renderExtrasDestaque() {
             const box = document.getElementById("extrasDestaqueBox");
             const scroll = document.getElementById("extrasDestaqueScroll");
             if (!box || !scroll) return;
 
-            const destaque = EXTRAS.filter(e => e.ativo && e.popular);
+            const destaque = listaExtrasPagosDoProduto(currentProduct).filter(e => e.ativo && e.popular);
 
             if (destaque.length === 0) {
                 box.classList.add("hidden");
@@ -5137,7 +5156,7 @@
                 // 🆕 Agora com contador +/- em vez de checkbox: dá pra pedir
                 // o MESMO adicional mais de uma vez (ex: 2x leite condensado).
                 // 🆕 Populares primeiro (sort estável — mantém a ordem original dentro de cada grupo)
-                gratisList.innerHTML = [...GRATIS].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0)).map(item => `
+                gratisList.innerHTML = [...listaGratisDoProduto(product)].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0)).map(item => `
 <div class="option ${!item.ativo ? 'esgotado' : (item.acabando ? 'acabando' : '')} ${item.popular ? 'popular' : ''}">
     <label style="cursor:default;">
         ${item.nome}${item.popular ? ' <span class="badge-popular">🔥 Mais pedido</span>' : ''}${item.ativo && item.acabando ? ' <span class="badge-acabando">⚠️ Acabando</span>' : ''}
@@ -5168,7 +5187,7 @@
 
             // EXTRAS
             // 🆕 Também com contador +/- (permite repetir o mesmo adicional pago)
-            extraList.innerHTML = [...EXTRAS].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0)).map(item => `
+            extraList.innerHTML = [...listaExtrasPagosDoProduto(product)].sort((a, b) => (b.popular ? 1 : 0) - (a.popular ? 1 : 0)).map(item => `
 <div class="option ${!item.ativo ? 'esgotado' : (item.acabando ? 'acabando' : '')} ${item.popular ? 'popular' : ''}">
     <label style="cursor:default;">
         ${item.nome}${item.popular ? ' <span class="badge-popular">🔥 Mais pedido</span>' : ''}${item.ativo && item.acabando ? ' <span class="badge-acabando">⚠️ Acabando</span>' : ''}
@@ -6016,7 +6035,7 @@
                     // no painel) e ordena do mais barato pro mais caro: os mais baratos
                     // ficam dentro da cota grátis, e o que sobrar (os mais caros) é cobrado
                     // no valor de cada um — não é mais um valor fixo genérico.
-                    const precoPorNome = Object.fromEntries(GRATIS.map(g => [g.nome, g.preco || 0]));
+                    const precoPorNome = Object.fromEntries(listaGratisDoProduto(currentProduct).map(g => [g.nome, g.preco || 0]));
                     const ordenados = [...gratis]
                         .map(nome => ({ nome, preco: precoPorNome[nome] || 0 }))
                         .sort((a, b) => a.preco - b.preco);
@@ -6065,7 +6084,7 @@
                 // chance destacando os adicionais "populares" (Nutella, Ovomaltine, etc.)
                 // antes de fechar o item. Só pergunta se existe algo popular pra sugerir.
                 if (extras.length === 0) {
-                    const destaquePopup = EXTRAS.filter(e => e.ativo && e.popular);
+                    const destaquePopup = listaExtrasPagosDoProduto(currentProduct).filter(e => e.ativo && e.popular);
                     if (destaquePopup.length > 0) {
                         const nomesDestaque = destaquePopup.map(e => e.nome).join(", ");
                         const continuarSemExtra = await perguntar(
