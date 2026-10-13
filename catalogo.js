@@ -126,6 +126,11 @@ function mapearProduto(id, data) {
         // ["Paçoca","Ovomaltine"]). No site eles saem da lista de pagos e aparecem junto dos grátis,
         // dividindo a mesma cota "limiteGratis". Passou da cota? Cobra o preço normal do adicional.
         extrasGratis: Array.isArray(data.extrasGratis) ? data.extrasGratis.map(String).map(x => x.trim()).filter(Boolean) : [],
+        // 🆕 opcoes: escolha OBRIGATÓRIA que o cliente faz antes de pôr o produto no
+        // carrinho (ex.: ["Cheddar","Mussarela"] na Batata Recheada). "tituloOpcao" é o
+        // rótulo da escolha (ex.: "Queijo"), usado na observação do pedido.
+        opcoes: Array.isArray(data.opcoes) ? data.opcoes.map(String).map(s => s.trim()).filter(Boolean) : [],
+        tituloOpcao: String(data.tituloOpcao || "").trim(),
         ordem: Number.isFinite(ordemNum) ? ordemNum : ORDEM_PADRAO,
         status,
         esgotado: status === STATUS.ESGOTADO,
@@ -160,6 +165,10 @@ export async function salvarProduto(db, dados, id = null) {
         extrasGratis: Array.isArray(dados.extrasGratis)
             ? dados.extrasGratis.map(s => String(s).trim()).filter(Boolean)
             : [],
+        opcoes: Array.isArray(dados.opcoes)
+            ? dados.opcoes.map(s => String(s).trim()).filter(Boolean)
+            : [],
+        tituloOpcao: String(dados.tituloOpcao || "").trim(),
         status: dados.status || STATUS.DISPONIVEL,
         atualizadoEm: new Date()
     };

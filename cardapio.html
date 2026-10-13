@@ -469,6 +469,19 @@
                             cobrado pelo preço normal do adicional. Nos outros produtos nada muda.
                         </p>
                     </div>
+                    <div style="flex:2; min-width:260px;">
+                        <label>Opções obrigatórias do cliente (opcional)</label>
+                        <input type="text" id="prod-opcoes" placeholder="Ex: Cheddar, Mussarela">
+                        <p style="font-size:0.78rem; color:var(--muted); margin-top:4px;">
+                            Nomes separados por vírgula. Quando preenchido, o cliente <b>precisa escolher uma</b>
+                            dessas opções antes de adicionar ao carrinho, e a escolha vai na observação do pedido
+                            (a cozinha vê). Deixe vazio nos produtos sem escolha.
+                        </p>
+                    </div>
+                    <div style="flex:1; min-width:180px;">
+                        <label>Nome da escolha (opcional)</label>
+                        <input type="text" id="prod-titulo-opcao" placeholder="Ex: Queijo">
+                    </div>
                     <input type="hidden" id="prod-editando-id">
                     <button id="prod-salvar">Salvar Produto</button>
                     <button id="prod-cancelar-edicao" class="btn-secundario" style="display:none;">Cancelar

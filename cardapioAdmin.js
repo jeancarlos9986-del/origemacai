@@ -103,7 +103,7 @@ escutarProdutos(db, produtos => {
             <img src="${esc(p.imagens[0])}" alt="" onerror="this.style.visibility='hidden'">
             <div class="item-info">
                 <strong>${esc(p.nome)} <span class="badge-tipo">${esc(p.cat)}</span></strong>
-                <span>${p.emPromocao ? `<s style="color:var(--muted);">R$ ${p.precoOriginal.toFixed(2)}</s> <strong style="color:var(--green);">R$ ${p.precoPromocional.toFixed(2)} 🔥 promoção</strong>` : `R$ ${p.precoOriginal.toFixed(2)}`} ${p.limiteGratis > 0 ? `· até ${p.limiteGratis} adicionais grátis` : "· sem personalização"} ${p.destaque ? "· 🔥 destaque" : ""} ${p.tamanhoMontar ? `· opção "${esc(p.tamanhoMontar)}" do Monte do seu jeito` : ""} ${p.queridinho ? "· ⭐ Queridinhos" : ""} ${Array.isArray(p.extrasFixos) && p.extrasFixos.length ? `· inclui ${esc(p.extrasFixos.join(", "))} fixo` : ""} ${Array.isArray(p.gratisPadrao) && p.gratisPadrao.length ? `· padrão: ${esc(p.gratisPadrao.join(", "))}` : ""}</span>
+                <span>${p.emPromocao ? `<s style="color:var(--muted);">R$ ${p.precoOriginal.toFixed(2)}</s> <strong style="color:var(--green);">R$ ${p.precoPromocional.toFixed(2)} 🔥 promoção</strong>` : `R$ ${p.precoOriginal.toFixed(2)}`} ${p.limiteGratis > 0 ? `· até ${p.limiteGratis} adicionais grátis` : "· sem personalização"} ${p.destaque ? "· 🔥 destaque" : ""} ${p.tamanhoMontar ? `· opção "${esc(p.tamanhoMontar)}" do Monte do seu jeito` : ""} ${p.queridinho ? "· ⭐ Queridinhos" : ""} ${Array.isArray(p.extrasFixos) && p.extrasFixos.length ? `· inclui ${esc(p.extrasFixos.join(", "))} fixo` : ""} ${Array.isArray(p.gratisPadrao) && p.gratisPadrao.length ? `· padrão: ${esc(p.gratisPadrao.join(", "))}` : ""} ${Array.isArray(p.opcoes) && p.opcoes.length ? `· cliente escolhe: ${esc(p.opcoes.join(" ou "))}` : ""}</span>
             </div>
             ${pillsStatus("produto", p.id, p.status)}
             <div class="icones-acao">
@@ -146,6 +146,8 @@ escutarProdutos(db, produtos => {
             document.getElementById("prod-extra-fixo").value = Array.isArray(p.extrasFixos) ? p.extrasFixos.join(", ") : "";
             document.getElementById("prod-gratis-padrao").value = Array.isArray(p.gratisPadrao) ? p.gratisPadrao.join(", ") : "";
             document.getElementById("prod-extras-gratis").value = Array.isArray(p.extrasGratis) ? p.extrasGratis.join(", ") : "";
+            document.getElementById("prod-opcoes").value = Array.isArray(p.opcoes) ? p.opcoes.join(", ") : "";
+            document.getElementById("prod-titulo-opcao").value = p.tituloOpcao || "";
             document.getElementById("prod-customizavel").checked = p.customizavel;
             document.getElementById("prod-cancelar-edicao").style.display = "";
             document.getElementById("prod-salvar").textContent = "Salvar Alterações";
@@ -183,6 +185,8 @@ function limparFormProduto() {
     document.getElementById("prod-extra-fixo").value = "";
     document.getElementById("prod-gratis-padrao").value = "";
     document.getElementById("prod-extras-gratis").value = "";
+    document.getElementById("prod-opcoes").value = "";
+    document.getElementById("prod-titulo-opcao").value = "";
     document.getElementById("prod-customizavel").checked = true;
     document.getElementById("prod-cancelar-edicao").style.display = "none";
     document.getElementById("prod-salvar").textContent = "Salvar Produto";
@@ -263,6 +267,9 @@ document.getElementById("prod-salvar").addEventListener("click", async () => {
             .split(",").map(s => s.trim()).filter(Boolean),
         extrasGratis: document.getElementById("prod-extras-gratis").value
             .split(",").map(s => s.trim()).filter(Boolean),
+        opcoes: document.getElementById("prod-opcoes").value
+            .split(",").map(s => s.trim()).filter(Boolean),
+        tituloOpcao: document.getElementById("prod-titulo-opcao").value.trim(),
         customizavel: document.getElementById("prod-customizavel").checked
     };
     const idEditando = document.getElementById("prod-editando-id").value || null;
