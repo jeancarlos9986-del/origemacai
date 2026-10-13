@@ -814,20 +814,74 @@
         }
 
         /* 🆕 Faixa de destaque das promoções no início do site */
-        #promoDestaque { margin: 12px 16px 0; }
-        #promoDestaque h2 { font-size: .95rem; margin: 0 0 8px; color: #fff; }
-        #promoDestaque .promo-lista { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; }
+        #promoDestaque {
+            margin: 12px 16px 0;
+        }
+
+        #promoDestaque h2 {
+            font-size: .95rem;
+            margin: 0 0 8px;
+            color: #fff;
+        }
+
+        #promoDestaque .promo-lista {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .promo-chip {
-            flex: 0 0 auto; min-width: 150px; max-width: 230px; text-align: left; cursor: pointer;
-            border: none; border-radius: 14px; padding: 10px 14px; color: #fff; font-family: inherit;
+            flex: 0 0 auto;
+            min-width: 150px;
+            max-width: 230px;
+            text-align: left;
+            cursor: pointer;
+            border: none;
+            border-radius: 14px;
+            padding: 10px 14px;
+            color: #fff;
+            font-family: inherit;
             background: linear-gradient(135deg, #f59e0b, #ef4444);
         }
-        .promo-chip b { display: block; font-size: .85rem; margin-bottom: 2px; }
-        .promo-chip span { font-size: .78rem; font-weight: 600; }
-        .promo-chip s { opacity: .8; margin-right: 4px; }
-        .promo-chip:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-        .card.promo-destacado { animation: promoPulso 1.2s ease-in-out 2; }
-        @keyframes promoPulso { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } 50% { box-shadow: 0 0 0 6px rgba(245,158,11,.55); } }
+
+        .promo-chip b {
+            display: block;
+            font-size: .85rem;
+            margin-bottom: 2px;
+        }
+
+        .promo-chip span {
+            font-size: .78rem;
+            font-weight: 600;
+        }
+
+        .promo-chip s {
+            opacity: .8;
+            margin-right: 4px;
+        }
+
+        .promo-chip:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        .card.promo-destacado {
+            animation: promoPulso 1.2s ease-in-out 2;
+        }
+
+        @keyframes promoPulso {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(245, 158, 11, .55);
+            }
+        }
 
         .promo-badge {
             display: inline-block;
@@ -2574,7 +2628,7 @@
                 <i class="fa-solid fa-cup-straw"></i> Copos de Açaí
             </button>
             <button class="tab" data-cat="Batatas">
-                <i class="fa-solid fa-utensils"></i> Batata Recheada
+                <i class="fa-solid fa-utensils"></i> ???
             </button>
         </div>
 
@@ -2737,8 +2791,8 @@
         <div class="modal-content" style="max-width:480px;">
             <div class="modal-top">
                 <div>
-                    <h2>Monte do seu jeito</h2>
-                    <small style="color:#9ca3af;">Escolha o tamanho do seu copo</small>
+                    <h2 id="tamanhoTitulo">Monte do seu jeito</h2>
+                    <small id="tamanhoSub" style="color:#9ca3af;">Escolha o tamanho do seu copo</small>
                 </div>
                 <i class="fa fa-times close" id="closeTamanho" role="button" tabindex="0"
                     aria-label="Fechar escolha de tamanho"></i>
@@ -4824,6 +4878,13 @@
                     const qtyEl = card ? card.querySelector(".qtyCard .qty-value") : null;
                     const qtd = qtyEl ? Math.max(1, Number(qtyEl.innerText) || 1) : 1;
 
+                    // 🆕 Produto com escolha obrigatória (ex.: Cheddar ou Mussarela):
+                    // pergunta a opção primeiro e só então manda pro carrinho.
+                    if (Array.isArray(product.opcoes) && product.opcoes.length) {
+                        abrirEscolhaOpcao(product, opcao => adicionarRapido(product, qtd, card, opcao));
+                        return;
+                    }
+
                     if (product.limiteGratis > 0) {
                         // 🆕 "Monte do seu jeito": ainda precisa escolher os adicionais
                         // grátis, então continua abrindo o modal — mas guarda a
@@ -4865,6 +4926,8 @@
                 .filter(Boolean)
                 .sort((a, b) => a.preco - b.preco);
 
+            document.getElementById("tamanhoTitulo").innerText = "Monte do seu jeito";
+            document.getElementById("tamanhoSub").innerText = "Escolha o tamanho do seu copo";
             const box = document.getElementById("tamanhoOpcoes");
             box.innerHTML = opcoes.map(p => `
                 <button type="button" class="btn tamanho-opcao-btn" data-id="${p.id}"
@@ -4889,6 +4952,31 @@
                 });
             });
 
+            document.getElementById("tamanhoModal").style.display = "flex";
+        }
+
+        // 🆕 Escolha OBRIGATÓRIA do produto (campo "opcoes" do painel — ex.: Cheddar ou
+        // Mussarela na Batata Recheada). Reaproveita o modal de tamanho: o cliente toca numa
+        // opção e o callback recebe o nome escolhido. A escolha vai na observação do item.
+        function rotuloOpcao(product) {
+            return product.tituloOpcao || "Opção";
+        }
+        function abrirEscolhaOpcao(product, onEscolher) {
+            document.getElementById("tamanhoTitulo").innerText = product.nome;
+            document.getElementById("tamanhoSub").innerText = "Escolha uma opção";
+            const box = document.getElementById("tamanhoOpcoes");
+            box.innerHTML = product.opcoes.map(op => `
+                <button type="button" class="btn tamanho-opcao-btn" data-opcao="${String(op).replace(/"/g, "&quot;")}"
+                    style="display:flex; justify-content:space-between; align-items:center; text-align:left; width:100%;">
+                    <strong>${op}</strong>
+                </button>
+            `).join("");
+            box.querySelectorAll(".tamanho-opcao-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.getElementById("tamanhoModal").style.display = "none";
+                    onEscolher(btn.dataset.opcao);
+                });
+            });
             document.getElementById("tamanhoModal").style.display = "flex";
         }
 
@@ -5307,6 +5395,19 @@
                 return;
             }
 
+            // 🆕 Produto com escolha obrigatória: "Editar" só troca a opção escolhida.
+            if (Array.isArray(product.opcoes) && product.opcoes.length) {
+                closeCheckout();
+                abrirEscolhaOpcao(product, opcao => {
+                    item.opcao = opcao;
+                    item.obs = `${rotuloOpcao(product)}: ${opcao}`;
+                    saveCart();
+                    updateCart();
+                    openCheckout();
+                });
+                return;
+            }
+
             closeCheckout();
             // 🆕 Editar substitui o item existente (não deve multiplicar cópias),
             // então zera a quantidade do card antes de abrir a personalização.
@@ -5334,7 +5435,7 @@
         // direto ao carrinho, na quantidade escolhida no seletor do card — sem
         // precisar abrir o modal de personalização. Quem quiser adicionais pagos
         // ainda pode tocar em "Editar" no resumo do pedido pra personalizar.
-        function adicionarRapido(product, qtd, card) {
+        function adicionarRapido(product, qtd, card, opcao = "") {
             const quantidade = Math.max(1, Number(qtd) || 1);
 
             for (let i = 0; i < quantidade; i++) {
@@ -5344,7 +5445,10 @@
                     preco: product.preco,
                     gratis: [],
                     extras: [],
-                    obs: ""
+                    // 🆕 Escolha obrigatória (ex.: "Queijo: Cheddar") — vai na observação,
+                    // que o carrinho, o resumo e a cozinha já exibem.
+                    opcao: opcao,
+                    obs: opcao ? `${rotuloOpcao(product)}: ${opcao}` : ""
                 });
             }
 
@@ -6693,7 +6797,7 @@
             lista.innerHTML = itens.map(p => {
                 const detalhe = p.receitaFixaTravada ? `🍧 Copo do dia · ${money(p.preco)}`
                     : p.emPromocao ? `<s>${money(p.precoOriginal)}</s> ${money(p.preco)}`
-                    : `🎁 ${p.promoGratisTexto}`;
+                        : `🎁 ${p.promoGratisTexto}`;
                 return `<button type="button" class="promo-chip" data-pid="${p.id}"><b>${p.nome}</b><span>${detalhe}</span></button>`;
             }).join("");
             box.classList.remove("hidden");
