@@ -1,5 +1,8 @@
-import { db } from "./firebase.js";
+import { db, auth } from "./firebase.js";
+import { abrirConferenciaCaixa, confirmarConferencia } from "./conferenciaCaixa.js";
 import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
+import { calcularNecessidades } from "./estoqueBaixa.js";
+import { norm } from "./utils.js";
 import {
     collection, onSnapshot, addDoc, query, where, getDocs, getDoc, doc, setDoc, updateDoc, deleteDoc, increment, orderBy, limit, runTransaction, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -32,6 +35,7 @@ let taxasConfig = { pix: 0.49, debito: 1.18, credito: 2.82 };
 let ultimoPag = { dinheiro: 0, pix: 0, cartao: 0 }, ultimoCat = { insumo: 0, fixo: 0, taxa: 0, outros: 0 }, ultimoGraf = [0, 0, 0, 0, 0, 0, 0], ultimoLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 let ultimasTaxas = { pix: 0, debito: 0, credito: 0, total: 0 };
 
+// ⚠️ Tabela ANTIGA, não é mais usada no cálculo (o CMV agora vem do estoque). Pode ser apagada.
 const CUSTOS = {
     acai: { custoPorGrama: 0.02, gramasPorCopo: 300 }, copo400: 0.58, copo500: 0.63, tampa: 0.40, colher: 0.30, guardanapo: 0.20,
     sacola1: 0.50, sacola2: 0.73, portaCopo1: 0.50, portaCopo2: 1.00,
@@ -59,15 +63,44 @@ function mostrarErro(contexto, erro) {
     el.classList.add("visivel", "alerta-erro");
     el.innerHTML = `<i class="fas fa-triangle-exclamation"></i> <strong>Erro ao carregar "${contexto}"${codigo}:</strong> ${escapeHTML(msg)} — recarregue a página; se persistir, confira sua conexão e as permissões do Firebase.`;
 }
+// ==============================================
+// 🧮 CUSTO REAL DOS PEDIDOS (CMV) — vem do ESTOQUE
+// ==============================================
+// Antes: tabela fixa no código (CUSTOS), com 300g de açaí em qualquer copo.
+// Agora: usa a MESMA receita da baixa de estoque (calcularNecessidades: 280g no
+// 400ml, 450g no 500ml, 565g no 700ml, embalagens, adicionais, sacola...) e
+// multiplica pelo custoUnitario cadastrado em cada item do estoque. Mudou o
+// preço de compra (tela Estoque)? O CMV acompanha sozinho.
+// Insumo SEM custo cadastrado conta R$ 0 e aparece no aviso do card
+// "Custos Produção" — assim a margem nunca fica bonita sem você saber.
+let custosEstoque = new Map();       // norm(nome) -> custo por unidade do estoque
+let custosCarregadoEm = 0;
+let insumosSemCusto = new Set();
+let custosSuspeitos = [];   // itens do estoque com custo quase zero (provável erro de digitação)
+let gastosSuspeitos = [];   // compras de insumo com valor menor que R$ 1,00
+let ultimoLucroLiq = 0;     // lucro do período (usado no "Copiar resumo")
+async function carregarCustosEstoque(forcar = false) {
+    if (!forcar && Date.now() - custosCarregadoEm < 60000) return;
+    try {
+        const snap = await getDocs(collection(db, "estoque"));
+        const mapa = new Map(), suspeitos = [];
+        snap.forEach(d => {
+            const e = d.data();
+            const c = Number(pegarCampo(e, ["custoUnitario", "custo", "valor"])) || 0;
+            mapa.set(norm(e.nome), c);
+            if (c > 0 && c <= 0.05) suspeitos.push(e.nome);
+        });
+        custosEstoque = mapa; custosSuspeitos = suspeitos; custosCarregadoEm = Date.now();
+    } catch (e) { mostrarErro("Custos do estoque (CMV)", e); }
+}
 const calcularCustoPedido = itens => {
-    let total = 0, qtd = 0; if (!itens) return 0;
-    itens.forEach(i => {
-        qtd++; total += CUSTOS.acai.custoPorGrama * CUSTOS.acai.gramasPorCopo;
-        const n = (i.nome || "").toLowerCase(); total += n.includes("400ml") ? CUSTOS.copo400 : CUSTOS.copo500;
-        total += CUSTOS.tampa + CUSTOS.colher + CUSTOS.guardanapo;
-        [].concat(i.gratis || [], i.extras?.gratis || [], i.extras?.pagos || [], i.pagos || []).forEach(nome => { if (CUSTOS.adicionais[nome]) total += CUSTOS.adicionais[nome]; });
+    if (!itens || !itens.length) return 0;
+    let total = 0;
+    calcularNecessidades(itens).forEach((v, chave) => {
+        const custo = custosEstoque.get(chave);
+        if (!custo) { insumosSemCusto.add(v.nome); return; }
+        total += v.qtd * custo;
     });
-    total += qtd === 1 ? CUSTOS.sacola1 + CUSTOS.portaCopo1 : CUSTOS.sacola2 + CUSTOS.portaCopo2;
     return Math.round(total * 100) / 100;
 };
 
@@ -275,6 +308,14 @@ async function recalcularCaixaAutomatico() {
         if (e.tipo !== "devolucao") return;
         const v = Number(e.valor || 0), forma = e.formaPagamento || "dinheiro";
         if (forma === "pix") pix -= v; else if (forma === "cartao") cartao -= v; else dinheiro -= v;
+    });
+
+    // 7) Acertos feitos na conferência de caixa (sobra/falta explicada)
+    const fechSnap = await getDocs(collection(db, "fechamento_caixa"));
+    fechSnap.forEach(d => {
+        const aj = d.data().ajusteAplicado;
+        if (!aj) return;
+        dinheiro += Number(aj.dinheiro || 0); pix += Number(aj.pix || 0); cartao += Number(aj.cartao || 0);
     });
 
     dinheiro = Number(dinheiro.toFixed(2)); pix = Number(pix.toFixed(2)); cartao = Number(cartao.toFixed(2));
@@ -583,16 +624,10 @@ window.excluirContaReceber = async (id) => {
 // ==============================================
 // 🧾 FECHAMENTO DE CAIXA
 // ==============================================
+// Fechamento/abertura de caixa: toda a lógica está em conferenciaCaixa.js
 async function fecharCaixa() {
-    const saldoReal = parseFloat(document.getElementById("saldoReal").value) || 0;
-    const saldoCalc = totalVendas - totalCustos - totalGastosEmpresa + totalReceitasExtras;
-    const dinheiroEsperado = Number((ultimoPag.dinheiro + totalTrocosPix - totalGastosDinheiro).toFixed(2));
-    await addDoc(collection(db, "fechamento_caixa"), {
-        data: new Date(), saldoCalculado: saldoCalc, saldoReal, diferenca: saldoReal - saldoCalc,
-        dinheiroVendas: ultimoPag.dinheiro, trocosPixPeriodo: totalTrocosPix, gastosDinheiroPeriodo: totalGastosDinheiro, dinheiroFisicoEsperado: dinheiroEsperado
-    });
-    alert("✅ Caixa fechado com sucesso!");
-    document.getElementById("modalFechar").classList.remove("aberto");
+    const salvou = await confirmarConferencia();
+    if (salvou) { document.getElementById("modalFechar").classList.remove("aberto"); carregarDados(); }
 }
 
 // ==============================================
@@ -693,6 +728,8 @@ async function salvarEdicao() {
 // 📈 CARREGAMENTO GERAL DE DADOS
 // ==============================================
 async function carregarDados() {
+    insumosSemCusto = new Set();
+    await carregarCustosEstoque(true);
     totalVendas = totalCustos = totalGastosEmpresa = totalGastosPessoal = totalReceitasExtras = totalTrocosPix = totalGastosDinheiro = qtdVendas = 0;
     const pagamentos = { dinheiro: 0, pix: 0, cartao: 0, debito: 0, credito: 0 }, categorias = { insumo: 0, fixo: 0, taxa: 0, outros: 0 };
     const lista = document.getElementById("lista-extrato"); lista.innerHTML = `<tr><td colspan="7" class="linha-carregando"><div class="skeleton-linha"></div><div class="skeleton-linha" style="width:70%"></div><div class="skeleton-linha" style="width:85%"></div></td></tr>`;
@@ -800,20 +837,20 @@ async function carregarDados() {
     const netPorDiaBase = netPorDia.slice();
     unsubscribeGastos = onSnapshot(query(collection(db, "gastos"), where("data", ">=", inicio), where("data", "<=", fim)), snap => {
         console.log("[DIAGNÓSTICO] Gastos encontrados no período:", snap.size);
-        totalGastosEmpresa = 0; totalGastosPessoal = 0; totalGastosDinheiro = 0;
+        totalGastosEmpresa = 0; totalGastosPessoal = 0; totalGastosDinheiro = 0; gastosSuspeitos = [];
         const linhas = [];
         // Como este listener roda de novo a cada mudança, zera a parte de gastos
         // do netPorDia antes de recontar (vendas/receitas já foram somadas acima).
         for (let i = 0; i < netPorDia.length; i++) netPorDia[i] = netPorDiaBase[i];
         snap.forEach(doc => {
             const g = doc.data(), v = Number(g.valor || 0), nat = g.natureza || "empresa", forma = g.formaPagamento || "dinheiro";
-            if (nat === "pessoal") totalGastosPessoal += v; else { totalGastosEmpresa += v; categorias[g.tipo || "outros"] += v; }
+            if (nat === "pessoal") totalGastosPessoal += v; else { totalGastosEmpresa += v; categorias[g.tipo || "outros"] += v; if ((g.tipo || "outros") === "insumo" && v > 0 && v < 1) gastosSuspeitos.push({ desc: g.descricao || "compra", valor: v, data: g.data ? g.data.toDate() : null }); }
             // 🐛 CORRIGIDO: qualquer gasto pago em dinheiro de papel saiu do caixa físico de
             // verdade, seja ele Empresa ou Pessoal — por isso conta pra baixo do "Dinheiro
             // Físico Esperado" independente da natureza. Só gasto pago com forma "pessoal"
             // (dinheiro do seu próprio bolso) não mexe no caixa físico da empresa.
             if (forma === "dinheiro") totalGastosDinheiro += v;
-            if (periodo === "mes" && nat !== "pessoal" && g.data) netPorDia[g.data.toDate().getDate()] -= v;
+            if (periodo === "mes" && nat !== "pessoal" && (g.tipo || "outros") !== "insumo" && g.data) netPorDia[g.data.toDate().getDate()] -= v;
             linhas.push({ id: doc.id, g, v, nat, forma });
         });
         const filtradas = filtroNatureza === "todos" ? linhas : linhas.filter(l => l.nat === filtroNatureza);
@@ -830,7 +867,7 @@ async function carregarDados() {
         atualizarTela(pagamentos, categorias, dadosGraf, diasSem, netPorDia, fim.getDate(), receitasForma).then(() => {
             if (!window.__diagMostrado) {
                 window.__diagMostrado = true;
-                setTimeout(() => alert("🔍 DIAGNÓSTICO (pode fechar esta janela depois de ler / tirar print):\n" + diagnostico + (window.__diagCaixa || "")), 300);
+                console.info("🔍 DIAGNÓSTICO:\n" + diagnostico + (window.__diagCaixa || ""));
             }
         });
     }, e => {
@@ -859,16 +896,31 @@ async function calcularTotaisPeriodoAnterior(periodoAtual, refAtual) {
     } else {
         return null;
     }
-    let vendas = 0, custos = 0, receitasExtra = 0, gastosEmpresa = 0;
+    // Mesma conta do lucro atual: insumo comprado não entra (já está no CMV) e as taxas são descontadas.
+    let vendas = 0, custos = 0, receitasExtra = 0, gastosOper = 0, gastosTaxas = 0;
+    const base = { pix: 0, debito: 0, credito: 0 };
+    await carregarCustosEstoque();
     try {
         const pedidosSnap = await getDocs(query(collection(db, "pedidos"), where("status", "==", "concluido"), where("criadoEm", ">=", inicio.getTime()), where("criadoEm", "<=", fim.getTime())));
-        pedidosSnap.forEach(d => { const p = d.data(), v = Number(p.total || 0); vendas += v; custos += calcularCustoPedido(p.itens || []); });
+        pedidosSnap.forEach(d => {
+            const p = d.data(), v = Number(p.total || 0); vendas += v; custos += calcularCustoPedido(p.itens || []);
+            const f = detectarFormaPedido(p.pagamento);
+            if (f === "pix") base.pix += v; else if (f === "cartao_debito") base.debito += v; else if (f === "cartao_credito") base.credito += v;
+        });
         const receitasSnap = await getDocs(query(collection(db, "receitas_extras"), where("data", ">=", inicio), where("data", "<=", fim)));
-        receitasSnap.forEach(d => receitasExtra += Number(d.data().valor || 0));
+        receitasSnap.forEach(d => {
+            const r = d.data(), v = Number(r.valor || 0), f = r.formaPagamento || "dinheiro"; receitasExtra += v;
+            if (f === "pix") base.pix += v; else if (f === "cartao_debito") base.debito += v; else if (f === "cartao_credito" || f === "cartao") base.credito += v;
+        });
         const gastosSnap = await getDocs(query(collection(db, "gastos"), where("data", ">=", inicio), where("data", "<=", fim)));
-        gastosSnap.forEach(d => { const g = d.data(); if ((g.natureza || "empresa") !== "pessoal") gastosEmpresa += Number(g.valor || 0); });
+        gastosSnap.forEach(d => {
+            const g = d.data(), v = Number(g.valor || 0), t = g.tipo || "outros";
+            if ((g.natureza || "empresa") === "pessoal" || t === "insumo") return;
+            if (t === "taxa") gastosTaxas += v; else gastosOper += v;
+        });
     } catch (e) { console.error("Erro ao buscar período anterior", e); return null; }
-    return { vendas, lucroLiq: Number((vendas - custos + receitasExtra - gastosEmpresa).toFixed(2)) };
+    const taxasCalc = base.pix * taxasConfig.pix / 100 + base.debito * taxasConfig.debito / 100 + base.credito * taxasConfig.credito / 100;
+    return { vendas, lucroLiq: Number((vendas - custos + receitasExtra - gastosOper - Math.max(taxasCalc, gastosTaxas)).toFixed(2)) };
 }
 
 // Monta o "↑12% vs ontem" que aparece do lado dos cards
@@ -922,8 +974,6 @@ async function salvarEdicaoPagamento() {
 async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMes, receitasForma = { pix: 0, debito: 0, credito: 0 }) {
     const lucroOp = Number((totalVendas - totalCustos).toFixed(2));
     const receitaTotal = totalVendas + totalReceitasExtras;
-    const lucroLiq = Number((lucroOp + totalReceitasExtras - totalGastosEmpresa).toFixed(2));
-    const margem = receitaTotal > 0 ? ((lucroLiq / receitaTotal) * 100).toFixed(1) : 0;
     const ticket = qtdVendas > 0 ? (totalVendas / qtdVendas).toFixed(2) : 0;
     const saldo = await saldoCaixa();
     const dinheiroEsperado = Number((pag.dinheiro + totalTrocosPix - totalGastosDinheiro).toFixed(2));
@@ -938,6 +988,19 @@ async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMe
     const taxaCreditoValor = Number((baseTaxaCredito * (taxasConfig.credito / 100)).toFixed(2));
     const taxaTotalValor = Number((taxaPixValor + taxaDebitoValor + taxaCreditoValor).toFixed(2));
 
+    // 💰 LUCRO REAL — uma conta só, usada no painel inteiro:
+    //   vendas + extras − CMV − gastos − taxas
+    // Insumo comprado NÃO é descontado aqui: o CMV já é o custo dos insumos usados
+    // (antes ele era descontado duas vezes). Taxas de Pix/cartão passam a ser descontadas;
+    // se você lançou taxa manualmente como gasto, vale o maior valor (sem contar em dobro).
+    const gastosInsumos = Number(cat.insumo || 0), gastosTaxasLanc = Number(cat.taxa || 0);
+    const gastosOperacionais = Number((totalGastosEmpresa - gastosInsumos - gastosTaxasLanc).toFixed(2));
+    const taxasNoLucro = Math.max(taxaTotalValor, gastosTaxasLanc);
+    const lucroLiq = Number((lucroOp + totalReceitasExtras - gastosOperacionais - taxasNoLucro).toFixed(2));
+    ultimoLucroLiq = lucroLiq;
+    const margem = receitaTotal > 0 ? ((lucroLiq / receitaTotal) * 100).toFixed(1) : 0;
+    const baseDivisao = Math.max(0, lucroLiq);
+
     // 📈 Comparativo com o período anterior (dia anterior / mês anterior)
     const rotuloAnterior = periodo === "dia" ? "ontem" : periodo === "mes" ? "mês anterior" : "";
     const comparativo = await calcularTotaisPeriodoAnterior(periodo, dataReferencia);
@@ -949,13 +1012,15 @@ async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMe
         <div class="card-resumo"><div class="rotulo">Total Vendas</div><div class="valor">${moeda(totalVendas)}</div><div class="destaque">${qtdVendas} pedidos${badgeVendas}</div></div>
         <div class="card-resumo"><div class="rotulo">Receitas Extras</div><div class="valor" style="color:var(--green)">${moeda(totalReceitasExtras)}</div></div>
         <div class="card-resumo" style="border-color:var(--green);"><div class="rotulo">A Receber</div><div class="valor" id="valorContasReceberCard" style="color:var(--green)">${moeda(totalContasReceberAtual)}</div><div class="destaque">de clientes</div></div>
-        <div class="card-resumo"><div class="rotulo">Custos Produção</div><div class="valor" style="color:var(--yellow)">${moeda(totalCustos)}</div></div>
-        <div class="card-resumo"><div class="rotulo">Gastos Empresa</div><div class="valor" style="color:var(--red)">${moeda(totalGastosEmpresa)}</div></div>
+        <div class="card-resumo"${insumosSemCusto.size ? ' style="border-color:var(--red);"' : ''}><div class="rotulo">Custos Produção (CMV)</div><div class="valor" style="color:var(--yellow)">${moeda(totalCustos)}</div><div class="destaque">${totalVendas > 0 ? ((totalCustos / totalVendas) * 100).toFixed(1) + '% das vendas' : 'custo real do estoque'}${insumosSemCusto.size ? `<br><span style="color:var(--red)">⚠️ sem custo no estoque: ${[...insumosSemCusto].map(escapeHTML).join(", ")}</span>` : ''}</div></div>
+        <div class="card-resumo"><div class="rotulo">Gastos Empresa</div><div class="valor" style="color:var(--red)">${moeda(totalGastosEmpresa)}</div><div class="destaque">inclui ${moeda(gastosInsumos)} de compras de insumo (já contadas no CMV, não descontam duas vezes)</div></div>
         <div class="card-resumo" style="border-color:#9333ea;"><div class="rotulo">Gastos Pessoais</div><div class="valor" style="color:#d8b4fe">${moeda(totalGastosPessoal)}</div><div class="destaque">não afeta o lucro</div></div>
         <div class="card-resumo" style="border-color:#9333ea;"><div class="rotulo">Empresa te deve</div><div class="valor" id="valorEmprestimoCard" style="color:#d8b4fe">${moeda(saldoEmprestimoAtual)}</div><div class="destaque" id="destaqueEmprestimoCard">4x de ${moeda(saldoEmprestimoAtual / 4)}</div></div>
         <div class="card-resumo" style="border-color:var(--yellow);"><div class="rotulo">Estoque Parado</div><div class="valor" id="valorEstoqueCard" style="color:var(--yellow)">${moeda(totalEstoqueAtual)}</div><div class="destaque">dinheiro em mercadoria</div></div>
-        <div class="card-resumo ${lucroLiq < 0 ? 'alerta-negativo' : ''}"><div class="rotulo">Saldo Final (empresa)</div><div class="valor" style="color:${lucroLiq < 0 ? 'var(--red)' : 'var(--green)'}">${moeda(lucroLiq)}</div><div class="destaque">Margem ${margem}% | Ticket ${moeda(ticket)}${badgeSaldo}</div></div>
+        <div class="card-resumo ${lucroLiq < 0 ? 'alerta-negativo' : ''}"><div class="rotulo">Lucro do Período (empresa)</div><div class="valor" style="color:${lucroLiq < 0 ? 'var(--red)' : 'var(--green)'}">${moeda(lucroLiq)}</div><div class="destaque">Margem ${margem}% | Ticket ${moeda(ticket)}<br>${badgeSaldo ? "Lucro" + badgeSaldo : ""}<br><span style="font-size:.66rem;color:var(--muted)">vendas + extras − CMV − gastos − taxas</span></div></div>
     `;
+
+    renderAlertasConfiabilidade({ gastosInsumos });
 
     // 🔝 Mini resumo fixo na topbar
     const miniCaixa = document.getElementById("miniSaldoCaixa"), miniPeriodo = document.getElementById("miniSaldoPeriodo"), miniRotulo = document.getElementById("miniRotuloPeriodo");
@@ -972,7 +1037,7 @@ async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMe
         if (graficoEvolucao) graficoEvolucao.destroy();
         graficoEvolucao = new Chart(document.getElementById("graficoEvolucaoMes"), {
             type: "line",
-            data: { labels: labelsDias, datasets: [{ label: "Saldo acumulado R$", data: saldoAcumulado, borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.15)", fill: true, tension: .3, pointRadius: 2 }] },
+            data: { labels: labelsDias, datasets: [{ label: "Lucro acumulado R$", data: saldoAcumulado, borderColor: "#8b5cf6", backgroundColor: "rgba(139,92,246,0.15)", fill: true, tension: .3, pointRadius: 2 }] },
             options: { plugins: { legend: { display: false } }, scales: { x: { title: { display: true, text: "Dia do mês" } } } }
         });
     } else {
@@ -986,7 +1051,7 @@ async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMe
             <div class="card-resumo"><div class="rotulo">Cartão (vendas)</div><div class="valor" style="color:var(--green)">${moeda(pag.cartao)}</div><div class="destaque">recebido no período</div></div>
             <div class="card-resumo" style="border-color:var(--yellow);"><div class="rotulo">Troco Enviado via Pix</div><div class="valor" style="color:var(--yellow)">${moeda(totalTrocosPix)}</div><div class="destaque">fica retido no caixa físico</div></div>
             <div class="card-resumo" style="border-color:var(--red);"><div class="rotulo">Gastos em Dinheiro</div><div class="valor" style="color:var(--red)">${moeda(totalGastosDinheiro)}</div><div class="destaque">saiu do caixa físico</div></div>
-            <div class="card-resumo" style="border-color:var(--yellow);"><div class="rotulo">Dinheiro Físico Esperado</div><div class="valor" style="color:var(--yellow)">${moeda(dinheiroEsperado)}</div><div class="destaque">vendas + troco Pix − gastos em dinheiro</div></div>
+            <div class="card-resumo" style="border-color:var(--yellow);"><div class="rotulo">Movimento de Dinheiro do Período</div><div class="valor" style="color:var(--yellow)">${moeda(dinheiroEsperado)}</div><div class="destaque">vendas + troco Pix − gastos em dinheiro. Só deste período: o que há na gaveta é o "Saldo Dinheiro" abaixo</div></div>
         </div>
         <p style="font-size:0.8rem; color:var(--muted); margin:18px 0 8px;"><i class="fas fa-percent"></i> Quanto foi perdido em taxas no período (Pix ${taxasConfig.pix}% | Débito ${taxasConfig.debito}% | Crédito ${taxasConfig.credito}% — <a href="#" id="linkAjustarTaxas" style="color:var(--primary);">ajustar taxas</a>)</p>
         <div class="cards-resumo">
@@ -998,15 +1063,15 @@ async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMe
         <p style="font-size:0.8rem; color:var(--muted); margin:18px 0 8px;"><i class="fas fa-wallet"></i> Saldo real do caixa (atualiza sozinho a cada venda, gasto ou compra de estoque — de qualquer período)</p>
         <div class="cards-resumo">
             <div class="card-resumo" style="border-color:var(--primary);"><div class="rotulo">Saldo Dinheiro</div><div class="valor" style="color:var(--primary)">${moeda(saldo.dinheiro)}</div></div>
-            <div class="card-resumo" style="border-color:#00b1ea;"><div class="rotulo"><i class="fas fa-qrcode"></i> Conta Mercado Pago</div><div class="valor" style="color:#00b1ea">${moeda(saldo.pix + saldo.cartao)}</div><div class="destaque">Pix: ${moeda(saldo.pix)} + Cartão: ${moeda(saldo.cartao)}</div></div>
+            <div class="card-resumo" style="border-color:#00b1ea;"><div class="rotulo"><i class="fas fa-qrcode"></i> Conta Mercado Pago</div><div class="valor" style="color:#00b1ea">${moeda(saldo.pix + saldo.cartao)}</div><div class="destaque">Pix: ${moeda(saldo.pix)} + Cartão: ${moeda(saldo.cartao)}<br>valor cheio, antes das taxas — confira no app do Mercado Pago</div></div>
             <div class="card-resumo" style="border-color:var(--primary);"><div class="rotulo">Saldo Caixa Total</div><div class="valor" style="color:var(--primary)">${moeda(saldo.total)}</div></div>
         </div>`;
     document.getElementById("linkAjustarTaxas")?.addEventListener("click", e => { e.preventDefault(); document.getElementById("btnTaxas")?.click(); });
     ultimasTaxas = { pix: taxaPixValor, debito: taxaDebitoValor, credito: taxaCreditoValor, total: taxaTotalValor };
 
-    document.getElementById("salario").textContent = moeda(lucroOp * 0.40);
-    document.getElementById("caixa").textContent = moeda(lucroOp * 0.35);
-    document.getElementById("reserva").textContent = moeda(lucroOp * 0.25);
+    document.getElementById("salario").textContent = moeda(baseDivisao * 0.40);
+    document.getElementById("caixa").textContent = moeda(baseDivisao * 0.35);
+    document.getElementById("reserva").textContent = moeda(baseDivisao * 0.25);
 
     document.getElementById("categoriasGastos").innerHTML = `
         <div class="cat-gasto">Insumos<br><strong>${moeda(cat.insumo)}</strong></div>
@@ -1021,9 +1086,35 @@ async function atualizarTela(pag, cat, dadosGraf, labels, netPorDia, ultimoDiaMe
     document.getElementById("barraMeta").style.width = `${perc}%`;
 
     if (graficoDivisao) graficoDivisao.destroy();
-    graficoDivisao = new Chart(document.getElementById("graficoDivisao"), { type: "doughnut", data: { labels: ["Salário", "Caixa", "Reserva"], datasets: [{ data: [lucroOp * 0.4, lucroOp * 0.35, lucroOp * 0.25], borderWidth: 0, backgroundColor: ["#f59e0b", "#7c3aed", "#00c853"] }] } });
+    graficoDivisao = new Chart(document.getElementById("graficoDivisao"), { type: "doughnut", data: { labels: ["Salário", "Caixa", "Reserva"], datasets: [{ data: [baseDivisao * 0.4, baseDivisao * 0.35, baseDivisao * 0.25], borderWidth: 0, backgroundColor: ["#f59e0b", "#7c3aed", "#00c853"] }] } });
     if (graficoVendas) graficoVendas.destroy();
     graficoVendas = new Chart(document.getElementById("graficoVendas"), { type: "bar", data: { labels, datasets: [{ label: "Vendas R$", data: dadosGraf, backgroundColor: "rgba(124,58,237,0.6)" }] } });
+}
+
+// ==============================================
+// 🛡️ CONFIABILIDADE — avisa quando algum número pode estar errado
+// ==============================================
+async function renderAlertasConfiabilidade({ gastosInsumos }) {
+    const box = document.getElementById("alertasConfiabilidade");
+    if (!box) return;
+    const msgs = [];
+    if (insumosSemCusto.size) msgs.push(`Itens <b>sem custo</b> no Estoque (o CMV não conta): ${[...insumosSemCusto].map(escapeHTML).join(", ")}.`);
+    if (custosSuspeitos.length) msgs.push(`Custo <b>quase zero</b> no Estoque (provável erro de digitação): ${custosSuspeitos.map(escapeHTML).join(", ")}.`);
+    if (gastosSuspeitos.length) msgs.push(`Compra com <b>valor suspeito</b> (menos de R$ 1,00): ${gastosSuspeitos.map(g => `${escapeHTML(g.desc)} ${moeda(g.valor)}${g.data ? " em " + g.data.toLocaleDateString("pt-BR").slice(0, 5) : ""}`).join("; ")}. Corrija no Estoque.`);
+    if ((periodo === "mes" || periodo === "todos") && totalVendas > 500 && totalCustos > 0) {
+        if (gastosInsumos <= 0) msgs.push(`Nenhuma compra de insumo lançada neste período, mas o CMV é ${moeda(totalCustos)}. Lance as compras na tela Estoque.`);
+        else {
+            const r = totalCustos / gastosInsumos;
+            if (r > 2) msgs.push(`O CMV (${moeda(totalCustos)}) é <b>${r.toFixed(1)}x</b> as compras de insumo lançadas (${moeda(gastosInsumos)}). Ou faltam compras no Estoque, ou as receitas/custos estão acima do real. Confira antes de confiar na margem.`);
+            else if (r < 0.5) msgs.push(`As compras de insumo (${moeda(gastosInsumos)}) são bem maiores que o CMV (${moeda(totalCustos)}). Pode haver compra lançada em dobro ou muito estoque parado.`);
+        }
+    }
+    try {
+        const pend = await getDocs(query(collection(db, "pedidos"), where("status", "==", "pix_pendente")));
+        if (pend.size) { let soma = 0; pend.forEach(d => { soma += Number(d.data().total || 0); }); msgs.push(`<b>${pend.size} PIX pendente(s)</b> (${moeda(soma)}) ainda não entraram no caixa. Confirme ou marque como "não pagou" na tela de Pedido de WhatsApp.`); }
+    } catch (e) { console.error("PIX pendentes:", e); }
+    box.style.display = msgs.length ? "" : "none";
+    box.innerHTML = msgs.length ? `<b>⚠️ Confira antes de confiar nos números</b><ul>${msgs.map(m => `<li>${m}</li>`).join("")}</ul>` : "";
 }
 
 const exportar = () => {
@@ -1038,7 +1129,7 @@ Troco enviado via Pix: ${moeda(totalTrocosPix)} | Estoque Parado: ${moeda(totalE
 Empresa te deve (empréstimo pessoal): ${moeda(saldoEmprestimoAtual)} — 4x de ${moeda(saldoEmprestimoAtual / 4)}
 A Receber de clientes: ${moeda(totalContasReceberAtual)}
 Taxas pagas — Pix: ${moeda(ultimasTaxas.pix)} | Débito: ${moeda(ultimasTaxas.debito)} | Crédito: ${moeda(ultimasTaxas.credito)} | Total: ${moeda(ultimasTaxas.total)}
-Saldo Final: ${moeda(totalVendas + totalReceitasExtras - totalCustos - totalGastosEmpresa)}`;
+Lucro do período (após CMV, gastos e taxas): ${moeda(ultimoLucroLiq)}`;
     navigator.clipboard.writeText(txt); alert("✅ Resumo copiado!");
 };
 
@@ -1084,14 +1175,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     document.getElementById("btnLancar").addEventListener("click", registrarGasto);
     document.getElementById("btnExportar").addEventListener("click", exportar);
-    document.getElementById("btnFecharCaixa").addEventListener("click", async () => {
-        document.getElementById("saldoCalc").textContent = moeda(totalVendas - totalCustos - totalGastosEmpresa + totalReceitasExtras);
-        document.getElementById("dinheiroVendasFechar").textContent = moeda(ultimoPag.dinheiro);
-        document.getElementById("trocoPixFechar").textContent = moeda(totalTrocosPix);
-        document.getElementById("gastosDinheiroFechar").textContent = moeda(totalGastosDinheiro);
-        document.getElementById("dinheiroEsperadoFechar").textContent = moeda(ultimoPag.dinheiro + totalTrocosPix - totalGastosDinheiro);
-        document.getElementById("modalFechar").classList.add("aberto");
-    });
+    document.getElementById("btnFecharCaixa").addEventListener("click", () =>
+        abrirConferenciaCaixa({ db, saldoCaixa, ajustarSaldo, moeda, esc: escapeHTML, usuario: () => auth.currentUser?.email || null }));
     document.getElementById("btnConfirmarFechar").addEventListener("click", fecharCaixa);
     document.getElementById("btnContas").addEventListener("click", () => { carregarContas(); document.getElementById("modalContas").classList.add("aberto"); });
     document.getElementById("btnAddConta").addEventListener("click", adicionarConta);

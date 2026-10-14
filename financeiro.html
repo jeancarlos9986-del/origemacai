@@ -966,6 +966,60 @@
                 transition: none !important;
             }
         }
+            /* ===== Conferência de caixa (abrir/fechar) ===== */
+        .cx-abas { display: flex; gap: 8px; margin-bottom: 10px; }
+        .cx-abas button { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-weight: 700; font-size: .85rem; font-family: inherit; cursor: pointer; }
+        .cx-abas button.on { background: var(--primary); border-color: var(--primary); }
+        .cx-ajuda { font-size: .78rem; color: var(--muted); margin: 6px 0 10px; line-height: 1.45; }
+        .cx-sistema { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .cx-sistema div { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 9px; font-size: .68rem; color: var(--muted); }
+        .cx-sistema strong { display: block; color: var(--text); font-size: .92rem; margin-top: 2px; }
+        .cx-link { background: none; border: none; color: var(--primary); font-size: .75rem; cursor: pointer; margin-top: 6px; padding: 0; }
+        .cx-sec { margin: 16px 0 6px; font-size: .84rem; font-weight: 800; color: var(--yellow); }
+        .cx-sec small { color: var(--muted); font-weight: 500; }
+        .cx-sub { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 8px 0 5px; }
+        .cx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+        .cx-grid label { display: flex; flex-direction: column; gap: 3px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 8px; font-size: .75rem; font-weight: 700; }
+        .cx-grid input { width: 100%; text-align: center; }
+        .cx-grid em { font-style: normal; font-size: .68rem; color: var(--green); min-height: 1em; text-align: center; }
+        .cx-totais { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--primary-soft); font-size: .8rem; }
+        .cx-totais .cx-total { margin-left: auto; font-size: .95rem; }
+        .cx-bateu { color: var(--green); font-weight: 700; font-size: .82rem; margin: 8px 0 0; }
+        .cx-dif { margin-top: 10px; padding: 12px; border-radius: 12px; border: 1px solid var(--yellow); background: var(--yellow-soft); display: grid; gap: 8px; }
+        .cx-dif-txt { font-size: .82rem; line-height: 1.4; }
+        .cx-dif select, .cx-dif input[type=text] { width: 100%; }
+        .cx-chk { display: flex; gap: 7px; align-items: center; font-size: .76rem; color: var(--muted); }
+        .cx-falta { color: var(--red); } .cx-sobra { color: var(--yellow); } .cx-ok { color: var(--green); }
+        .cx-linha-in { display: grid; gap: 4px; margin-top: 8px; font-size: .78rem; color: var(--muted); }
+        .cx-linha-in input { width: 100%; }
+        .cx-hist-linha { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px dashed var(--border); font-size: .74rem; color: var(--muted); }
+        .cx-vazio { color: var(--muted); font-size: .85rem; }
+            .alerta-confiab { margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--yellow); background: var(--yellow-soft); font-size: .8rem; line-height: 1.5; }
+        .alerta-confiab ul { margin: 6px 0 0 18px; }
+        .alerta-confiab li { margin: 3px 0; }
+    
+        /* ===== Análise com IA ===== */
+        #modalIA .modal-conteudo { max-width: 640px; }
+        .ia-status { font-size: .84rem; color: var(--muted); margin: 10px 0; min-height: 1.2em; }
+        .ia-status.erro { color: var(--red); font-weight: 600; }
+        .ia-saude { display: inline-block; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: .82rem; background: var(--surface-2); border: 1px solid var(--border); }
+        .ia-saude.boa { border-color: var(--green); } .ia-saude.atencao { border-color: var(--yellow); } .ia-saude.critica { border-color: var(--red); }
+        .ia-resumo { margin: 10px 0 14px; line-height: 1.55; font-size: .92rem; }
+        .ia-numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 14px; }
+        .ia-numeros div { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; }
+        .ia-numeros span { display: block; font-size: .7rem; color: var(--muted); }
+        .ia-numeros b { font-family: var(--font-mono); font-size: .95rem; }
+        .ia-titulo { margin: 16px 0 8px; font-size: .9rem; }
+        .ia-alerta { border-left: 4px solid var(--yellow); background: var(--yellow-soft); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; font-size: .84rem; line-height: 1.5; }
+        .ia-alerta.alta { border-color: var(--red); background: var(--red-soft); } .ia-alerta.baixa { border-color: var(--primary); background: var(--primary-soft); }
+        .ia-alerta p { margin-top: 3px; } .ia-acao { color: var(--text); font-weight: 600; }
+        .ia-dest { font-size: .84rem; line-height: 1.5; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); margin-bottom: 6px; border-left: 3px solid var(--muted); }
+        .ia-dest.positivo { border-color: var(--green); } .ia-dest.negativo { border-color: var(--red); }
+        .ia-bloco { margin-top: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+        .ia-bloco h5 { font-size: .8rem; margin-bottom: 4px; } .ia-bloco p { font-size: .84rem; line-height: 1.55; color: var(--muted); }
+        .ia-lista { margin: 0 0 0 18px; font-size: .86rem; line-height: 1.5; } .ia-lista li { margin-bottom: 8px; } .ia-lista span { color: var(--muted); font-size: .8rem; }
+        .ia-rodape { font-size: .7rem; color: var(--muted); margin-top: 14px; }
+        .ia-pergunta { display: flex; gap: 8px; margin-top: 14px; } .ia-pergunta input { flex: 1; min-width: 0; }
     </style>
 </head>
 
@@ -1027,8 +1081,8 @@
                     Extra</button>
                 <button class="btn btn-aviso" id="btnTrocoPix"><i class="fas fa-hand-holding-usd"></i> Troco via
                     Pix</button>
-                <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Fechar
-                    Dia</button>
+                <button class="btn btn-sucesso" id="btnFecharCaixa"><i class="fas fa-cash-register"></i> Abrir / Fechar Caixa</button>
+                <button class="btn btn-primario" id="btnAnaliseIA"><i class="fas fa-robot"></i> Análise com IA</button>
                 <div class="menu-mais" id="menuMais">
                     <button class="btn" id="btnMaisAcoes"><i class="fas fa-ellipsis-v"></i> Mais ações</button>
                     <div class="menu-mais-lista" id="menuMaisLista">
@@ -1049,6 +1103,7 @@
                 </div>
             </div>
         </div>
+<div class="alerta-confiab" id="alertasConfiabilidade" style="display:none"></div>
         <div class="cards-resumo" id="cards-principais"></div>
         <div id="resumo-extra"></div>
         <div class="grid-3">
@@ -1087,8 +1142,7 @@
         </div>
         <div class="card" id="cardEvolucaoMes">
             <h3><i class="fas fa-chart-line"></i> Evolução do Saldo no Mês</h3>
-            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">Saldo acumulado (vendas + extras −
-                gastos) dia a dia, dentro do mês selecionado no calendário acima.</p>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">Lucro acumulado (vendas − custo dos pedidos + extras − gastos, sem contar insumo duas vezes) dia a dia, dentro do mês selecionado no calendário acima.</p>
             <div class="grafico-container"><canvas id="graficoEvolucaoMes"></canvas></div>
         </div>
         <div class="card">
@@ -1129,7 +1183,7 @@
                             <th>Descrição</th>
                             <th style="text-align:right">Entrada</th>
                             <th style="text-align:right">Saída</th>
-                            <th style="text-align:right">Saldo</th>
+                            <th style="text-align:right" title="Lucro daquela venda (venda menos o custo do pedido). Não é saldo acumulado.">Lucro</th>
                             <th class="acoes-col">Ações</th>
                         </tr>
                     </thead>
@@ -1236,19 +1290,9 @@
         </div>
     </div>
     <div class="modal" id="modalFechar">
-        <div class="modal-conteudo">
-            <h4><i class="fas fa-cash-register"></i> Fechar Caixa do Dia</h4>
-            <p style="margin-bottom:10px; font-size:0.9rem;">Saldo calculado: <strong id="saldoCalc">R$ 0,00</strong>
-            </p>
-            <div class="aviso-caixa-fisico">
-                <p><span>Dinheiro em vendas</span><strong id="dinheiroVendasFechar">R$ 0,00</strong></p>
-                <p><span>(+) Troco devolvido via Pix</span><strong id="trocoPixFechar">R$ 0,00</strong></p>
-                <p><span>(-) Gastos pagos em dinheiro</span><strong id="gastosDinheiroFechar">R$ 0,00</strong></p>
-                <p><span>= Dinheiro esperado</span><strong id="dinheiroEsperadoFechar">R$ 0,00</strong></p>
-            </div>
-            <input type="number" id="saldoReal" placeholder="Valor real em espécie R$" step="0.01"
-                style="width:100%; margin-bottom:10px;">
-            <div class="lista-fechamento" id="listaFechamento"></div>
+        <div class="modal-conteudo" style="max-width:560px;">
+            <h4><i class="fas fa-cash-register"></i> <span id="cxTitulo">Conferência de Caixa</span></h4>
+            <div id="cxCorpo"></div>
             <div class="botoes-modal"><button class="btn" id="btnCancelarFechar">Cancelar</button><button
                     class="btn btn-sucesso" id="btnConfirmarFechar">Confirmar</button></div>
         </div>
@@ -1383,7 +1427,22 @@
                     class="btn btn-primario" id="btnSalvarTaxas">Salvar</button></div>
         </div>
     </div>
+    <div class="modal" id="modalIA">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-robot"></i> Análise financeira com IA</h4>
+            <p style="font-size:0.8rem; color:var(--muted); margin-bottom:6px;">Lê hoje, ontem, últimos 7 dias, mês atual e mês anterior, com a mesma conta de lucro desta tela. Só lê e sugere: não altera nada.</p>
+            <p id="iaStatus" class="ia-status" role="status"></p>
+            <div id="iaResultado"></div>
+            <div id="iaPerguntaBox" style="display:none">
+                <div class="ia-pergunta"><input type="text" id="iaPergunta" maxlength="300" placeholder="Pergunte: quanto gastei com fixos este mês?"><button class="btn btn-primario" id="iaPerguntarBtn">Perguntar</button></div>
+                <div id="iaResposta"></div>
+            </div>
+            <div class="botoes-modal"><button class="btn" id="iaFecharBtn">Fechar</button><button class="btn btn-primario" id="iaAnalisarBtn"><i class="fas fa-rotate"></i> Analisar de novo</button></div>
+        </div>
+    </div>
     <script type="module" src="./financeiro.js?v=4"></script>
+    <script type="module" src="./financeiroIA.js"></script>
+<script type="module" src="./menu-telas.js"></script>
 </body>
 
 </html>
