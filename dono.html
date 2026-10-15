@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#08080c">
+    <title>Painel do Dono - Nova Origem Açaí</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #08080c; --surface: #15151d; --surface-2: #1c1c27; --surface-3: #262633;
+            --primary: #8b5cf6; --primary-dark: #6d28d9; --primary-soft: rgba(139, 92, 246, .14); --berry: #ec4899;
+            --green: #10b981; --green-soft: rgba(16, 185, 129, .12); --red: #f43f5e; --red-soft: rgba(244, 63, 94, .12);
+            --yellow: #f59e0b; --yellow-soft: rgba(245, 158, 11, .12); --blue: #38bdf8; --blue-soft: rgba(56, 189, 248, .12);
+            --text: #f5f5f7; --muted: #9697a6; --border: rgba(255, 255, 255, .08); --radius: 16px; --radius-sm: 10px;
+            --font: 'Plus Jakarta Sans', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+        html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+        body {
+            font-family: var(--font); color: var(--text); min-height: 100vh; padding-bottom: 80px;
+            background: radial-gradient(circle at 15% 0%, rgba(139, 92, 246, .16), transparent 45%),
+                radial-gradient(circle at 100% 20%, rgba(236, 72, 153, .08), transparent 40%), var(--bg);
+            background-attachment: fixed;
+        }
+        a { color: inherit; text-decoration: none; }
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 0 14px; }
+
+        .topbar { position: sticky; top: 0; z-index: 40; backdrop-filter: blur(14px); background: rgba(8, 8, 12, .8); border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+        .topbar .wrap { display: flex; align-items: center; gap: 10px; padding-top: 12px; padding-bottom: 12px; }
+        .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; margin-right: auto; }
+        .brand-mark { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--primary), var(--berry)); box-shadow: 0 4px 14px rgba(139, 92, 246, .35); }
+        .brand small { display: block; font-size: .68rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+        .live { display: flex; align-items: center; gap: 7px; font-size: .74rem; color: var(--muted); font-weight: 600; }
+        .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(16, 185, 129, .6); animation: pulso 2s infinite; }
+        .live.off i { background: var(--red); animation: none; }
+        @keyframes pulso { 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        .btn-sair { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); border-radius: 10px; padding: 8px 12px; font: 700 .78rem var(--font); cursor: pointer; }
+
+        .saud h1 { font-size: 1.25rem; font-weight: 800; }
+        .saud p { font-size: .8rem; color: var(--muted); margin: 2px 0 16px; text-transform: capitalize; }
+
+        h2.sec { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 22px 0 10px; display: flex; align-items: center; gap: 8px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+        .card h3 { font-size: .9rem; font-weight: 800; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .card h3 .ver { margin-left: auto; font-size: .72rem; color: var(--primary); font-weight: 700; }
+        .grid { display: grid; gap: 12px; }
+        .g2 { grid-template-columns: repeat(2, 1fr); }
+        .g3 { grid-template-columns: repeat(3, 1fr); }
+        .g4 { grid-template-columns: repeat(4, 1fr); }
+        .duas { grid-template-columns: 1fr 1fr; }
+        @media (max-width: 760px) { .g4 { grid-template-columns: repeat(2, 1fr); } .g3 { grid-template-columns: repeat(2, 1fr); } .duas { grid-template-columns: 1fr; } }
+
+        .kpi { padding: 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); }
+        .kpi p { font-size: .72rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+        .kpi strong { display: block; font-family: var(--mono); font-size: 1.45rem; margin-top: 6px; }
+        .kpi small { display: block; font-size: .72rem; color: var(--muted); margin-top: 3px; font-weight: 600; }
+        .kpi.destaque { background: linear-gradient(135deg, rgba(139, 92, 246, .28), rgba(236, 72, 153, .14)); border-color: rgba(139, 92, 246, .5); }
+        .kpi.destaque strong { font-size: 1.8rem; }
+
+        a.fila { display: block; padding: 14px 12px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); text-align: center; transition: .15s; }
+        a.fila:hover { transform: translateY(-2px); border-color: var(--primary); }
+        a.fila .n { font-family: var(--mono); font-size: 2rem; font-weight: 700; display: block; line-height: 1.1; }
+        a.fila span.l { font-size: .74rem; font-weight: 700; color: var(--muted); display: block; margin-top: 6px; }
+        a.fila.quente { border-color: var(--red); background: var(--red-soft); }
+        a.fila.morno { border-color: var(--yellow); background: var(--yellow-soft); }
+        .c-novo .n { color: #c4b5fd; } .c-preparo .n { color: var(--yellow); } .c-pronto .n { color: var(--green); }
+        .c-rota .n { color: var(--blue); } .c-ok .n { color: var(--text); }
+
+        .linha { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border); font-size: .86rem; }
+        .linha:last-child { border-bottom: none; }
+        .linha .v { margin-left: auto; font-family: var(--mono); font-weight: 700; white-space: nowrap; }
+        .barra { height: 6px; border-radius: 6px; background: var(--surface-3); overflow: hidden; margin-top: 5px; }
+        .barra > i { display: block; height: 100%; border-radius: 6px; }
+        .pill { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 800; white-space: nowrap; }
+        .p-novo { background: rgba(196, 181, 253, .15); color: #c4b5fd; } .p-preparo { background: var(--yellow-soft); color: var(--yellow); }
+        .p-pronto { background: var(--green-soft); color: var(--green); } .p-em_rota { background: var(--blue-soft); color: var(--blue); }
+        .p-concluido { background: var(--surface-3); color: var(--muted); } .p-outro { background: var(--red-soft); color: var(--red); }
+
+        .aviso { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border-radius: 12px; margin-bottom: 8px; font-size: .84rem; font-weight: 600; line-height: 1.35; }
+        .aviso:last-child { margin-bottom: 0; }
+        .aviso.red { background: var(--red-soft); border: 1px solid rgba(244, 63, 94, .4); }
+        .aviso.yellow { background: var(--yellow-soft); border: 1px solid rgba(245, 158, 11, .4); }
+        .aviso.green { background: var(--green-soft); border: 1px solid rgba(16, 185, 129, .4); }
+        .aviso a { margin-left: auto; color: var(--primary); font-size: .74rem; white-space: nowrap; font-weight: 800; }
+
+        .mkt-tema { font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+        .mkt-leg { font-size: .85rem; color: var(--muted); white-space: pre-line; line-height: 1.5; margin-top: 8px; }
+        .vazio { color: var(--muted); font-size: .84rem; padding: 6px 0; }
+
+        .telas-grupo { font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--yellow); margin: 12px 0 8px; }
+        .telas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+        .tela { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); font-size: .84rem; font-weight: 700; transition: .15s; }
+        .tela:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .tela .ic { font-size: 1.25rem; }
+        .rodape { text-align: center; color: var(--muted); font-size: .72rem; margin-top: 22px; }
+        .oculto { display: none !important; }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="wrap">
+            <div class="brand"><span class="brand-mark"><i class="fas fa-crown"></i></span>
+                <div>Nova Origem Açaí<small>Painel do dono</small></div>
+            </div>
+            <div class="live" id="live"><i></i><span id="live-txt">conectando...</span></div>
+            <button class="btn-sair" id="btn-logout" type="button">Sair</button>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <div class="saud">
+            <h1>Olá, <span id="nome-usuario">dono</span> 👋</h1>
+            <p id="data-hoje"></p>
+        </div>
+
+        <h2 class="sec"><i class="fas fa-bell"></i> Atenção agora</h2>
+        <div class="card" id="atencao"><p class="vazio">Carregando...</p></div>
+
+        <h2 class="sec"><i class="fas fa-sack-dollar"></i> Dinheiro de hoje</h2>
+        <div class="grid g4">
+            <div class="kpi destaque"><p>Faturamento hoje</p><strong id="k-fat">—</strong><small id="k-fat-sub"></small></div>
+            <div class="kpi"><p>Pedidos hoje</p><strong id="k-ped">—</strong><small id="k-ped-sub"></small></div>
+            <div class="kpi"><p>Ticket médio</p><strong id="k-tkt">—</strong><small>por pedido concluído</small></div>
+            <div class="kpi"><p>Lucro bruto (est.)</p><strong id="k-luc">—</strong><small id="k-luc-sub">vendas − custo dos insumos</small></div>
+        </div>
+        <div class="grid g4" style="margin-top:12px;">
+            <div class="kpi"><p>Faturamento do mês</p><strong id="k-mes">—</strong><small id="k-mes-sub"></small></div>
+            <div class="kpi"><p>Faturamento total</p><strong id="k-total">—</strong><small id="k-total-sub">desde o início</small></div>
+            <div class="kpi"><p>Saldo em caixa</p><strong id="k-caixa">—</strong><small id="k-caixa-sub"></small></div>
+            <div class="kpi"><p>Contas a pagar</p><strong id="k-contas">—</strong><small id="k-contas-sub"></small></div>
+        </div>
+
+        <h2 class="sec"><i class="fas fa-motorcycle"></i> Pedidos agora</h2>
+        <div class="grid g3" id="fila" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+            <a class="fila c-novo" href="./cozinha.html" id="f-novo"><b class="n">0</b><span class="l">🟣 Novos</span></a>
+            <a class="fila c-preparo" href="./cozinha.html" id="f-preparo"><b class="n">0</b><span class="l">🟡 Em preparo</span></a>
+            <a class="fila c-pronto" href="./entregador.html" id="f-aguarda"><b class="n">0</b><span class="l">🟢 Prontos p/ entregador</span></a>
+            <a class="fila c-pronto" href="./cozinha.html" id="f-retirada"><b class="n">0</b><span class="l">🏪 Prontos p/ retirada</span></a>
+            <a class="fila c-rota" href="./entregador.html" id="f-rota"><b class="n">0</b><span class="l">🛵 Em rota</span></a>
+            <a class="fila c-ok" href="./entregador.html" id="f-ok"><b class="n">0</b><span class="l">✅ Concluídos hoje</span></a>
+        </div>
+
+        <div class="grid duas" style="margin-top:18px;">
+            <section class="card">
+                <h3><i class="fas fa-credit-card" style="color:var(--primary)"></i> Recebido hoje por forma <a class="ver" href="./financeiro.html">financeiro →</a></h3>
+                <div id="formas"><p class="vazio">Sem vendas concluídas ainda.</p></div>
+            </section>
+            <section class="card">
+                <h3><i class="fas fa-receipt" style="color:var(--primary)"></i> Últimos pedidos <a class="ver" href="./cozinha.html">cozinha →</a></h3>
+                <div id="ultimos"><p class="vazio">Nenhum pedido hoje.</p></div>
+            </section>
+        </div>
+
+        <div class="grid duas" style="margin-top:18px;">
+            <section class="card">
+                <h3><i class="fas fa-boxes" style="color:var(--yellow)"></i> Estoque — itens mais baixos <a class="ver" href="./estoque.html">estoque →</a></h3>
+                <div id="estoque"><p class="vazio">Carregando...</p></div>
+            </section>
+            <section class="card">
+                <h3><i class="fas fa-bullhorn" style="color:var(--berry)"></i> Marketing de hoje <a class="ver" href="./marketing.html">marketing →</a></h3>
+                <div id="marketing"><p class="vazio">Carregando...</p></div>
+            </section>
+        </div>
+
+        <h2 class="sec"><i class="fas fa-compass"></i> Ir para outra tela</h2>
+        <div class="card" id="telas"></div>
+        <p class="rodape" id="rodape"></p>
+    </main>
+
+    <script type="module" src="./dono.js"></script>
+</body>
+
+</html>
