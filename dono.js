@@ -1,7 +1,7 @@
 import { db } from "./firebase.js";
 import { protegerPagina, renderizarUsuarioLogado } from "./auth-guard.js";
 import {
-    collection, doc, onSnapshot, query, where, orderBy, limit, getDocs, getAggregateFromServer, sum, count
+    collection, doc, onSnapshot, query, where, orderBy, limit, getDocs, getAggregateFromServer, sum, count, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { calcularNecessidades } from "./estoqueBaixa.js";
 import { TELAS } from "./menu-telas.js";
@@ -46,6 +46,7 @@ function formaPagamento(pg) {
 
 // ---------- estado ----------
 let pedidosHoje = [], abertos = [], estoque = [], caixa = null, contas = [];
+let pedidosMes = [], gastosMes = [];   // concluídos do mês e gastos do mês (reposição / retirada)
 let plano;            // undefined = carregando | null = nenhum plano | objeto
 let agreg = { mes: null, total: null };
 const falhas = new Set();
@@ -64,6 +65,7 @@ protegerPagina([]).then(r => {
     if (r?.nome) setTxt("nome-usuario", r.nome.split(" ")[0]);
     setTxt("data-hoje", new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" }));
     montarTelas();
+    iniciarFormularioGasto();
     iniciarListeners();
     carregarAgregados();
     setInterval(() => {
@@ -103,6 +105,9 @@ function iniciarListeners() {
     escutar("estoque", collection(db, "estoque"), s => { estoque = lista(s); });
     escutar("caixa", doc(db, "configuracoes", "caixa_empresa"), s => { caixa = s.exists() ? s.data() : null; });
     escutar("contas a pagar", query(collection(db, "contas_pagar"), where("pago", "==", false)), s => { contas = lista(s); });
+    const iniMes = new Date(); iniMes.setDate(1); iniMes.setHours(0, 0, 0, 0);
+    escutar("pedidos do mês", query(collection(db, "pedidos"), where("status", "==", "concluido"), where("criadoEm", ">=", iniMes.getTime())), s => { pedidosMes = lista(s); });
+    escutar("gastos do mês", query(collection(db, "gastos"), where("data", ">=", iniMes)), s => { gastosMes = lista(s); });
     escutar("marketing", query(collection(db, "marketing_planos"), orderBy("criadoEm", "desc"), limit(1)), s => { plano = s.empty ? null : s.docs[0].data(); });
 }
 
@@ -148,6 +153,8 @@ function render() {
     renderFormas();
     renderUltimos();
     renderEstoque();
+    renderReserva();
+    renderGastosHoje();
     renderMarketing();
     renderAtencao();
     setTxt("rodape", falhas.size ? `⚠️ Não carregou: ${[...falhas].join(", ")} (veja o console do navegador).` : "Os números se atualizam sozinhos.");
@@ -256,6 +263,139 @@ function renderEstoque() {
         <span class="v" style="color:${cor(x.r)}">${x.q.toFixed(2)} ${esc(x.i.unidade || "")}</span></div>
         <div class="barra"><i style="width:${Math.min(100, x.r / 2 * 100)}%; background:${cor(x.r)};"></i></div>
         <div style="font-size:.7rem;color:var(--muted);margin-top:3px;">mínimo ${x.m || "—"}</div></div>`).join(""));
+}
+
+// ---------- reposição de estoque e dinheiro livre ----------
+// MESMA conta usada pela análise com IA (financeiroIA.js → reposicaoEstoque):
+//   faltaRepor  = custo dos insumos usados nas vendas do mês (CMV) − compras de insumo já lançadas no mês
+//   livre       = saldo em caixa − faltaRepor − contas vencidas ou que vencem em até 7 dias
+const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+
+function cmvDe(lista) {
+    const custos = new Map(estoque.map(i => [norm(i.nome), custoDe(i)]));
+    let cmv = 0; const semCusto = new Set();
+    lista.forEach(p => calcularNecessidades(p.itens || []).forEach((v, chave) => {
+        const c = custos.get(chave);
+        if (!c) semCusto.add(v.nome); else cmv += v.qtd * c;
+    }));
+    return { cmv: r2(cmv), semCusto };
+}
+
+const ehEmpresa = g => (g.natureza || "empresa") !== "pessoal";
+const dataGasto = g => g.data?.toDate ? g.data.toDate().getTime() : 0;
+
+function resumoReserva() {
+    const { cmv, semCusto } = cmvDe(pedidosMes);
+    const compras = r2(gastosMes.filter(g => ehEmpresa(g) && g.tipo === "insumo").reduce((a, g) => a + num(g.valor), 0));
+    const faltaRepor = Math.max(0, r2(cmv - compras));
+    const saldo = caixa ? r2(caixa.total ?? (num(caixa.dinheiro) + num(caixa.pix) + num(caixa.cartao))) : 0;
+    const limite = Date.now() + 7 * 86400000;
+    const contas7d = r2(contas.filter(c => { const t = c.dataVenc?.toDate?.().getTime(); return t && t <= limite; }).reduce((a, c) => a + num(c.valor), 0));
+    const paraMinimo = r2(estoque.reduce((a, i) => { const q = qtdDe(i), m = minDe(i); return m > 0 && q < m ? a + (m - q) * custoDe(i) : a; }, 0));
+    const retirada = r2(gastosMes.filter(g => !ehEmpresa(g) && !["pessoal", "aprazo"].includes(g.formaPagamento)).reduce((a, g) => a + num(g.valor), 0));
+    return { cmv, compras, faltaRepor, saldo, contas7d, paraMinimo, retirada, semCusto, livre: r2(saldo - faltaRepor - contas7d) };
+}
+
+function renderReserva() {
+    if (!caixa) return set("reserva", `<p class="vazio">${falhas.has("caixa") ? "Não consegui ler o caixa." : "Sem saldo de caixa ainda — abra o Financeiro e confira o caixa."}</p>`);
+    const r = resumoReserva();
+    set("reserva", `
+        <div class="linha"><span>💼 Saldo em caixa</span><span class="v">${moeda(r.saldo)}</span></div>
+        <div class="linha"><span>📦 Guardar p/ repor estoque</span><span class="v" style="color:var(--yellow)">− ${moeda(r.faltaRepor)}</span></div>
+        <div class="linha"><span>🗓️ Contas até 7 dias</span><span class="v">− ${moeda(r.contas7d)}</span></div>
+        <div class="linha"><span><b>✅ Livre para usar</b></span><span class="v grande" style="color:${r.livre < 0 ? "var(--red)" : "var(--green)"}">${moeda(r.livre)}</span></div>
+        <p class="reserva-nota">No mês, as vendas consumiram ${moeda(r.cmv)} em insumos e você já repôs ${moeda(r.compras)}. Para o estoque voltar ao mínimo: ${moeda(r.paraMinimo)}. Retirada pessoal no mês: ${moeda(r.retirada)}.</p>
+        ${r.livre < 0 ? `<p class="reserva-nota alerta">⚠️ O caixa não cobre a reposição e as contas dos próximos 7 dias.</p>` : ""}
+        ${r.semCusto.size ? `<p class="reserva-nota alerta">⚠️ ${r.semCusto.size} insumo(s) sem custo no estoque: o valor a repor pode estar menor que o real.</p>` : ""}`);
+}
+
+// ---------- lançar gasto ----------
+const TIPOS_GASTO = {
+    estoque: { natureza: "empresa", tipo: "insumo" },
+    fixo: { natureza: "empresa", tipo: "fixo" },
+    outros: { natureza: "empresa", tipo: "outros" },
+    pessoal: { natureza: "pessoal", tipo: "outros" }
+};
+const FORMAS = { dinheiro: "💵", pix: "⚡", cartao: "💳", pessoal: "👛" };
+
+// Grava o gasto e ajusta o saldo do caixa na MESMA transação (ou grava os dois, ou nenhum).
+// Regras iguais às do financeiro.js: quem mexe no caixa é a FORMA de pagamento; "pessoal" (bolso) e
+// "aprazo" não mexem; gasto da empresa pago do bolso vira empréstimo (a empresa te deve).
+async function gravarGasto({ descricao, valor, tipo, natureza, forma }) {
+    const gastoRef = doc(collection(db, "gastos"));
+    const caixaRef = doc(db, "configuracoes", "caixa_empresa");
+    await runTransaction(db, async tx => {
+        const snap = await tx.get(caixaRef);
+        const atual = snap.exists() ? snap.data() : {};
+        tx.set(gastoRef, { descricao, valor, tipo, natureza, formaPagamento: forma, data: new Date(), origem: "painel-dono" });
+        if (forma !== "pessoal" && forma !== "aprazo") {
+            const novo = { dinheiro: r2(atual.dinheiro), pix: r2(atual.pix), cartao: r2(atual.cartao) };
+            if (forma === "pix") novo.pix = r2(novo.pix - valor);
+            else if (forma === "cartao") novo.cartao = r2(novo.cartao - valor);
+            else novo.dinheiro = r2(novo.dinheiro - valor);
+            novo.total = r2(novo.dinheiro + novo.pix + novo.cartao);
+            novo.ultimaAtualizacao = new Date();
+            tx.set(caixaRef, novo, { merge: true });
+        }
+        if (natureza !== "pessoal" && forma === "pessoal") {
+            tx.set(doc(collection(db, "emprestimos")), { tipo: "emprestimo", descricao: `Gasto: ${descricao}`, valor, data: new Date(), origem: "gasto", gastoId: gastoRef.id });
+        }
+    });
+}
+
+function dicaGasto() {
+    const t = $("g-tipo").value, f = $("g-forma").value;
+    const txt = f === "pessoal"
+        ? (t === "pessoal" ? "Pago do seu bolso e para uso pessoal: só fica registrado, não mexe no caixa." : "Pago do seu bolso: não mexe no caixa e vira empréstimo da empresa para você.")
+        : t === "pessoal" ? "Sai do caixa, mas não é custo da empresa: entra como retirada e não reduz o lucro."
+        : t === "estoque" ? "Sai do caixa e abate o que falta repor. Registra só o valor; não altera as quantidades do estoque."
+        : "Sai do caixa e entra como despesa da empresa no lucro.";
+    setTxt("g-dica", txt);
+}
+
+function msgGasto(txt, tipo) { const el = $("g-msg"); if (!el) return; el.textContent = txt; el.className = "msg-gasto" + (tipo ? " " + tipo : ""); }
+
+let lancando = false;
+async function lancarGasto() {
+    if (lancando) return;
+    const descricao = $("g-desc").value.trim().slice(0, 80);
+    const valor = r2(parseFloat($("g-valor").value));
+    const def = TIPOS_GASTO[$("g-tipo").value];
+    const forma = $("g-forma").value;
+    if (!descricao || !(valor > 0) || !def) return msgGasto("Preencha o que foi e o valor.", "erro");
+    lancando = true; $("g-add").disabled = true; msgGasto("Lançando…");
+    try {
+        await gravarGasto({ descricao, valor, tipo: def.tipo, natureza: def.natureza, forma });
+        $("g-desc").value = ""; $("g-valor").value = ""; $("g-desc").focus();
+        msgGasto(`✅ ${moeda(valor)} lançado.`, "ok");
+    } catch (e) {
+        console.error("Painel do dono — lançar gasto:", e);
+        msgGasto(`Não consegui lançar: ${e.code === "permission-denied" ? "sem permissão no Firestore." : (e.message || "erro desconhecido")}`, "erro");
+    }
+    lancando = false; $("g-add").disabled = false;
+}
+
+function iniciarFormularioGasto() {
+    $("g-add")?.addEventListener("click", lancarGasto);
+    ["g-desc", "g-valor"].forEach(id => $(id)?.addEventListener("keydown", e => { if (e.key === "Enter") lancarGasto(); }));
+    ["g-tipo", "g-forma"].forEach(id => $(id)?.addEventListener("change", dicaGasto));
+    dicaGasto();
+}
+
+function renderGastosHoje() {
+    const ini = inicioDoDia();
+    const hoje = gastosMes.filter(g => dataGasto(g) >= ini).sort((a, b) => dataGasto(b) - dataGasto(a));
+    const empresa = hoje.filter(ehEmpresa).reduce((a, g) => a + num(g.valor), 0);
+    const pessoal = hoje.filter(g => !ehEmpresa(g)).reduce((a, g) => a + num(g.valor), 0);
+    setTxt("g-resumo", hoje.length ? `empresa ${moeda(empresa)} • retirada ${moeda(pessoal)}` : "");
+    if (!hoje.length) return set("gastos-hoje", `<p class="vazio">Nada lançado hoje.</p>`);
+    const rotulo = g => !ehEmpresa(g) ? "Retirada" : g.tipo === "insumo" ? "Estoque" : g.tipo === "fixo" ? "Fixo" : g.tipo === "taxa" ? "Taxa" : "Empresa";
+    set("gastos-hoje", hoje.slice(0, 8).map(g => `
+        <div class="linha"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(g.descricao || "—")}</span>
+        <span class="pill ${ehEmpresa(g) ? "p-pronto" : "p-preparo"}">${rotulo(g)}</span>
+        <span>${FORMAS[g.formaPagamento] || "💵"}</span><span class="v">${moeda(g.valor)}</span></div>`).join("") +
+        (hoje.length > 8 ? `<p class="vazio">+ ${hoje.length - 8} lançamento(s) — veja tudo no financeiro.</p>` : "") +
+        `<p class="vazio">Para editar ou excluir um lançamento, use o <a href="./financeiro.html" style="color:var(--primary);font-weight:800;">financeiro</a>.</p>`);
 }
 
 function renderMarketing() {

@@ -69,7 +69,7 @@ async function montarResumo() {
 
     // ----- Estoque: custos (para o CMV) e capital parado -----
     const custos = new Map(), semCustoEstoque = [], suspeitos = [], abaixoMinimo = [];
-    let valorEstoque = 0;
+    let valorEstoque = 0, custoParaMinimo = 0;
     estSnap.forEach(d => {
         const e = d.data();
         const q = Number(campo(e, ["quantidade", "qtd", "quant"])) || 0;
@@ -77,7 +77,8 @@ async function montarResumo() {
         custos.set(norm(e.nome), c);
         valorEstoque += q * c;
         if (c > 0 && c <= 0.05) suspeitos.push(limpar(e.nome));
-        const min = Number(e.nivelMinimo) || 0;
+        const min = Number(campo(e, ["nivelMinimo", "minimo", "estoqueMinimo"])) || 0;
+        if (min > 0 && q < min) custoParaMinimo += (min - q) * c;
         if (min > 0 && q <= min) abaixoMinimo.push(`${limpar(e.nome)} (${r2(q)} de mínimo ${min})`);
     });
     const insumosSemCusto = new Set();
@@ -203,7 +204,7 @@ async function montarResumo() {
 
     // ----- Caixa e contas -----
     const caixa = caixaSnap.exists() ? caixaSnap.data() : {};
-    const saldo = { dinheiro: r2(caixa.dinheiro), pix: r2(caixa.pix), cartao: r2(caixa.cartao), total: r2(caixa.total) };
+    const saldo = { dinheiro: r2(caixa.dinheiro), pix: r2(caixa.pix), cartao: r2(caixa.cartao), total: r2(caixa.total ?? (Number(caixa.dinheiro || 0) + Number(caixa.pix || 0) + Number(caixa.cartao || 0))) };
 
     const aPagar = [];
     pagSnap.forEach(d => { const c = d.data(); if (c.pago) return; const v = paraData(c.dataVenc); aPagar.push({ descricao: limpar(c.descricao), valor: Number(c.valor || 0), venc: v }); });
@@ -217,6 +218,19 @@ async function montarResumo() {
         vencidas: { qtd: vencidas.length, total: somaC(vencidas), itens: vencidas.slice(0, 8).map(fmtConta) },
         proximos7dias: { qtd: prox7.length, total: somaC(prox7), itens: prox7.slice(0, 8).map(fmtConta) },
         caixaCobreProximos7dias: r2(saldo.total - somaC(vencidas) - somaC(prox7))
+    };
+
+    // ----- Reposição de estoque e dinheiro livre (mesma conta do Painel do dono) -----
+    const faltaRepor = p => Math.max(0, r2(p.cmv - p.comprasDeInsumo));
+    const contas7d = r2(somaC(vencidas) + somaC(prox7));
+    const retiradasMes = r2(gastos.filter(g => g.t >= iniMes.getTime() && g.natureza === "pessoal" && g.forma !== "pessoal" && g.forma !== "aprazo").reduce((s, g) => s + g.valor, 0));
+    const reposicaoEstoque = {
+        mesAtual: { insumosConsumidosCMV: periodos.mesAtual.cmv, comprasDeInsumoFeitas: periodos.mesAtual.comprasDeInsumo, faltaRepor: faltaRepor(periodos.mesAtual) },
+        hoje: { insumosConsumidosCMV: periodos.hoje.cmv, comprasDeInsumoFeitas: periodos.hoje.comprasDeInsumo, faltaRepor: faltaRepor(periodos.hoje) },
+        custoParaVoltarAoMinimoDoEstoque: r2(custoParaMinimo),
+        contasVencidasOuAte7dias: contas7d,
+        retiradasPessoaisPagasPeloCaixaNoMes: retiradasMes,
+        livreParaUsar: r2(saldo.total - faltaRepor(periodos.mesAtual) - contas7d)
     };
 
     const aReceber = [];
@@ -244,7 +258,7 @@ async function montarResumo() {
         periodos, projecaoMes, serieDiariaVendas14dias: serieDiaria, mediaVendasPorDiaDaSemana28dias: mediaPorDiaDaSemana,
         porProduto, gastosDoMesPorCategoria: porCategoria, maioresGastosDoMes: maioresGastos,
         taxasConfiguradasPct: { pix: taxas.pix, debito: taxas.debito, credito: taxas.credito },
-        caixaAtual: saldo, contasPagar, contasReceber,
+        caixaAtual: saldo, reposicaoEstoque, contasPagar, contasReceber,
         dinheiroPessoalEmprestado: r2(emprestado),
         estoque: { valorParado: r2(valorEstoque), itensAbaixoDoMinimo: abaixoMinimo.slice(0, 8) },
         confiabilidade

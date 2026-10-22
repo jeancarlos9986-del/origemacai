@@ -97,6 +97,50 @@
         .tela .ic { font-size: 1.25rem; }
         .rodape { text-align: center; color: var(--muted); font-size: .72rem; margin-top: 22px; }
         .oculto { display: none !important; }
+
+        /* ---- Reposição, lançamento de gasto e IA ---- */
+        :root { --font-mono: var(--mono); }
+        .btn { background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 9px 14px; font: 700 .82rem var(--font); cursor: pointer; }
+        .btn:disabled { opacity: .55; cursor: wait; }
+        .btn-primario { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-color: transparent; }
+        .btn-ia { margin-left: auto; text-transform: none; letter-spacing: 0; }
+        .reserva .linha .v.grande { font-size: 1.2rem; }
+        .reserva-nota { color: var(--muted); font-size: .76rem; line-height: 1.5; margin-top: 8px; }
+        .reserva-nota.alerta { color: var(--yellow); }
+        .form-gasto { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .form-gasto .full { grid-column: 1 / -1; }
+        .form-gasto input, .form-gasto select { width: 100%; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px 11px; font: 600 .86rem var(--font); }
+        .form-gasto input:focus, .form-gasto select:focus { outline: none; border-color: var(--primary); }
+        .dica-gasto { color: var(--muted); font-size: .74rem; line-height: 1.45; min-height: 2.1em; margin-top: 8px; }
+        .msg-gasto { font-size: .8rem; font-weight: 700; min-height: 1.2em; margin-top: 4px; }
+        .msg-gasto.ok { color: var(--green); } .msg-gasto.erro { color: var(--red); }
+        .gasto-topo { display: flex; justify-content: space-between; gap: 8px; font-size: .74rem; color: var(--muted); font-weight: 700; margin: 14px 0 4px; }
+        .modal { position: fixed; inset: 0; z-index: 100000; background: rgba(5, 5, 10, .78); display: none; align-items: center; justify-content: center; padding: 14px; }
+        .modal.aberto { display: flex; }
+        .modal-conteudo { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; width: 100%; max-width: 640px; max-height: 88vh; overflow: auto; }
+        .modal-conteudo h4 { font-size: 1rem; font-weight: 800; margin-bottom: 8px; }
+        .botoes-modal { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+        .ia-status { font-size: .84rem; color: var(--muted); margin: 10px 0; min-height: 1.2em; }
+        .ia-status.erro { color: var(--red); font-weight: 600; }
+        .ia-saude { display: inline-block; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: .82rem; background: var(--surface-2); border: 1px solid var(--border); }
+        .ia-saude.boa { border-color: var(--green); } .ia-saude.atencao { border-color: var(--yellow); } .ia-saude.critica { border-color: var(--red); }
+        .ia-resumo { margin: 10px 0 14px; line-height: 1.55; font-size: .92rem; }
+        .ia-numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 14px; }
+        .ia-numeros div { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; }
+        .ia-numeros span { display: block; font-size: .7rem; color: var(--muted); }
+        .ia-numeros b { font-family: var(--font-mono); font-size: .95rem; }
+        .ia-titulo { margin: 16px 0 8px; font-size: .9rem; }
+        .ia-alerta { border-left: 4px solid var(--yellow); background: var(--yellow-soft); padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; font-size: .84rem; line-height: 1.5; }
+        .ia-alerta.alta { border-color: var(--red); background: var(--red-soft); } .ia-alerta.baixa { border-color: var(--primary); background: var(--primary-soft); }
+        .ia-alerta p { margin-top: 3px; } .ia-acao { color: var(--text); font-weight: 600; }
+        .ia-dest { font-size: .84rem; line-height: 1.5; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); margin-bottom: 6px; border-left: 3px solid var(--muted); }
+        .ia-dest.positivo { border-color: var(--green); } .ia-dest.negativo { border-color: var(--red); }
+        .ia-bloco { margin-top: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+        .ia-bloco h5 { font-size: .8rem; margin-bottom: 4px; } .ia-bloco p { font-size: .84rem; line-height: 1.55; color: var(--muted); }
+        .ia-lista { margin: 0 0 0 18px; font-size: .86rem; line-height: 1.5; } .ia-lista li { margin-bottom: 8px; } .ia-lista span { color: var(--muted); font-size: .8rem; }
+        .ia-rodape { font-size: .7rem; color: var(--muted); margin-top: 14px; }
+        .ia-pergunta { display: flex; gap: 8px; margin-top: 14px; }
+        .ia-pergunta input { flex: 1; min-width: 0; background: var(--surface-2); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px 11px; font: 600 .86rem var(--font); }
     </style>
 </head>
 
@@ -132,6 +176,40 @@
             <div class="kpi"><p>Faturamento total</p><strong id="k-total">—</strong><small id="k-total-sub">desde o início</small></div>
             <div class="kpi"><p>Saldo em caixa</p><strong id="k-caixa">—</strong><small id="k-caixa-sub"></small></div>
             <div class="kpi"><p>Contas a pagar</p><strong id="k-contas">—</strong><small id="k-contas-sub"></small></div>
+        </div>
+
+        <h2 class="sec"><i class="fas fa-piggy-bank"></i> Reposição e dinheiro livre
+            <button class="btn btn-primario btn-ia" id="btnAnaliseIA" type="button"><i class="fas fa-robot"></i> Análise com IA</button>
+        </h2>
+        <div class="grid duas">
+            <section class="card reserva">
+                <h3><i class="fas fa-wallet" style="color:var(--green)"></i> Quanto posso usar <a class="ver" href="./financeiro.html">financeiro →</a></h3>
+                <div id="reserva"><p class="vazio">Carregando...</p></div>
+            </section>
+            <section class="card">
+                <h3><i class="fas fa-pen-to-square" style="color:var(--primary)"></i> Lançar gasto</h3>
+                <div class="form-gasto">
+                    <input class="full" type="text" id="g-desc" maxlength="80" placeholder="O que foi? Ex: Nutella 350 g" autocomplete="off">
+                    <input type="number" id="g-valor" min="0.01" step="0.01" inputmode="decimal" placeholder="Valor R$">
+                    <select id="g-tipo" aria-label="Tipo do gasto">
+                        <option value="estoque">📦 Reposição de estoque</option>
+                        <option value="fixo">🏷️ Custo fixo</option>
+                        <option value="outros">🧾 Outra despesa da empresa</option>
+                        <option value="pessoal">🙋 Retirada pessoal</option>
+                    </select>
+                    <select class="full" id="g-forma" aria-label="Como foi pago">
+                        <option value="dinheiro">💵 Pago com dinheiro em papel do caixa</option>
+                        <option value="pix">⚡ Pago com o Pix da empresa</option>
+                        <option value="cartao">💳 Pago com cartão da empresa</option>
+                        <option value="pessoal">👛 Pago do meu bolso (não mexe no caixa)</option>
+                    </select>
+                    <button class="btn btn-primario full" id="g-add" type="button">Lançar</button>
+                </div>
+                <p class="dica-gasto" id="g-dica"></p>
+                <p class="msg-gasto" id="g-msg" role="status"></p>
+                <div class="gasto-topo"><span>Lançado hoje</span><span id="g-resumo"></span></div>
+                <div id="gastos-hoje"><p class="vazio">Nada lançado hoje.</p></div>
+            </section>
         </div>
 
         <h2 class="sec"><i class="fas fa-motorcycle"></i> Pedidos agora</h2>
@@ -171,7 +249,22 @@
         <p class="rodape" id="rodape"></p>
     </main>
 
+    <div class="modal" id="modalIA">
+        <div class="modal-conteudo">
+            <h4><i class="fas fa-robot"></i> Análise financeira com IA</h4>
+            <p style="font-size:.8rem; color:var(--muted); margin-bottom:6px;">Lê hoje, ontem, últimos 7 dias, mês atual e mês anterior, com a mesma conta de lucro do Financeiro. Só lê e sugere: não altera nada.</p>
+            <p id="iaStatus" class="ia-status" role="status"></p>
+            <div id="iaResultado"></div>
+            <div id="iaPerguntaBox" style="display:none">
+                <div class="ia-pergunta"><input type="text" id="iaPergunta" maxlength="300" placeholder="Pergunte: quanto posso tirar essa semana?"><button class="btn btn-primario" id="iaPerguntarBtn" type="button">Perguntar</button></div>
+                <div id="iaResposta"></div>
+            </div>
+            <div class="botoes-modal"><button class="btn" id="iaFecharBtn" type="button">Fechar</button><button class="btn btn-primario" id="iaAnalisarBtn" type="button"><i class="fas fa-rotate"></i> Analisar de novo</button></div>
+        </div>
+    </div>
+
     <script type="module" src="./dono.js"></script>
+    <script type="module" src="./financeiroIA.js"></script>
 </body>
 
 </html>
