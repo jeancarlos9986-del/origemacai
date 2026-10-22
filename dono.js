@@ -265,10 +265,11 @@ function renderEstoque() {
         <div style="font-size:.7rem;color:var(--muted);margin-top:3px;">mínimo ${x.m || "—"}</div></div>`).join(""));
 }
 
-// ---------- reposição de estoque e dinheiro livre ----------
-// MESMA conta usada pela análise com IA (financeiroIA.js → reposicaoEstoque):
-//   faltaRepor  = custo dos insumos usados nas vendas do mês (CMV) − compras de insumo já lançadas no mês
-//   livre       = saldo em caixa − faltaRepor − contas vencidas ou que vencem em até 7 dias
+// ---------- quanto posso gastar hoje / dinheiro livre no caixa ----------
+// MESMA conta usada pela análise com IA (financeiroIA.js → reposicaoEstoque).
+//  HOJE:  aindaPodeUsar = vendido hoje − reposição − outras despesas da empresa − retirada pessoal já feita
+//         reposição = o MAIOR entre o que as vendas de hoje consumiram de insumo (CMV) e o que você já comprou hoje
+//  CAIXA: livre = saldo em caixa − contas vencidas ou que vencem em até 7 dias
 const r2 = n => Math.round((Number(n) || 0) * 100) / 100;
 
 function cmvDe(lista) {
@@ -282,31 +283,50 @@ function cmvDe(lista) {
 }
 
 const ehEmpresa = g => (g.natureza || "empresa") !== "pessoal";
+const saiuDoCaixa = g => !["pessoal", "aprazo"].includes(g.formaPagamento);
 const dataGasto = g => g.data?.toDate ? g.data.toDate().getTime() : 0;
+const somaValor = lista => r2(lista.reduce((a, g) => a + num(g.valor), 0));
 
 function resumoReserva() {
-    const { cmv, semCusto } = cmvDe(pedidosMes);
-    const compras = r2(gastosMes.filter(g => ehEmpresa(g) && g.tipo === "insumo").reduce((a, g) => a + num(g.valor), 0));
-    const faltaRepor = Math.max(0, r2(cmv - compras));
+    // ----- hoje -----
+    const h = resumoHoje();
+    const gHoje = gastosMes.filter(g => dataGasto(g) >= inicioDoDia());
+    const comprasHoje = somaValor(gHoje.filter(g => ehEmpresa(g) && g.tipo === "insumo"));
+    const outrasHoje = somaValor(gHoje.filter(g => ehEmpresa(g) && g.tipo !== "insumo"));
+    const retiradaHoje = somaValor(gHoje.filter(g => !ehEmpresa(g) && saiuDoCaixa(g)));
+    const reposicao = Math.max(h.cmv, comprasHoje);
+    const sobra = r2(h.fat - reposicao - outrasHoje - retiradaHoje);
+
+    // ----- caixa -----
     const saldo = caixa ? r2(caixa.total ?? (num(caixa.dinheiro) + num(caixa.pix) + num(caixa.cartao))) : 0;
     const limite = Date.now() + 7 * 86400000;
     const contas7d = r2(contas.filter(c => { const t = c.dataVenc?.toDate?.().getTime(); return t && t <= limite; }).reduce((a, c) => a + num(c.valor), 0));
-    const paraMinimo = r2(estoque.reduce((a, i) => { const q = qtdDe(i), m = minDe(i); return m > 0 && q < m ? a + (m - q) * custoDe(i) : a; }, 0));
-    const retirada = r2(gastosMes.filter(g => !ehEmpresa(g) && !["pessoal", "aprazo"].includes(g.formaPagamento)).reduce((a, g) => a + num(g.valor), 0));
-    return { cmv, compras, faltaRepor, saldo, contas7d, paraMinimo, retirada, semCusto, livre: r2(saldo - faltaRepor - contas7d) };
+    const retiradaMes = somaValor(gastosMes.filter(g => !ehEmpresa(g) && saiuDoCaixa(g)));
+    return { hoje: { vendas: r2(h.fat), cmv: h.cmv, comprasHoje, reposicao: r2(reposicao), outrasHoje, retiradaHoje, sobra, semCusto: h.semCusto },
+        caixa: { saldo, contas7d, livre: r2(saldo - contas7d) }, retiradaMes };
 }
 
 function renderReserva() {
-    if (!caixa) return set("reserva", `<p class="vazio">${falhas.has("caixa") ? "Não consegui ler o caixa." : "Sem saldo de caixa ainda — abra o Financeiro e confira o caixa."}</p>`);
-    const r = resumoReserva();
+    const r = resumoReserva(), h = r.hoje, c = r.caixa;
+    const cor = v => v < 0 ? "var(--red)" : "var(--green)";
+    const caixaHtml = caixa
+        ? `<div class="linha"><span>💼 Saldo em caixa</span><span class="v">${moeda(c.saldo)}</span></div>
+           <div class="linha"><span>🗓️ Contas até 7 dias</span><span class="v">− ${moeda(c.contas7d)}</span></div>
+           <div class="linha"><span><b>🏦 Livre no caixa</b></span><span class="v grande" style="color:${cor(c.livre)}">${moeda(c.livre)}</span></div>`
+        : `<p class="vazio">${falhas.has("caixa") ? "Não consegui ler o caixa." : "Sem saldo de caixa ainda — abra o Financeiro e confira o caixa."}</p>`;
     set("reserva", `
-        <div class="linha"><span>💼 Saldo em caixa</span><span class="v">${moeda(r.saldo)}</span></div>
-        <div class="linha"><span>📦 Guardar p/ repor estoque</span><span class="v" style="color:var(--yellow)">− ${moeda(r.faltaRepor)}</span></div>
-        <div class="linha"><span>🗓️ Contas até 7 dias</span><span class="v">− ${moeda(r.contas7d)}</span></div>
-        <div class="linha"><span><b>✅ Livre para usar</b></span><span class="v grande" style="color:${r.livre < 0 ? "var(--red)" : "var(--green)"}">${moeda(r.livre)}</span></div>
-        <p class="reserva-nota">No mês, as vendas consumiram ${moeda(r.cmv)} em insumos e você já repôs ${moeda(r.compras)}. Para o estoque voltar ao mínimo: ${moeda(r.paraMinimo)}. Retirada pessoal no mês: ${moeda(r.retirada)}.</p>
-        ${r.livre < 0 ? `<p class="reserva-nota alerta">⚠️ O caixa não cobre a reposição e as contas dos próximos 7 dias.</p>` : ""}
-        ${r.semCusto.size ? `<p class="reserva-nota alerta">⚠️ ${r.semCusto.size} insumo(s) sem custo no estoque: o valor a repor pode estar menor que o real.</p>` : ""}`);
+        <div class="reserva-sub">Hoje</div>
+        <div class="linha"><span>💰 Vendido hoje</span><span class="v">${moeda(h.vendas)}</span></div>
+        <div class="linha"><span>📦 Guardar p/ repor estoque</span><span class="v" style="color:var(--yellow)">− ${moeda(h.reposicao)}</span></div>
+        ${h.outrasHoje > 0 ? `<div class="linha"><span>🧾 Outras despesas da empresa</span><span class="v">− ${moeda(h.outrasHoje)}</span></div>` : ""}
+        <div class="linha"><span>🙋 Retirada pessoal já feita</span><span class="v">− ${moeda(h.retiradaHoje)}</span></div>
+        <div class="linha"><span><b>✅ Ainda pode usar hoje</b></span><span class="v grande" style="color:${cor(h.sobra)}">${moeda(h.sobra)}</span></div>
+        <p class="reserva-nota">As vendas de hoje consumiram ${moeda(h.cmv)} de insumos e você comprou ${moeda(h.comprasHoje)}. Vale o maior dos dois, para não gastar o que precisa voltar pro estoque.</p>
+        ${h.sobra < 0 ? `<p class="reserva-nota alerta">⚠️ Hoje já saiu mais do que o dia rendeu depois de separar a reposição.</p>` : ""}
+        ${h.semCusto.size ? `<p class="reserva-nota alerta">⚠️ ${h.semCusto.size} insumo(s) sem custo no estoque: a reposição pode estar maior que a mostrada.</p>` : ""}
+        <div class="reserva-sub" style="margin-top:16px;">Caixa</div>
+        ${caixaHtml}
+        <p class="reserva-nota">Retirada pessoal no mês: ${moeda(r.retiradaMes)}.</p>`);
 }
 
 // ---------- lançar gasto ----------

@@ -69,7 +69,7 @@ async function montarResumo() {
 
     // ----- Estoque: custos (para o CMV) e capital parado -----
     const custos = new Map(), semCustoEstoque = [], suspeitos = [], abaixoMinimo = [];
-    let valorEstoque = 0, custoParaMinimo = 0;
+    let valorEstoque = 0;
     estSnap.forEach(d => {
         const e = d.data();
         const q = Number(campo(e, ["quantidade", "qtd", "quant"])) || 0;
@@ -78,7 +78,6 @@ async function montarResumo() {
         valorEstoque += q * c;
         if (c > 0 && c <= 0.05) suspeitos.push(limpar(e.nome));
         const min = Number(campo(e, ["nivelMinimo", "minimo", "estoqueMinimo"])) || 0;
-        if (min > 0 && q < min) custoParaMinimo += (min - q) * c;
         if (min > 0 && q <= min) abaixoMinimo.push(`${limpar(e.nome)} (${r2(q)} de mínimo ${min})`);
     });
     const insumosSemCusto = new Set();
@@ -220,17 +219,24 @@ async function montarResumo() {
         caixaCobreProximos7dias: r2(saldo.total - somaC(vencidas) - somaC(prox7))
     };
 
-    // ----- Reposição de estoque e dinheiro livre (mesma conta do Painel do dono) -----
-    const faltaRepor = p => Math.max(0, r2(p.cmv - p.comprasDeInsumo));
+    // ----- Quanto pode gastar hoje e dinheiro livre no caixa (mesma conta do Painel do dono) -----
     const contas7d = r2(somaC(vencidas) + somaC(prox7));
-    const retiradasMes = r2(gastos.filter(g => g.t >= iniMes.getTime() && g.natureza === "pessoal" && g.forma !== "pessoal" && g.forma !== "aprazo").reduce((s, g) => s + g.valor, 0));
+    const gHoje = gastos.filter(g => g.t >= hoje0.getTime());
+    const somaG = l => r2(l.reduce((s, g) => s + g.valor, 0));
+    const saiuDoCaixa = g => g.forma !== "pessoal" && g.forma !== "aprazo";
+    const outrasHoje = somaG(gHoje.filter(g => g.natureza !== "pessoal" && g.tipo !== "insumo"));
+    const retiradaHoje = somaG(gHoje.filter(g => g.natureza === "pessoal" && saiuDoCaixa(g)));
+    const reposicaoDoDia = r2(Math.max(periodos.hoje.cmv, periodos.hoje.comprasDeInsumo));
+    const retiradasMes = somaG(gastos.filter(g => g.t >= iniMes.getTime() && g.natureza === "pessoal" && saiuDoCaixa(g)));
     const reposicaoEstoque = {
-        mesAtual: { insumosConsumidosCMV: periodos.mesAtual.cmv, comprasDeInsumoFeitas: periodos.mesAtual.comprasDeInsumo, faltaRepor: faltaRepor(periodos.mesAtual) },
-        hoje: { insumosConsumidosCMV: periodos.hoje.cmv, comprasDeInsumoFeitas: periodos.hoje.comprasDeInsumo, faltaRepor: faltaRepor(periodos.hoje) },
-        custoParaVoltarAoMinimoDoEstoque: r2(custoParaMinimo),
+        hoje: {
+            vendas: periodos.hoje.vendas, insumosConsumidosCMV: periodos.hoje.cmv, comprasDeInsumoFeitas: periodos.hoje.comprasDeInsumo,
+            reposicaoConsiderada: reposicaoDoDia, outrasDespesasDaEmpresa: outrasHoje, retiradaPessoalJaFeita: retiradaHoje,
+            aindaPodeUsarHoje: r2(periodos.hoje.vendas - reposicaoDoDia - outrasHoje - retiradaHoje)
+        },
         contasVencidasOuAte7dias: contas7d,
         retiradasPessoaisPagasPeloCaixaNoMes: retiradasMes,
-        livreParaUsar: r2(saldo.total - faltaRepor(periodos.mesAtual) - contas7d)
+        livreNoCaixa: r2(saldo.total - contas7d)
     };
 
     const aReceber = [];
