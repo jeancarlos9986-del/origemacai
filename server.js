@@ -65,6 +65,14 @@ const db = admin.firestore();
 
 app.use(bodyParser.json());
 
+// ==================================================
+// 💰 ANÁLISE FINANCEIRA COM IA — rota POST /financeiro/analise
+// ==================================================
+// Precisa do arquivo financeiroApi.js na mesma pasta deste server.js e da
+// variável de ambiente ANTHROPIC_API_KEY configurada no Render.
+// (Tem que ficar DEPOIS do app.use(bodyParser.json()) acima.)
+require('./financeiroApi')(app, admin, db, fetch);
+
 // ✅ SUAS CHAVES
 const MP_TOKEN = process.env.MP_TOKEN || "APP_USR-2553785228948600-060911-65330e84299bb43e1f81d3902c4c1a11-293452112";
 const WHATSAPP = "5534997741051";
