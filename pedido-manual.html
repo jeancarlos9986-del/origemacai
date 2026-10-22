@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pedido de WhatsApp — Nova Origem Açaí</title>
+<link rel="icon" href="./logonovonova.png.jpeg">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+    :root { --roxo:#7c1fd6; --claro:#a855f7; --amarelo:#ffd60a; --lilas:#c4b5fd; --card:rgba(18,6,34,.9); --borda:rgba(168,85,247,.45); --ok:#22c55e; --erro:#ff7a90; }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; color:#fff; font-family:"Poppins",-apple-system,"Segoe UI",Arial,sans-serif; background:linear-gradient(180deg,#0b0414,#1b0835 50%,#0b0414); background-attachment:fixed; }
+    .hidden { display:none !important; }
+    main { max-width:760px; margin:0 auto; padding:18px 14px 150px; }
+    header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+    header img { width:54px; height:54px; border-radius:50%; border:3px solid var(--claro); object-fit:cover; }
+    h1 { margin:0; font:400 1.35rem/1.1 "Permanent Marker",sans-serif; text-transform:uppercase; }
+    header small { color:var(--lilas); display:block; font-size:.75rem; margin-top:3px; }
+    header a { margin-left:auto; color:var(--lilas); font-size:.78rem; }
+    h2 { margin:0 0 10px; font:400 1rem/1.2 "Permanent Marker",sans-serif; text-transform:uppercase; color:var(--amarelo); }
+    .card { background:var(--card); border:1.5px solid var(--borda); border-radius:18px; padding:14px; margin-bottom:14px; }
+    input, button { font-family:inherit; }
+    input[type=text], input[type=tel], input[type=number] { width:100%; padding:11px 13px; border-radius:12px; border:1.5px solid rgba(168,85,247,.5); background:#12041f; color:#fff; font-size:.95rem; }
+    input:focus-visible, button:focus-visible { outline:2px solid var(--amarelo); outline-offset:2px; }
+    .linha2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .prods { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+    .prod { text-align:left; padding:10px 12px; border-radius:14px; border:1.5px solid var(--claro); background:#12041f; color:#fff; cursor:pointer; font-size:.82rem; font-weight:600; }
+    .prod b { display:block; color:var(--amarelo); font-size:.9rem; margin-top:3px; }
+    .prod:active { transform:scale(.97); }
+    .prod:disabled { opacity:.4; cursor:not-allowed; }
+    .item { border:1.5px solid var(--borda); border-radius:14px; padding:10px 12px; margin-top:10px; background:rgba(124,31,214,.08); }
+    .item-topo { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .item-topo strong { flex:1 1 150px; font-size:.9rem; }
+    .item-topo .preco { color:var(--amarelo); font-weight:700; }
+    .mini { padding:5px 10px; border-radius:999px; border:1.5px solid var(--claro); background:transparent; color:#fff; font-size:.72rem; font-weight:600; cursor:pointer; }
+    .mini.perigo { border-color:var(--erro); color:var(--erro); }
+    .rotulo { font-size:.72rem; color:var(--lilas); font-weight:600; margin:9px 0 5px; text-transform:uppercase; letter-spacing:.05em; }
+    .rotulo.alerta { color:#fbbf24; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .chip { padding:6px 11px; border-radius:999px; border:1.5px solid rgba(168,85,247,.55); background:#12041f; color:#fff; font-size:.76rem; cursor:pointer; }
+    .chip.on { background:linear-gradient(135deg,var(--roxo),var(--claro)); border-color:var(--claro); font-weight:700; }
+    .chip.fixo { background:#3a1a62; border-style:dashed; cursor:default; }
+    .vazio { color:var(--lilas); font-size:.84rem; margin:6px 0 0; }
+    .pags { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .pag { padding:13px 8px; border-radius:14px; border:1.5px solid var(--claro); background:#12041f; color:#fff; font-weight:700; font-size:.88rem; cursor:pointer; line-height:1.25; }
+    .pag small { display:block; font-weight:400; font-size:.68rem; color:var(--lilas); margin-top:2px; }
+    .pag.on { background:var(--amarelo); border-color:var(--amarelo); color:#1a0b2e; }
+    .pag.on small { color:#4a3a00; }
+    .pag.pend.on { background:#fbbf24; border-color:#fbbf24; }
+    .barra { position:fixed; left:0; right:0; bottom:0; z-index:5; background:rgba(11,4,20,.96); border-top:1.5px solid var(--borda); padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px)); }
+    .barra-in { max-width:760px; margin:0 auto; display:flex; align-items:center; gap:12px; }
+    .total { flex:1; font-size:.74rem; color:var(--lilas); line-height:1.25; }
+    .total b { display:block; font-size:1.35rem; color:#fff; }
+    #lancarBtn { padding:15px 22px; border:none; border-radius:999px; background:var(--amarelo); color:#1a0b2e; font:400 1.05rem "Permanent Marker",sans-serif; text-transform:uppercase; cursor:pointer; }
+    #lancarBtn:disabled { opacity:.5; cursor:wait; }
+    .reg { border-top:1.5px dashed rgba(168,85,247,.35); padding:10px 0; font-size:.84rem; }
+    .reg:first-of-type { border-top:none; }
+    .reg-topo { display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+    .reg small { color:var(--lilas); }
+    .reg .acoes { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .reg a.mini { text-decoration:none; display:inline-block; }
+    .sel { font-size:.66rem; font-weight:700; padding:2px 8px; border-radius:999px; background:#3a1a62; }
+    .sel.pend { background:#fbbf24; color:#1a0b2e; } .sel.ok { background:#14532d; } .sel.x { background:#7f1d1d; }
+    #msg { position:fixed; left:50%; transform:translateX(-50%); bottom:96px; z-index:9; max-width:92vw; padding:12px 16px; border-radius:14px; background:#12041f; border:1.5px solid var(--claro); font-size:.86rem; text-align:center; box-shadow:0 0 30px rgba(0,0,0,.6); }
+    #msg.erro { border-color:var(--erro); color:var(--erro); }
+    #msg.ok { border-color:var(--ok); }
+</style>
+</head>
+<body>
+<main id="app" class="hidden">
+    <header>
+        <img src="./logonovonova.png.jpeg" alt="Nova Origem">
+        <div><h1>Pedido de WhatsApp</h1><small>Lança no financeiro e dá baixa no estoque. Não vai pra cozinha.</small></div>
+        <a href="./financeiro.html">Financeiro</a>
+    </header>
+
+    <section class="card">
+        <h2>Cliente</h2>
+        <div class="linha2">
+            <input type="text" id="nome" placeholder="Nome (opcional)" autocomplete="off">
+            <input type="tel" id="fone" placeholder="WhatsApp do cliente" autocomplete="off">
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Toque no que o cliente pediu</h2>
+        <div class="prods" id="prods"><p class="vazio">Carregando cardápio…</p></div>
+        <div id="itens"></div>
+    </section>
+
+    <section class="card">
+        <h2>Como pagou?</h2>
+        <div class="pags" id="pags"></div>
+        <div style="margin-top:12px">
+            <div class="rotulo" style="margin-top:0">Ajuste no total (R$) — desconto negativo, ex: -2</div>
+            <input type="number" id="ajuste" inputmode="decimal" step="0.01" placeholder="0,00">
+        </div>
+    </section>
+
+    <section class="card" id="cardPend">
+        <h2>PIX que ainda não caiu</h2>
+        <div id="pendentes"><p class="vazio">Nenhum PIX pendente. 👍</p></div>
+    </section>
+
+    <section class="card">
+        <h2>Lançados hoje por aqui</h2>
+        <div id="hoje"><p class="vazio">Nenhum ainda hoje.</p></div>
+    </section>
+</main>
+
+<div class="barra hidden" id="barra"><div class="barra-in">
+    <div class="total"><span id="resumo">0 itens</span><b id="totalTxt">R$ 0,00</b></div>
+    <button id="lancarBtn">Lançar pedido</button>
+</div></div>
+<div id="msg" class="hidden"></div>
+<script type="module" src="./pedidoManual.js"></script>
+<script type="module" src="./menu-telas.js"></script>
+</body>
+</html>
